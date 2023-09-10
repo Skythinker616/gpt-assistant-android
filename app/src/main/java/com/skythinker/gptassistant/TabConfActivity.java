@@ -14,7 +14,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -26,14 +28,23 @@ import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class TabConfActivity extends Activity {
 
     private RecyclerView rvTabList;
     private TabConfListAdapter adapter;
     private BroadcastReceiver localReceiver;
+    private Handler handler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +124,7 @@ public class TabConfActivity extends Activity {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveAsrInfo(editable.toString().trim(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey());
+                GlobalDataHolder.saveAsrInfo(editable.toString().trim(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
             }
         });
 
@@ -122,7 +133,7 @@ public class TabConfActivity extends Activity {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrAppId(), editable.toString().trim(), GlobalDataHolder.getAsrSecretKey());
+                GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrAppId(), editable.toString().trim(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
             }
         });
 
@@ -131,8 +142,13 @@ public class TabConfActivity extends Activity {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), editable.toString().trim());
+                GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), editable.toString().trim(), GlobalDataHolder.getAsrUseRealTime());
             }
+        });
+
+        ((Switch) findViewById(R.id.sw_asr_real_time_conf)).setChecked(GlobalDataHolder.getAsrUseRealTime());
+        ((Switch) findViewById(R.id.sw_asr_real_time_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), checked);
         });
 
         ((Switch) findViewById(R.id.sw_check_access_conf)).setChecked(GlobalDataHolder.getCheckAccessOnStart());
@@ -161,6 +177,48 @@ public class TabConfActivity extends Activity {
             btOk.setOnClickListener(btView -> {
                 dialog.dismiss();
             });
+        });
+
+        (findViewById(R.id.tv_check_update_conf)).setOnClickListener(view -> {
+            new Thread(() -> {
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder()
+                        .url("https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest")
+                        .build();
+                try {
+                    Response response = client.newCall(request).execute();
+                    String json = response.body().string();
+                    JSONObject jsonObject = new JSONObject(json);
+                    String version = jsonObject.getString("tag_name").replace("v", "");
+                    if(version.equals(BuildConfig.VERSION_NAME)){
+                        handler.post(() -> {
+                            Toast.makeText(this, String.format("已是最新版本 (v%s)", version), Toast.LENGTH_LONG).show();
+                        });
+                    } else {
+                        handler.post(() -> {
+                            Toast.makeText(this, String.format("发现新版本 v%s (当前版本 v%s)", version, BuildConfig.VERSION_NAME), Toast.LENGTH_LONG).show();
+                            Intent intent = new Intent();
+                            intent.setAction("android.intent.action.VIEW");
+                            Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android/releases");
+                            intent.setData(content_url);
+                            startActivity(intent);
+                        });
+                    }
+                } catch (JSONException | IOException e) {
+                    handler.post(() -> {
+                        Toast.makeText(this, "检查更新失败", Toast.LENGTH_SHORT).show();
+                    });
+                    e.printStackTrace();
+                }
+            }).start();
+        });
+
+        (findViewById(R.id.tv_homepage_conf)).setOnClickListener(view -> {
+            Intent intent = new Intent();
+            intent.setAction("android.intent.action.VIEW");
+            Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android");
+            intent.setData(content_url);
+            startActivity(intent);
         });
     }
 

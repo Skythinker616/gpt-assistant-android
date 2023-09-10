@@ -49,7 +49,9 @@ Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服�
 
 用户可以参照[百度语音识别官方文档](https://cloud.baidu.com/doc/SPEECH/s/qknh9i8ed)注册并创建应用，然后获取AppID、API Key和Secret Key填入设置中
 
-注意，在创建应用时，需要勾选“短语音识别”服务，然后将“语音包名”设置为“Android”，并填入本软件包名`com.skythinker.gptassistant`
+若设置项的“启用长语音”选项关闭，则使用的是百度短语音识别接口，若开启，则使用的是实时语音识别接口，需要用户根据需求在创建应用时勾选对应的服务
+
+此外，在创建应用时，需要将“语音包名”设置为“Android”，并填入本软件包名`com.skythinker.gptassistant`
 
 ![设置语音包名](readme_img/asr_set_package.jpg)
 
@@ -74,7 +76,7 @@ Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服�
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
 | 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.2.0 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.2.0 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.2.1 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.2.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.2.0 |

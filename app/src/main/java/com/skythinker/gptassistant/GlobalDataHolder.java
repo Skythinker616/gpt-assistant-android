@@ -18,6 +18,7 @@ public class GlobalDataHolder {
     private static String asrAppId;
     private static String asrApiKey;
     private static String asrSecretKey;
+    private static boolean asrUseRealTime;
     private static String gptApiHost;
     private static String gptApiKey;
     private static boolean checkAccessOnStart;
@@ -75,16 +76,19 @@ public class GlobalDataHolder {
         asrAppId = sp.getString("asr_app_id", "");
         asrApiKey = sp.getString("asr_api_key", "");
         asrSecretKey = sp.getString("asr_secret_key", "");
+        asrUseRealTime = sp.getBoolean("asr_use_real_time", false);
     }
 
-    public static void saveAsrInfo(String appId, String apiKey, String secretKey) {
+    public static void saveAsrInfo(String appId, String apiKey, String secretKey, boolean useRealTime) {
         asrApiKey = apiKey;
         asrAppId = appId;
         asrSecretKey = secretKey;
+        asrUseRealTime = useRealTime;
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("asr_app_id", asrAppId);
         editor.putString("asr_api_key", asrApiKey);
         editor.putString("asr_secret_key", asrSecretKey);
+        editor.putBoolean("asr_use_real_time", asrUseRealTime);
         editor.apply();
     }
 
@@ -129,6 +133,8 @@ public class GlobalDataHolder {
     public static String getAsrApiKey() { return asrApiKey; }
 
     public static String getAsrSecretKey() { return asrSecretKey; }
+
+    public static boolean getAsrUseRealTime() { return asrUseRealTime; }
 
     public static String getGptApiHost() { return gptApiHost; }
 

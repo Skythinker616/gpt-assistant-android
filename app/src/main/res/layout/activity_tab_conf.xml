@@ -290,6 +290,37 @@
 
                         </LinearLayout>
 
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginVertical="8dp"
+                            android:layout_marginBottom="10dp"
+                            android:gravity="center|center_horizontal"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_asr_real_time_conf"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="启用长语音"
+                                android:textColor="#000000"
+                                android:textSize="20sp" />
+
+                            <Switch
+                                android:id="@+id/sw_asr_real_time_conf"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:checked="false"
+                                android:showText="false"
+                                android:thumb="@drawable/switch_thumb"
+                                android:track="@drawable/switch_track"
+                                tools:checked="true"
+                                tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                        </LinearLayout>
+
                     </LinearLayout>
 
                 </androidx.cardview.widget.CardView>
@@ -413,6 +444,40 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="查看帮助"
+                                android:textColor="#000000"
+                                android:textSize="20sp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginVertical="8dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_check_update_conf"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="检查更新"
+                                android:textColor="#000000"
+                                android:textSize="20sp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginVertical="8dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_homepage_conf"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="项目主页"
                                 android:textColor="#000000"
                                 android:textSize="20sp" />
 

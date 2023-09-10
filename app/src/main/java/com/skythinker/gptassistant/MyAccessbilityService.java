@@ -25,6 +25,7 @@ public class MyAccessbilityService extends AccessibilityService {
     private int pressCount = 0;
     private boolean isPressing = false;
     private boolean isBaned = false;
+    private boolean isInStartDelay = false;
     AudioManager audioManager;
     Vibrator vibrator;
 
@@ -84,10 +85,13 @@ public class MyAccessbilityService extends AccessibilityService {
                                 e.printStackTrace();
                             }
                             Log.d("MyAccessbilityService", "startActivity: MainActivity");
+                            isInStartDelay = true;
                             handler.postDelayed(() -> {
-                                Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
-                                LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
-                                Log.d("MyAccessbilityService", "broadcast: KEY_SPEECH_START");
+                                if(isInStartDelay) {
+                                    Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
+                                    LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+                                    Log.d("MyAccessbilityService", "broadcast: KEY_SPEECH_START");
+                                }
                             }, 500);
                         } else {
                             Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
@@ -101,6 +105,7 @@ public class MyAccessbilityService extends AccessibilityService {
             } else if(eventAction == KeyEvent.ACTION_UP) {
                 keyUpTime = eventTime;
                 isPressing = false;
+                isInStartDelay = false;
                 if(eventTime - keyDownTime < longPressTime) {
                     isBaned = true;
                     audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);

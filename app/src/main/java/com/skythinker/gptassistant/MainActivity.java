@@ -74,6 +74,7 @@ public class MainActivity extends Activity implements EventListener {
     private Markwon markwon;
     private EventManager asr;
     private long asrStartTime = 0;
+    String asrBuffer = "";
     BroadcastReceiver localReceiver = null;
 
     private static boolean isAlive = false;
@@ -185,8 +186,18 @@ public class MainActivity extends Activity implements EventListener {
                     params.put(SpeechConstant.APP_ID, GlobalDataHolder.getAsrAppId());
                     params.put(SpeechConstant.APP_KEY, GlobalDataHolder.getAsrApiKey());
                     params.put(SpeechConstant.SECRET, GlobalDataHolder.getAsrSecretKey());
+                    if(GlobalDataHolder.getAsrUseRealTime()){
+                        params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, true);
+                        params.put(SpeechConstant.VAD, SpeechConstant.VAD_DNN);
+                    }
+                    else{
+                        params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, false);
+                        params.put(SpeechConstant.VAD, SpeechConstant.VAD_TOUCH);
+                    }
+                    params.put(SpeechConstant.PID, 15374);
                     asr.send(SpeechConstant.ASR_START, (new JSONObject(params)).toString(), null, 0, 0);
                     asrStartTime = System.currentTimeMillis();
+                    asrBuffer = "";
                     etUserInput.setText("");
                     etUserInput.setHint("正在聆听...");
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_STOP")) {
@@ -333,12 +344,17 @@ public class MainActivity extends Activity implements EventListener {
     @Override
     public void onEvent(String name, String params, byte[] data, int offset, int length) {
         if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_PARTIAL)) {
+            Log.d("asr partial", params);
             try {
                 JSONObject json = new JSONObject(params);
                 String resultType = json.getString("result_type");
                 if(resultType.equals("final_result")) {
                     String bestResult = json.getString("best_result");
-                    etUserInput.setText(bestResult);
+                    asrBuffer += bestResult;
+                    etUserInput.setText(asrBuffer);
+                }else if(resultType.equals("partial_result")){
+                    String bestResult = json.getString("best_result");
+                    etUserInput.setText(String.format("%s%s", asrBuffer, bestResult));
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

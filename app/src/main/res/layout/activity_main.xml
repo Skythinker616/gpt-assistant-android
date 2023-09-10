@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom|center_horizontal"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/view_bg_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/main_card_background"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_gpt_reply"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="10dp"
+                        android:layout_marginVertical="10dp"
+                        android:text="请向GPT提出问题。"
+                        android:textColor="#000000"
+                        android:textIsSelectable="true"
+                        android:textSize="16sp" />
+                </LinearLayout>
+            </ScrollView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginVertical="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/tabs_layout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginRight="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/tab_background_selected"
+                            android:minWidth="20dp"
+                            android:minHeight="0dp"
+                            android:text="+"
+                            android:textColor="#000000"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <ImageButton
+                    android:id="@+id/bt_edit"
+                    android:layout_width="30dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="15dp"
+                    android:layout_weight="0"
+                    android:background="#00FFFFFF"
+                    android:scaleType="centerInside"
+                    android:src="@android:drawable/ic_menu_manage" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#19000000"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp"
+                    app:contentPadding="5dp">
+
+                    <EditText
+                        android:id="@+id/et_user_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="#00FFFFFF"
+                        android:ems="10"
+                        android:gravity="start|top"
+                        android:hint="在此输入问题，长按可清除"
+                        android:inputType="textMultiLine"
+                        android:textColorHint="#838383"
+                        android:textSize="18sp" />
+                </androidx.cardview.widget.CardView>
+
+                <ImageButton
+                    android:id="@+id/bt_send"
+                    android:layout_width="60dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0"
+                    android:background="#00FFFFFF"
+                    android:scaleType="center"
+                    android:src="@android:drawable/ic_menu_send" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

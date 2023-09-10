@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F6F7"
+    tools:context=".TabDetailConfActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="5px"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="10dp"
+            android:text="功能标签内容设置"
+            android:textAlignment="center"
+            android:textColor="#3C3C3C"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:contentPadding="10dp">
+
+            <EditText
+                android:id="@+id/et_tab_detail_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#00FFFFFF"
+                android:ems="10"
+                android:gravity="start|top"
+                android:hint="在这里输入标题"
+                android:inputType="text" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:contentPadding="10dp">
+
+            <EditText
+                android:id="@+id/et_tab_detail_prompt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#00FFFFFF"
+                android:ems="10"
+                android:gravity="start|top"
+                android:hint="在这里输入模板内容"
+                android:inputType="textMultiLine|text" />
+        </androidx.cardview.widget.CardView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_tab_detail_cancel"
+                android:layout_width="80dp"
+                android:layout_height="30dp"
+                android:layout_marginRight="40dp"
+                app:cardBackgroundColor="#B6B6B6"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <TextView
+                    android:id="@+id/textView3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="取消"
+                    android:textColor="#000000"
+                    android:textSize="16sp" />
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_tab_detail_ok"
+                android:layout_width="80dp"
+                android:layout_height="30dp"
+                app:cardBackgroundColor="@color/tag_background_selected"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <TextView
+                    android:id="@+id/textView4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="确定"
+                    android:textColor="#000000"
+                    android:textSize="16sp" />
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

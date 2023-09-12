@@ -20,7 +20,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewOutlineProvider;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -113,6 +112,16 @@ public class MainActivity extends Activity implements EventListener {
         });
         setContentView(R.layout.activity_main);
         etUserInput = findViewById(R.id.et_user_input);
+        Intent activityIntent = getIntent();
+        if(activityIntent != null){
+            String action = activityIntent.getAction();
+            if(action != null && action.equals("android.intent.action.PROCESS_TEXT")){
+                String text = activityIntent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
+                if(text != null){
+                    etUserInput.setText(text);
+                }
+            }
+        }
         tvGptReply = findViewById(R.id.tv_gpt_reply);
         tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
         (findViewById(R.id.bt_edit)).setOnClickListener(view -> {

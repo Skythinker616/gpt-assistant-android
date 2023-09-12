@@ -46,33 +46,33 @@ GPT Assistant 是一个基于ChatGPT的安卓端语音助手，允许用户通�
 
 3. 松开后再次短按，发送问题
 
-<center>
+<div align="center">
 	<img src="readme_img/usage.gif" height="400px">
-</center>
+</div>
 
 **二、用状态栏快捷键也可触发**
 
 下拉状态栏，点击“GPT”按钮，即可唤出界面，键盘会自动弹出，可以手动输入问题
 
-<center>
+<div align="center">
 	<img src="readme_img/tile_btn.gif" height="400px">
-</center>
+</div>
 
 **三、从全局上下文菜单唤起**
 
 在选中文本后弹出的系统菜单中，点击GPTAssistant选项，即可直接唤起应用并将选中文本添加到输入框
 
-<center>
+<div align="center">
 	<img src="readme_img/context_menu.gif" height="400px">
-</center>
+</div>
 
 **四、支持连续对话**
 
 激活右上角的对话图标，即可保留当前会话，进行连续对话
 
-<center>
+<div align="center">
 	<img src="readme_img/multi_chat.gif" height="400px">
-</center>
+</div>
 
 ---
 

@@ -1,6 +1,7 @@
 package com.skythinker.gptassistant;
 
 import android.util.Log;
+import android.util.Pair;
 
 import com.plexpt.chatgpt.ChatGPT;
 import com.plexpt.chatgpt.ChatGPTStream;
@@ -11,6 +12,7 @@ import com.plexpt.chatgpt.listener.ConsoleStreamListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import okhttp3.sse.EventSource;
 
@@ -21,17 +23,37 @@ public class ChatApiClient {
         void onFinished();
     }
 
+    public enum ChatRole {
+        SYSTEM,
+        USER,
+        ASSISTANT
+    }
+
     String url = "";
     String apiKey = "";
+    String model = "";
     ChatGPTStream chatGPT = null;
     OnReceiveListener listener = null;
 
-    public ChatApiClient(String url, String apiKey, OnReceiveListener listener) {
+    public ChatApiClient(String url, String apiKey, String model, OnReceiveListener listener) {
         this.listener = listener;
+        this.model = model;
         setApiInfo(url, apiKey);
     }
 
     public void sendPrompt(String systemPrompt, String userPrompt) {
+        if(systemPrompt == null && userPrompt == null) {
+            listener.onError("模板和问题内容均为空");
+            return;
+        }
+
+        sendPromptList(Arrays.asList(
+            Pair.create(ChatRole.SYSTEM, systemPrompt),
+            Pair.create(ChatRole.USER, userPrompt)
+        ));
+    }
+
+    public void sendPromptList(List<Pair<ChatRole, String>> promptList) {
         if(url.isEmpty()) {
             listener.onError("请在设置中填写服务器地址");
             return;
@@ -42,21 +64,21 @@ public class ChatApiClient {
             listener.onError("ChatGPT初始化失败");
             return;
         }
-        if(systemPrompt == null && userPrompt == null) {
-            listener.onError("模板和问题内容均为空");
-            return;
-        }
 
         ArrayList<Message> messages = new ArrayList<>();
-        if(systemPrompt != null) {
-            messages.add(Message.ofSystem(systemPrompt));
-        }
-        if(userPrompt != null) {
-            messages.add(Message.of(userPrompt));
+        for(Pair<ChatRole, String> prompt : promptList) {
+            if(prompt.first == ChatRole.SYSTEM) {
+                messages.add(Message.ofSystem(prompt.second));
+            } else if(prompt.first == ChatRole.USER) {
+                messages.add(Message.of(prompt.second));
+            } else if(prompt.first == ChatRole.ASSISTANT) {
+                messages.add(Message.ofAssistant(prompt.second));
+            }
         }
 
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .messages(messages)
+                .model(model)
                 .build();
         chatGPT.streamChatCompletion(chatCompletion, new AbstractStreamListener() {
             @Override
@@ -101,5 +123,9 @@ public class ChatApiClient {
                 .apiHost(url)
                 .build()
                 .init();
+    }
+
+    public void setModel(String model) {
+        this.model = model;
     }
 }

@@ -2,7 +2,6 @@ package com.skythinker.gptassistant;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -10,24 +9,28 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.Outline;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
+import android.util.Pair;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -35,24 +38,17 @@ import com.baidu.speech.EventListener;
 import com.baidu.speech.EventManager;
 import com.baidu.speech.EventManagerFactory;
 import com.baidu.speech.asr.SpeechConstant;
-import com.plexpt.chatgpt.ChatGPT;
 import com.plexpt.chatgpt.entity.chat.ChatCompletion;
-import com.plexpt.chatgpt.entity.chat.ChatCompletionResponse;
-import com.plexpt.chatgpt.entity.chat.Message;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import ch.qos.logback.core.helpers.ThrowableToStringArray;
 import io.noties.markwon.Markwon;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
 import io.noties.markwon.ext.tables.TablePlugin;
@@ -69,6 +65,7 @@ public class MainActivity extends Activity implements EventListener {
     private int selectedTab = 0;
     private TextView tvGptReply;
     private EditText etUserInput;
+    private LinearLayout llChatList;
     private Handler handler = new Handler();
     private Markwon markwon;
     private EventManager asr;
@@ -79,17 +76,17 @@ public class MainActivity extends Activity implements EventListener {
     private static boolean isAlive = false;
     private static boolean isRunning = false;
 
-    private static Context selfContext = null;
-
     ChatApiClient chatApiClient = null;
     private String chatApiBuffer = "";
 
     private TextToSpeech tts = null;
 
+    private boolean multiChat = false;
+    private List<Pair<ChatApiClient.ChatRole, String>> multiChatList = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        selfContext = this;
         GlobalDataHolder.init(this);
         markwon = Markwon.builder(this)
                 .usePlugin(SyntaxHighlightPlugin.create(new Prism4j(new GrammarLocatorDef()), Prism4jThemeDefault.create(0)))
@@ -122,20 +119,28 @@ public class MainActivity extends Activity implements EventListener {
                 }
             }
         }
-        tvGptReply = findViewById(R.id.tv_gpt_reply);
-        tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
-        (findViewById(R.id.bt_edit)).setOnClickListener(view -> {
+        llChatList = findViewById(R.id.ll_chat_list);
+        (findViewById(R.id.cv_settings)).setOnClickListener(view -> {
             startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
         });
         updateTabListView();
         chatApiClient = new ChatApiClient(GlobalDataHolder.getGptApiHost(),
                 GlobalDataHolder.getGptApiKey(),
+                GlobalDataHolder.getGpt4Enable() ? ChatCompletion.Model.GPT_4_0613.getName() : ChatCompletion.Model.GPT_3_5_TURBO_0613.getName(),
                 new ChatApiClient.OnReceiveListener() {
                     @Override
                     public void onReceive(String message) {
                         chatApiBuffer += message;
                         handler.post(() -> {
+                            ScrollView scrollView = findViewById(R.id.sv_chat_list);
+                            boolean isBottom = scrollView.getChildAt(0).getBottom()
+                                    <= scrollView.getHeight() + scrollView.getScrollY();
+
                             markwon.setMarkdown(tvGptReply, chatApiBuffer);
+
+                            if(isBottom){
+                                scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+                            }
                         });
                     }
 
@@ -144,6 +149,7 @@ public class MainActivity extends Activity implements EventListener {
                         if(GlobalDataHolder.getTtsEnable()){
                             handler.post(() -> {
                                 tts.speak(tvGptReply.getText().toString(), TextToSpeech.QUEUE_FLUSH, null);
+                                multiChatList.add(new Pair<>(ChatApiClient.ChatRole.ASSISTANT, chatApiBuffer));
                             });
                         }
                     }
@@ -158,11 +164,7 @@ public class MainActivity extends Activity implements EventListener {
 
         (findViewById(R.id.bt_send)).setOnClickListener(view -> {
             tts.stop();
-            chatApiBuffer = "";
-            tvGptReply.setText("正在等待回复...");
-            PromptTabData tabData = GlobalDataHolder.getTabDataList().get(selectedTab);
-            String userInput = etUserInput.getText().toString();
-            chatApiClient.sendPrompt(tabData.getPrompt(), userInput);
+            sendQuestion();
         });
 
         etUserInput.setOnLongClickListener(view -> {
@@ -170,14 +172,39 @@ public class MainActivity extends Activity implements EventListener {
             return true;
         });
 
-//        // 触发软键盘
-//        etUserInput.requestFocus();
-//        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-//        imm.showSoftInput(findViewById(R.id.et_user_input), InputMethodManager.RESULT_UNCHANGED_SHOWN);
+        (findViewById(R.id.cv_multi_chat)).setOnClickListener(view -> {
+            multiChat = !multiChat;
+            if(multiChat){
+                ((CardView) findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn_enabled));
+            }else{
+                ((CardView) findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn));
+            }
+        });
+
+        (findViewById(R.id.cv_clear_chat)).setOnClickListener(view -> {
+            multiChatList.clear();
+            llChatList.removeAllViews();
+            TextView tv = new TextView(this);
+            tv.setTextColor(Color.parseColor("#000000"));
+            tv.setTextSize(16);
+            int paddingInPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, getResources().getDisplayMetrics());
+            tv.setPadding(paddingInPx, 0, paddingInPx, 0);
+            tv.setText("请向GPT提出问题。");
+            llChatList.addView(tv);
+        });
+
+        (findViewById(R.id.cv_close)).setOnClickListener(view -> {
+            finish();
+        });
 
         (findViewById(R.id.view_bg_empty)).setOnClickListener(view -> {
             finish();
         });
+
+        if(GlobalDataHolder.getDefaultEnableMultiChat()){
+            multiChat = true;
+            ((CardView) findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn_enabled));
+        }
 
         isAlive = true;
 
@@ -217,11 +244,7 @@ public class MainActivity extends Activity implements EventListener {
                         asr.send(SpeechConstant.ASR_STOP, "{}", null, 0, 0);
                     }
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SEND")) {
-                    chatApiBuffer = "";
-                    tvGptReply.setText("正在等待回复...");
-                    PromptTabData tabData = GlobalDataHolder.getTabDataList().get(selectedTab);
-                    String userInput = etUserInput.getText().toString();
-                    chatApiClient.sendPrompt(tabData.getPrompt(), userInput);
+                    sendQuestion();
                 } else if(action.equals("com.skythinker.gptassistant.SHOW_KEYBOARD")) {
                     etUserInput.requestFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -265,6 +288,7 @@ public class MainActivity extends Activity implements EventListener {
         if(requestCode == 0) {
             updateTabListView();
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
+            chatApiClient.setModel(GlobalDataHolder.getGpt4Enable() ? ChatCompletion.Model.GPT_4_0613.getName() : ChatCompletion.Model.GPT_3_5_TURBO_0613.getName());
         }
     }
 
@@ -289,11 +313,94 @@ public class MainActivity extends Activity implements EventListener {
             tabBtn.setLayoutParams(params);
             int finalI = i;
             tabBtn.setOnClickListener(view -> {
+                if(selectedTab != finalI){
+                    findViewById(R.id.cv_clear_chat).performClick();
+                }
                 selectedTab = finalI;
                 updateTabListView();
             });
             tabList.addView(tabBtn);
         }
+    }
+
+    private void sendQuestion(){
+        if(!multiChat){
+            llChatList.removeAllViews();
+            multiChatList.clear();
+        }
+
+        if(multiChatList.size() == 0){
+            PromptTabData tabData = GlobalDataHolder.getTabDataList().get(selectedTab);
+            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.SYSTEM, tabData.getPrompt()));
+        }
+        String userInput = etUserInput.getText().toString();
+        multiChatList.add(new Pair<>(ChatApiClient.ChatRole.USER, userInput));
+
+        if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){
+            llChatList.removeViewAt(0);
+        }
+
+        if(multiChat && multiChatList.size() > 0 && multiChatList.get(0).first == ChatApiClient.ChatRole.SYSTEM){
+            String systemPrompt = multiChatList.get(0).second;
+            multiChatList.remove(0);
+            String firstUserInput = multiChatList.get(0).second;
+            String newUserInput = systemPrompt + " " + firstUserInput;
+            multiChatList.set(0, new Pair<>(ChatApiClient.ChatRole.USER, newUserInput));
+            if(llChatList.getChildCount() > 0){
+                ((TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1)).setText(newUserInput);
+            }
+        }
+
+        ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(80, 80);
+        iconParams.setMargins(10, 30, 10, 30);
+
+        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        contentParams.setMargins(10, 40, 10, 40);
+
+        LinearLayout userLinearLayout = new LinearLayout(this);
+        userLinearLayout.setOrientation(LinearLayout.HORIZONTAL);
+
+        ImageView userIcon = new ImageView(this);
+        userIcon.setImageResource(R.drawable.chat_user_icon);
+        userIcon.setLayoutParams(iconParams);
+
+        TextView userQuestion = new TextView(this);
+        userQuestion.setText(multiChatList.get(multiChatList.size() - 1).second);
+        userQuestion.setTextSize(16);
+        userQuestion.setTextColor(Color.BLACK);
+        userQuestion.setLayoutParams(contentParams);
+        userQuestion.setMovementMethod(LinkMovementMethod.getInstance());
+        userQuestion.setTextIsSelectable(true);
+
+        userLinearLayout.addView(userIcon);
+        userLinearLayout.addView(userQuestion);
+
+        LinearLayout gptLinearLayout = new LinearLayout(this);
+        gptLinearLayout.setOrientation(LinearLayout.HORIZONTAL);
+        gptLinearLayout.setBackgroundColor(Color.parseColor("#0A000000"));
+
+        ImageView gptIcon = new ImageView(this);
+        gptIcon.setImageResource(R.drawable.chat_gpt_icon);
+        gptIcon.setLayoutParams(iconParams);
+
+        TextView gptReply = new TextView(this);
+        gptReply.setTextSize(16);
+        gptReply.setTextColor(Color.BLACK);
+        gptReply.setLayoutParams(contentParams);
+        userQuestion.setMovementMethod(LinkMovementMethod.getInstance());
+        userQuestion.setTextIsSelectable(true);
+
+        gptLinearLayout.addView(gptIcon);
+        gptLinearLayout.addView(gptReply);
+
+        llChatList.addView(userLinearLayout);
+        llChatList.addView(gptLinearLayout);
+
+        tvGptReply = gptReply;
+
+        chatApiBuffer = "";
+        tvGptReply.setText("正在等待回复...");
+        chatApiClient.sendPromptList(multiChatList);
     }
 
     public static boolean isAlive() {

@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.util.Base64;
 import android.util.Log;
 
+import com.plexpt.chatgpt.entity.chat.ChatCompletion;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,8 +23,10 @@ public class GlobalDataHolder {
     private static boolean asrUseRealTime;
     private static String gptApiHost;
     private static String gptApiKey;
+    private static boolean gpt4Enable;
     private static boolean checkAccessOnStart;
     private static boolean ttsEnable;
+    private static boolean defaultEnableMultiChat;
     private static SharedPreferences sp = null;
 
     public static void init(Context context) {
@@ -36,6 +40,7 @@ public class GlobalDataHolder {
         loadGptApiInfo();
         loadStartUpSetting();
         loadTtsSetting();
+        loadMultiChatSetting();
     }
 
     public static List<PromptTabData> getTabDataList() {
@@ -95,14 +100,17 @@ public class GlobalDataHolder {
     public static void loadGptApiInfo() {
         gptApiHost = sp.getString("gpt_api_host", "");
         gptApiKey = sp.getString("gpt_api_key", "");
+        gpt4Enable = sp.getBoolean("gpt4_enable", false);
     }
 
-    public static void saveGptApiInfo(String host, String key) {
+    public static void saveGptApiInfo(String host, String key, boolean gpt4) {
         gptApiHost = host;
         gptApiKey = key;
+        gpt4Enable = gpt4;
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("gpt_api_host", gptApiHost);
         editor.putString("gpt_api_key", gptApiKey);
+        editor.putBoolean("gpt4_enable", gpt4Enable);
         editor.apply();
     }
 
@@ -128,6 +136,17 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    public static void loadMultiChatSetting() {
+        defaultEnableMultiChat = sp.getBoolean("default_enable_multi_chat", false);
+    }
+
+    public static void saveMultiChatSetting(boolean defaultEnable) {
+        defaultEnableMultiChat = defaultEnable;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("default_enable_multi_chat", defaultEnableMultiChat);
+        editor.apply();
+    }
+
     public static String getAsrAppId() { return asrAppId; }
 
     public static String getAsrApiKey() { return asrApiKey; }
@@ -140,7 +159,11 @@ public class GlobalDataHolder {
 
     public static String getGptApiKey() { return gptApiKey; }
 
+    public static boolean getGpt4Enable() { return gpt4Enable; }
+
     public static boolean getCheckAccessOnStart() { return checkAccessOnStart; }
 
     public static boolean getTtsEnable() { return ttsEnable; }
+
+    public static boolean getDefaultEnableMultiChat() { return defaultEnableMultiChat; }
 }

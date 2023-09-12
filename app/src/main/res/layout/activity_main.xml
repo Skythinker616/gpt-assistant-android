@@ -25,25 +25,83 @@
             android:orientation="vertical"
             android:padding="10dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:layout_marginBottom="10dp"
+                android:gravity="right"
+                android:orientation="horizontal">
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_multi_chat"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:foreground="@drawable/chat_btn"
+                    app:cardBackgroundColor="#00000000"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_clear_chat"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="10dp"
+                    android:foreground="@drawable/clear_btn"
+                    app:cardBackgroundColor="#00DADADA"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_settings"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="10dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/settings_btn"
+                    app:cardBackgroundColor="#00DADADA"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_close"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="10dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/close_btn"
+                    app:cardBackgroundColor="#00DADADA"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp" />
+
+            </LinearLayout>
+
+            <View
+                android:id="@+id/view"
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:background="#A5A5A5" />
+
             <ScrollView
+                android:id="@+id/sv_chat_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1">
 
                 <LinearLayout
+                    android:id="@+id/ll_chat_list"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/tv_gpt_reply"
+                        android:id="@+id/textView5"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="10dp"
-                        android:layout_marginVertical="10dp"
+                        android:paddingHorizontal="10dp"
                         android:text="请向GPT提出问题。"
                         android:textColor="#000000"
-                        android:textIsSelectable="true"
                         android:textSize="16sp" />
                 </LinearLayout>
             </ScrollView>
@@ -83,16 +141,6 @@
 
                     </LinearLayout>
                 </HorizontalScrollView>
-
-                <ImageButton
-                    android:id="@+id/bt_edit"
-                    android:layout_width="30dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="15dp"
-                    android:layout_weight="0"
-                    android:background="#00FFFFFF"
-                    android:scaleType="centerInside"
-                    android:src="@android:drawable/ic_menu_manage" />
 
             </LinearLayout>
 

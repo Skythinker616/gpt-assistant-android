@@ -106,7 +106,7 @@ public class TabConfActivity extends Activity {
                         host += "/";
                     }
                 }
-                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey());
+                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGpt4Enable());
             }
         });
 
@@ -115,8 +115,13 @@ public class TabConfActivity extends Activity {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim());
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGpt4Enable());
             }
+        });
+
+        ((Switch) findViewById(R.id.sw_gpt4_enable_conf)).setChecked(GlobalDataHolder.getGpt4Enable());
+        ((Switch) findViewById(R.id.sw_gpt4_enable_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), checked);
         });
 
         ((EditText) findViewById(R.id.et_asr_app_id_conf)).setText(GlobalDataHolder.getAsrAppId());
@@ -159,6 +164,11 @@ public class TabConfActivity extends Activity {
         ((Switch) findViewById(R.id.sw_tts_enable_conf)).setChecked(GlobalDataHolder.getTtsEnable());
         ((Switch) findViewById(R.id.sw_tts_enable_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
             GlobalDataHolder.saveTtsSetting(checked);
+        });
+
+        ((Switch) findViewById(R.id.sw_def_enable_multi_chat_conf)).setChecked(GlobalDataHolder.getDefaultEnableMultiChat());
+        ((Switch) findViewById(R.id.sw_def_enable_multi_chat_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            GlobalDataHolder.saveMultiChatSetting(checked);
         });
 
         (findViewById(R.id.tv_set_access_conf)).setOnClickListener(view -> {

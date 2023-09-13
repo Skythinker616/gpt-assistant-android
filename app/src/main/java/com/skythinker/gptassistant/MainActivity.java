@@ -108,6 +108,8 @@ public class MainActivity extends Activity implements EventListener {
             }
         });
         setContentView(R.layout.activity_main);
+        tvGptReply = findViewById(R.id.tv_chat_notice);
+        tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
         etUserInput = findViewById(R.id.et_user_input);
         Intent activityIntent = getIntent();
         if(activityIntent != null){
@@ -157,7 +159,12 @@ public class MainActivity extends Activity implements EventListener {
                     @Override
                     public void onError(String message) {
                         handler.post(() -> {
-                            tvGptReply.setText(String.format("获取失败: %s", message));
+                            String errText = String.format("获取失败: %s", message);
+                            if(tvGptReply != null){
+                                tvGptReply.setText(errText);
+                            }else{
+                                Toast.makeText(MainActivity.this, errText, Toast.LENGTH_LONG).show();
+                            }
                         });
                     }
                 });
@@ -190,6 +197,7 @@ public class MainActivity extends Activity implements EventListener {
             int paddingInPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, getResources().getDisplayMetrics());
             tv.setPadding(paddingInPx, 0, paddingInPx, 0);
             tv.setText("请向GPT提出问题。");
+            tvGptReply = tv;
             llChatList.addView(tv);
         });
 
@@ -482,7 +490,11 @@ public class MainActivity extends Activity implements EventListener {
                 if(errorCode != 0) {
                     String errorMessage = json.getString("desc");
                     Log.d("asr error", "error code: " + errorCode + ", error message: " + errorMessage);
-                    tvGptReply.setText(String.format("语音识别出错: %s", errorMessage));
+                    if(tvGptReply != null) {
+                        tvGptReply.setText(String.format("语音识别出错: %s", errorMessage));
+                    }else{
+                        Toast.makeText(this, String.format("语音识别出错: %s", errorMessage), Toast.LENGTH_LONG).show();
+                    }
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

@@ -122,7 +122,7 @@ Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服�
 
 ## 测试环境
 
-已测试通过的机型：
+已测试的机型：
 
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
@@ -131,7 +131,7 @@ Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服�
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.2.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.2.0 |
-| 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.2.0 |
+| 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.3.0 |
 | Pixel 2 (模拟器) | Android 12 | Android 12 | 1.2.0 |
 
 ---

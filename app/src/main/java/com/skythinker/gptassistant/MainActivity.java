@@ -80,6 +80,7 @@ public class MainActivity extends Activity implements EventListener {
     private String chatApiBuffer = "";
 
     private TextToSpeech tts = null;
+    private boolean ttsEnabled = true;
 
     private boolean multiChat = false;
     private List<Pair<ChatApiClient.ChatRole, String>> multiChatList = new ArrayList<>();
@@ -148,7 +149,7 @@ public class MainActivity extends Activity implements EventListener {
 
                     @Override
                     public void onFinished() {
-                        if(GlobalDataHolder.getTtsEnable()){
+                        if(ttsEnabled){
                             handler.post(() -> {
                                 tts.speak(tvGptReply.getText().toString(), TextToSpeech.QUEUE_FLUSH, null);
                                 multiChatList.add(new Pair<>(ChatApiClient.ChatRole.ASSISTANT, chatApiBuffer));
@@ -201,6 +202,16 @@ public class MainActivity extends Activity implements EventListener {
             llChatList.addView(tv);
         });
 
+        (findViewById(R.id.cv_tts_off)).setOnClickListener(view -> {
+            ttsEnabled = !ttsEnabled;
+            if(ttsEnabled) {
+                ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off));
+            }else{
+                ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
+                tts.stop();
+            }
+        });
+
         (findViewById(R.id.cv_close)).setOnClickListener(view -> {
             finish();
         });
@@ -212,6 +223,11 @@ public class MainActivity extends Activity implements EventListener {
         if(GlobalDataHolder.getDefaultEnableMultiChat()){
             multiChat = true;
             ((CardView) findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn_enabled));
+        }
+
+        if(!GlobalDataHolder.getDefaultEnableTts()){
+            ttsEnabled = false;
+            ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
         }
 
         isAlive = true;

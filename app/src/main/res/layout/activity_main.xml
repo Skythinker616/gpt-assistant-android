@@ -53,6 +53,17 @@
                     app:cardElevation="0dp" />
 
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_tts_off"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="10dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/tts_off"
+                    app:cardBackgroundColor="#00DADADA"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp" />
+
+                <androidx.cardview.widget.CardView
                     android:id="@+id/cv_settings"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
@@ -168,6 +179,7 @@
                         android:gravity="start|top"
                         android:hint="在此输入问题，长按可清除"
                         android:inputType="textMultiLine"
+                        android:maxHeight="150dp"
                         android:textColorHint="#838383"
                         android:textSize="18sp" />
                 </androidx.cardview.widget.CardView>

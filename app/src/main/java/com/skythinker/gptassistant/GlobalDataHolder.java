@@ -5,8 +5,6 @@ import android.content.SharedPreferences;
 import android.util.Base64;
 import android.util.Log;
 
-import com.plexpt.chatgpt.entity.chat.ChatCompletion;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,7 +23,7 @@ public class GlobalDataHolder {
     private static String gptApiKey;
     private static boolean gpt4Enable;
     private static boolean checkAccessOnStart;
-    private static boolean ttsEnable;
+    private static boolean defaultEnableTts;
     private static boolean defaultEnableMultiChat;
     private static SharedPreferences sp = null;
 
@@ -126,13 +124,13 @@ public class GlobalDataHolder {
     }
 
     public static void loadTtsSetting() {
-        ttsEnable = sp.getBoolean("tts_enable", true);
+        defaultEnableTts = sp.getBoolean("tts_enable", true);
     }
 
     public static void saveTtsSetting(boolean enable) {
-        ttsEnable = enable;
+        defaultEnableTts = enable;
         SharedPreferences.Editor editor = sp.edit();
-        editor.putBoolean("tts_enable", ttsEnable);
+        editor.putBoolean("tts_enable", defaultEnableTts);
         editor.apply();
     }
 
@@ -163,7 +161,7 @@ public class GlobalDataHolder {
 
     public static boolean getCheckAccessOnStart() { return checkAccessOnStart; }
 
-    public static boolean getTtsEnable() { return ttsEnable; }
+    public static boolean getDefaultEnableTts() { return defaultEnableTts; }
 
     public static boolean getDefaultEnableMultiChat() { return defaultEnableMultiChat; }
 }

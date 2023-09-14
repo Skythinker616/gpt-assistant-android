@@ -20,6 +20,8 @@ GPT Assistant 是一个基于ChatGPT的安卓端语音助手，允许用户通�
 
 本软件通过OpenAI API获取回复，在国内使用时可以用第三方转发服务，如[Chatanywhere](https://github.com/chatanywhere/GPT_API_free)，其目前提供免费和付费服务，具体使用方法见[下述说明](#使用方法)
 
+> 注：Chatanywhere注册需要GitHub账号，因此注册时可能需要科学上网
+
 ### 费用说明
 
 本软件不会以任何方式收取费用，也不会在软件中嵌入任何广告，但使用的下述服务**可能**产生费用:
@@ -127,10 +129,10 @@ Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服�
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
 | 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.3.0 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.3.0 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.3.1 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.2.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |
-| 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.2.0 |
+| 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.3.0 |
 | 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.3.0 |
 | Pixel 2 (模拟器) | Android 12 | Android 12 | 1.2.0 |
 

@@ -1,6 +1,7 @@
 package com.skythinker.gptassistant;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -11,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
@@ -24,6 +26,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -38,12 +41,13 @@ import com.baidu.speech.EventListener;
 import com.baidu.speech.EventManager;
 import com.baidu.speech.EventManagerFactory;
 import com.baidu.speech.asr.SpeechConstant;
-import com.plexpt.chatgpt.entity.chat.ChatCompletion;
+import com.unfbx.chatgpt.entity.chat.ChatCompletion;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -65,6 +69,8 @@ public class MainActivity extends Activity implements EventListener {
     private int selectedTab = 0;
     private TextView tvGptReply;
     private EditText etUserInput;
+    private ImageButton btSend;
+    private ScrollView svChatArea;
     private LinearLayout llChatList;
     private Handler handler = new Handler();
     private Markwon markwon;
@@ -81,10 +87,19 @@ public class MainActivity extends Activity implements EventListener {
 
     private TextToSpeech tts = null;
     private boolean ttsEnabled = true;
+    final private List<String> ttsSentenceSeparator = new ArrayList<String>() {{
+        add("。");add(".");
+        add("？");add("?");
+        add("！");add("!");
+        add("……");
+        add("\n");
+    }};
+    private int ttsSentenceEndIndex = 0;
 
     private boolean multiChat = false;
     private List<Pair<ChatApiClient.ChatRole, String>> multiChatList = new ArrayList<>();
 
+    @SuppressLint("UseCompatLoadingForDrawables")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -122,6 +137,8 @@ public class MainActivity extends Activity implements EventListener {
                 }
             }
         }
+        btSend = findViewById(R.id.bt_send);
+        svChatArea = findViewById(R.id.sv_chat_list);
         llChatList = findViewById(R.id.ll_chat_list);
         (findViewById(R.id.cv_settings)).setOnClickListener(view -> {
             startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
@@ -135,26 +152,47 @@ public class MainActivity extends Activity implements EventListener {
                     public void onReceive(String message) {
                         chatApiBuffer += message;
                         handler.post(() -> {
-                            ScrollView scrollView = findViewById(R.id.sv_chat_list);
-                            boolean isBottom = scrollView.getChildAt(0).getBottom()
-                                    <= scrollView.getHeight() + scrollView.getScrollY();
+                            boolean isBottom = svChatArea.getChildAt(0).getBottom()
+                                    <= svChatArea.getHeight() + svChatArea.getScrollY();
 
                             markwon.setMarkdown(tvGptReply, chatApiBuffer);
 
                             if(isBottom){
-                                scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+                                scrollChatAreaToBottom();
+                            }
+
+                            if(ttsEnabled) {
+                                String wholeText = tvGptReply.getText().toString();
+                                if(ttsSentenceEndIndex < wholeText.length()) {
+                                    int nextSentenceEndIndex = wholeText.length();
+                                    boolean found = false;
+                                    for(String separator : ttsSentenceSeparator) {
+                                        int index = wholeText.indexOf(separator, ttsSentenceEndIndex);
+                                        if(index != -1 && index < nextSentenceEndIndex) {
+                                            nextSentenceEndIndex = index + separator.length();
+                                            found = true;
+                                        }
+                                    }
+                                    if(found) {
+                                        String sentence = wholeText.substring(ttsSentenceEndIndex, nextSentenceEndIndex);
+                                        ttsSentenceEndIndex = nextSentenceEndIndex;
+                                        tts.speak(sentence, TextToSpeech.QUEUE_ADD, null);
+                                    }
+                                }
                             }
                         });
                     }
 
                     @Override
                     public void onFinished() {
-                        if(ttsEnabled){
-                            handler.post(() -> {
-                                tts.speak(tvGptReply.getText().toString(), TextToSpeech.QUEUE_FLUSH, null);
-                                multiChatList.add(new Pair<>(ChatApiClient.ChatRole.ASSISTANT, chatApiBuffer));
-                            });
-                        }
+                        handler.post(() -> {
+                            String ttsText = tvGptReply.getText().toString();
+                            if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) {
+                                tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
+                            }
+                            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.ASSISTANT, chatApiBuffer));
+                            btSend.setImageResource(R.drawable.send_btn);
+                        });
                     }
 
                     @Override
@@ -166,13 +204,18 @@ public class MainActivity extends Activity implements EventListener {
                             }else{
                                 Toast.makeText(MainActivity.this, errText, Toast.LENGTH_LONG).show();
                             }
+                            btSend.setImageResource(R.drawable.send_btn);
                         });
                     }
                 });
 
-        (findViewById(R.id.bt_send)).setOnClickListener(view -> {
-            tts.stop();
-            sendQuestion();
+        btSend.setOnClickListener(view -> {
+            if(chatApiClient.isStreaming()){
+                chatApiClient.stop();
+            }else{
+                tts.stop();
+                sendQuestion();
+            }
         });
 
         etUserInput.setOnLongClickListener(view -> {
@@ -190,8 +233,12 @@ public class MainActivity extends Activity implements EventListener {
         });
 
         (findViewById(R.id.cv_clear_chat)).setOnClickListener(view -> {
+            if(chatApiClient.isStreaming()){
+                chatApiClient.stop();
+            }
             multiChatList.clear();
             llChatList.removeAllViews();
+            tts.stop();
             TextView tv = new TextView(this);
             tv.setTextColor(Color.parseColor("#000000"));
             tv.setTextSize(16);
@@ -268,7 +315,8 @@ public class MainActivity extends Activity implements EventListener {
                         asr.send(SpeechConstant.ASR_STOP, "{}", null, 0, 0);
                     }
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SEND")) {
-                    sendQuestion();
+                    if(!chatApiClient.isStreaming())
+                        sendQuestion();
                 } else if(action.equals("com.skythinker.gptassistant.SHOW_KEYBOARD")) {
                     etUserInput.requestFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -316,6 +364,15 @@ public class MainActivity extends Activity implements EventListener {
         }
     }
 
+    private void scrollChatAreaToBottom() {
+        svChatArea.post(() -> {
+            int delta = svChatArea.getChildAt(0).getBottom()
+                    - (svChatArea.getHeight() + svChatArea.getScrollY());
+            if(delta != 0)
+                svChatArea.smoothScrollBy(0, delta);
+        });
+    }
+
     private void updateTabListView() {
         LinearLayout tabList = findViewById(R.id.tabs_layout);
         tabList.removeAllViews();
@@ -337,9 +394,6 @@ public class MainActivity extends Activity implements EventListener {
             tabBtn.setLayoutParams(params);
             int finalI = i;
             tabBtn.setOnClickListener(view -> {
-                if(selectedTab != finalI){
-                    findViewById(R.id.cv_clear_chat).performClick();
-                }
                 selectedTab = finalI;
                 updateTabListView();
             });
@@ -420,11 +474,15 @@ public class MainActivity extends Activity implements EventListener {
         llChatList.addView(userLinearLayout);
         llChatList.addView(gptLinearLayout);
 
+        scrollChatAreaToBottom();
+
         tvGptReply = gptReply;
 
         chatApiBuffer = "";
+        ttsSentenceEndIndex = 0;
         tvGptReply.setText("正在等待回复...");
         chatApiClient.sendPromptList(multiChatList);
+        btSend.setImageResource(R.drawable.cancel_btn);
     }
 
     public static boolean isAlive() {

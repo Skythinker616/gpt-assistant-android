@@ -97,13 +97,13 @@
                 android:id="@+id/sv_chat_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_marginTop="10dp"
                 android:layout_weight="1">
 
                 <LinearLayout
                     android:id="@+id/ll_chat_list"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
                     android:orientation="vertical">
 
                     <TextView
@@ -190,8 +190,8 @@
                     android:layout_height="match_parent"
                     android:layout_weight="0"
                     android:background="#00FFFFFF"
-                    android:scaleType="center"
-                    android:src="@android:drawable/ic_menu_send" />
+                    android:scaleType="centerInside"
+                    android:src="@drawable/send_btn" />
             </LinearLayout>
 
         </LinearLayout>

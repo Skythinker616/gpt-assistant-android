@@ -20,7 +20,7 @@ GPT Assistant 是一个基于ChatGPT的安卓端语音助手，允许用户通�
 
 本软件通过OpenAI API获取回复，在国内使用时可以用第三方转发服务，如[Chatanywhere](https://github.com/chatanywhere/GPT_API_free)，其目前提供免费和付费服务，具体使用方法见[下述说明](#使用方法)
 
-> 注：Chatanywhere注册需要GitHub账号，因此注册时可能需要科学上网
+> 注：Chatanywhere注册需要GitHub账号，因此注册时需要能够登录GitHub的网络环境
 
 ### 费用说明
 
@@ -128,8 +128,8 @@ Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服�
 
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
-| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.3.0 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.3.1 |
+| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.4.0 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.4.0 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.2.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.3.0 |
@@ -153,4 +153,4 @@ Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服�
 ## 引用的开源项目
 
 - [Markwon](https://github.com/noties/Markwon): Android上的Markdown渲染器
-- [chatgpt-java](https://github.com/PlexPt/chatgpt-java): OpenAI API的Java封装
+- [chatgpt-java](https://github.com/Grt1228/chatgpt-java): OpenAI API的Java封装

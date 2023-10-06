@@ -12,7 +12,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
@@ -37,21 +36,11 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.baidu.speech.EventListener;
-import com.baidu.speech.EventManager;
-import com.baidu.speech.EventManagerFactory;
-import com.baidu.speech.asr.SpeechConstant;
 import com.unfbx.chatgpt.entity.chat.ChatCompletion;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import io.noties.markwon.Markwon;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
@@ -64,7 +53,7 @@ import io.noties.prism4j.Prism4j;
 import io.noties.prism4j.annotations.PrismBundle;
 
 @PrismBundle(includeAll = true)
-public class MainActivity extends Activity implements EventListener {
+public class MainActivity extends Activity {
 
     private int selectedTab = 0;
     private TextView tvGptReply;
@@ -74,9 +63,7 @@ public class MainActivity extends Activity implements EventListener {
     private LinearLayout llChatList;
     private Handler handler = new Handler();
     private Markwon markwon;
-    private EventManager asr;
     private long asrStartTime = 0;
-    String asrBuffer = "";
     BroadcastReceiver localReceiver = null;
 
     private static boolean isAlive = false;
@@ -99,6 +86,9 @@ public class MainActivity extends Activity implements EventListener {
     private boolean multiChat = false;
     private List<Pair<ChatApiClient.ChatRole, String>> multiChatList = new ArrayList<>();
 
+    AsrClientBase asrClient = null;
+    AsrClientBase.IAsrCallback asrCallback = null;
+
     @SuppressLint("UseCompatLoadingForDrawables")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,10 +110,11 @@ public class MainActivity extends Activity implements EventListener {
                     Log.d("TTS", "初始化成功");
                 }
             }else{
-                Log.e("TTS", "初始化失败");
+                Log.e("TTS", "初始化失败 ErrorCode: " + status);
             }
         });
         setContentView(R.layout.activity_main);
+        overridePendingTransition(R.anim.translate_up_in, R.anim.translate_down_out);
         tvGptReply = findViewById(R.id.tv_chat_notice);
         tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
         etUserInput = findViewById(R.id.et_user_input);
@@ -280,8 +271,23 @@ public class MainActivity extends Activity implements EventListener {
         isAlive = true;
 
         requestPermission();
-        asr = EventManagerFactory.create(this, "asr");
-        asr.registerListener(this);
+
+        asrCallback = new AsrClientBase.IAsrCallback() {
+            @Override
+            public void onError(String msg) {
+                if(tvGptReply != null) {
+                    tvGptReply.setText(String.format("语音识别出错: %s", msg));
+                }else{
+                    Toast.makeText(MainActivity.this, String.format("语音识别出错: %s", msg), Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onResult(String result) {
+                etUserInput.setText(result);
+            }
+        };
+        setAsrClient(GlobalDataHolder.getAsrUseBaidu() ? "baidu" : "hms");
 
         localReceiver = new BroadcastReceiver() {
             @Override
@@ -289,30 +295,16 @@ public class MainActivity extends Activity implements EventListener {
                 String action = intent.getAction();
                 if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_START")) {
                     tts.stop();
-                    Map<String, Object> params = new LinkedHashMap<>();
-                    params.put(SpeechConstant.APP_ID, GlobalDataHolder.getAsrAppId());
-                    params.put(SpeechConstant.APP_KEY, GlobalDataHolder.getAsrApiKey());
-                    params.put(SpeechConstant.SECRET, GlobalDataHolder.getAsrSecretKey());
-                    if(GlobalDataHolder.getAsrUseRealTime()){
-                        params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, true);
-                        params.put(SpeechConstant.VAD, SpeechConstant.VAD_DNN);
-                    }
-                    else{
-                        params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, false);
-                        params.put(SpeechConstant.VAD, SpeechConstant.VAD_TOUCH);
-                    }
-                    params.put(SpeechConstant.PID, 15374);
-                    asr.send(SpeechConstant.ASR_START, (new JSONObject(params)).toString(), null, 0, 0);
+                    asrClient.startRecongnize();
                     asrStartTime = System.currentTimeMillis();
-                    asrBuffer = "";
                     etUserInput.setText("");
                     etUserInput.setHint("正在聆听...");
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_STOP")) {
                     etUserInput.setHint("在此输入问题，长按可清除");
                     if(System.currentTimeMillis() - asrStartTime < 1000) {
-                        asr.send(SpeechConstant.ASR_CANCEL, null, null, 0, 0);
+                        asrClient.cancelRecongnize();
                     } else {
-                        asr.send(SpeechConstant.ASR_STOP, "{}", null, 0, 0);
+                        asrClient.stopRecongnize();
                     }
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SEND")) {
                     if(!chatApiClient.isStreaming())
@@ -354,6 +346,19 @@ public class MainActivity extends Activity implements EventListener {
         }
     }
 
+    private void setAsrClient(String type) {
+        if(asrClient != null) {
+            asrClient.destroy();
+        }
+        if(type.equals("baidu")) {
+            asrClient = new BaiduAsrClient(this);
+            asrClient.setCallback(asrCallback);
+        } else if (type.equals("hms")) {
+            asrClient = new HmsAsrClient(this);
+            asrClient.setCallback(asrCallback);
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -361,6 +366,11 @@ public class MainActivity extends Activity implements EventListener {
             updateTabListView();
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             chatApiClient.setModel(GlobalDataHolder.getGpt4Enable() ? ChatCompletion.Model.GPT_4_0613.getName() : ChatCompletion.Model.GPT_3_5_TURBO_0613.getName());
+            if(GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof HmsAsrClient) {
+                setAsrClient("baidu");
+            } else if(!GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof BaiduAsrClient) {
+                setAsrClient("hms");
+            }
         }
     }
 
@@ -532,47 +542,9 @@ public class MainActivity extends Activity implements EventListener {
     protected void onDestroy() {
         isAlive = false;
         LocalBroadcastManager.getInstance(this).unregisterReceiver(localReceiver);
-        asr.send(SpeechConstant.ASR_CANCEL, "{}", null, 0, 0);
-        asr.unregisterListener(this);
+        asrClient.destroy();
         tts.stop();
         tts.shutdown();
         super.onDestroy();
-    }
-
-    @Override
-    public void onEvent(String name, String params, byte[] data, int offset, int length) {
-        if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_PARTIAL)) {
-            Log.d("asr partial", params);
-            try {
-                JSONObject json = new JSONObject(params);
-                String resultType = json.getString("result_type");
-                if(resultType.equals("final_result")) {
-                    String bestResult = json.getString("best_result");
-                    asrBuffer += bestResult;
-                    etUserInput.setText(asrBuffer);
-                }else if(resultType.equals("partial_result")){
-                    String bestResult = json.getString("best_result");
-                    etUserInput.setText(String.format("%s%s", asrBuffer, bestResult));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_FINISH)) {
-            try {
-                JSONObject json = new JSONObject(params);
-                int errorCode = json.getInt("error");
-                if(errorCode != 0) {
-                    String errorMessage = json.getString("desc");
-                    Log.d("asr error", "error code: " + errorCode + ", error message: " + errorMessage);
-                    if(tvGptReply != null) {
-                        tvGptReply.setText(String.format("语音识别出错: %s", errorMessage));
-                    }else{
-                        Toast.makeText(this, String.format("语音识别出错: %s", errorMessage), Toast.LENGTH_LONG).show();
-                    }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }

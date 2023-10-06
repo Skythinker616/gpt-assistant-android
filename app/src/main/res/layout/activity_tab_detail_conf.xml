@@ -10,7 +10,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="10dp">
 
         <TextView
             android:id="@+id/textView2"
@@ -19,7 +20,7 @@
             android:layout_marginVertical="5px"
             android:paddingHorizontal="10dp"
             android:paddingVertical="10dp"
-            android:text="功能标签内容设置"
+            android:text="模板内容设置"
             android:textAlignment="center"
             android:textColor="#3C3C3C"
             android:textSize="16sp"
@@ -78,7 +79,7 @@
                 android:layout_width="80dp"
                 android:layout_height="30dp"
                 android:layout_marginRight="40dp"
-                app:cardBackgroundColor="#B6B6B6"
+                app:cardBackgroundColor="#CACACA"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 

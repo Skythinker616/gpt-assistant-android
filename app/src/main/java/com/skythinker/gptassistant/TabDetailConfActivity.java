@@ -15,6 +15,7 @@ public class TabDetailConfActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_detail_conf);
+        overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
 
         etTitle = findViewById(R.id.et_tab_detail_title);
         etPrompt = findViewById(R.id.et_tab_detail_prompt);

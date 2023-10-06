@@ -32,7 +32,7 @@
                     android:paddingHorizontal="10dp"
                     android:text="模板设置"
                     android:textColor="#3C3C3C"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
 
                 <TextView
                     android:id="@+id/textView10"
@@ -41,7 +41,7 @@
                     android:layout_marginBottom="10dp"
                     android:paddingHorizontal="10dp"
                     android:text="| 长按拖动排序，左滑删除"
-                    android:textColor="#595959"
+                    android:textColor="#6A6A6A"
                     android:textSize="12sp" />
 
                 <androidx.cardview.widget.CardView
@@ -49,7 +49,8 @@
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="#FFFFFF"
                     app:cardCornerRadius="20dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    app:contentPaddingTop="5dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -65,11 +66,12 @@
                         <ImageButton
                             android:id="@+id/bt_add_tab"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginVertical="5dp"
+                            android:layout_height="25dp"
+                            android:layout_marginVertical="15dp"
                             android:layout_weight="0"
                             android:background="#00FFFFFF"
-                            android:src="@android:drawable/ic_menu_add" />
+                            android:scaleType="centerInside"
+                            android:src="@drawable/add_btn" />
 
                     </LinearLayout>
 
@@ -85,7 +87,7 @@
                     android:paddingVertical="2dp"
                     android:text="OpenAI 设置"
                     android:textColor="#3C3C3C"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
@@ -110,6 +112,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -120,7 +123,7 @@
                                 android:layout_weight="0"
                                 android:text="Key"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <EditText
                                 android:id="@+id/et_openai_key_conf"
@@ -133,7 +136,8 @@
                                 android:inputType="text"
                                 android:text=""
                                 android:textAlignment="textEnd"
-                                android:textSize="20sp" />
+                                android:textColor="#5A5A5A"
+                                android:textSize="16sp" />
 
                         </LinearLayout>
 
@@ -142,6 +146,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -152,7 +157,7 @@
                                 android:layout_weight="0"
                                 android:text="网址"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <EditText
                                 android:id="@+id/et_openai_host_conf"
@@ -164,7 +169,8 @@
                                 android:hint='https://xxx.xxx/'
                                 android:inputType="text"
                                 android:textAlignment="textEnd"
-                                android:textSize="20sp" />
+                                android:textColor="#5A5A5A"
+                                android:textSize="16sp" />
 
                         </LinearLayout>
 
@@ -173,7 +179,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
-                            android:gravity="center|center_horizontal"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -182,7 +188,7 @@
                                 android:layout_weight="1"
                                 android:text="GPT-4"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <Switch
                                 android:id="@+id/sw_gpt4_enable_conf"
@@ -207,12 +213,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:layout_marginBottom="5dp"
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="2dp"
                     android:text="百度语音设置"
                     android:textColor="#3C3C3C"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/textView5"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:paddingHorizontal="10dp"
+                    android:text="| 关闭百度接口则使用内置华为接口"
+                    android:textColor="#6A6A6A"
+                    android:textSize="12sp" />
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
@@ -237,6 +252,38 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_asr_use_baidu_conf"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="使用百度接口"
+                                android:textColor="#000000"
+                                android:textSize="18sp" />
+
+                            <Switch
+                                android:id="@+id/sw_asr_use_baidu_conf"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:checked="false"
+                                android:showText="false"
+                                android:thumb="@drawable/switch_thumb"
+                                android:track="@drawable/switch_track"
+                                tools:checked="true"
+                                tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginVertical="15dp"
+                            android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -247,7 +294,7 @@
                                 android:layout_weight="0"
                                 android:text="AppID"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <EditText
                                 android:id="@+id/et_asr_app_id_conf"
@@ -258,7 +305,8 @@
                                 android:ems="10"
                                 android:inputType="text"
                                 android:textAlignment="textEnd"
-                                android:textSize="20sp" />
+                                android:textColor="#5A5A5A"
+                                android:textSize="16sp" />
 
                         </LinearLayout>
 
@@ -267,6 +315,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -277,7 +326,7 @@
                                 android:layout_weight="0"
                                 android:text="ApiKey"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <EditText
                                 android:id="@+id/et_asr_api_key_conf"
@@ -289,7 +338,8 @@
                                 android:inputType="text"
                                 android:text=""
                                 android:textAlignment="textEnd"
-                                android:textSize="20sp" />
+                                android:textColor="#5A5A5A"
+                                android:textSize="16sp" />
 
                         </LinearLayout>
 
@@ -298,6 +348,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -308,7 +359,7 @@
                                 android:layout_weight="0"
                                 android:text="Secret"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <EditText
                                 android:id="@+id/et_asr_secret_conf"
@@ -320,7 +371,8 @@
                                 android:inputType="text"
                                 android:text=""
                                 android:textAlignment="textEnd"
-                                android:textSize="20sp" />
+                                android:textColor="#5A5A5A"
+                                android:textSize="16sp" />
 
                         </LinearLayout>
 
@@ -329,7 +381,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
-                            android:gravity="center|center_horizontal"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -339,7 +391,7 @@
                                 android:layout_weight="1"
                                 android:text="启用长语音"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <Switch
                                 android:id="@+id/sw_asr_real_time_conf"
@@ -369,7 +421,7 @@
                     android:paddingVertical="2dp"
                     android:text="其他选项"
                     android:textColor="#3C3C3C"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
@@ -394,6 +446,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -403,7 +456,7 @@
                                 android:layout_weight="1"
                                 android:text="设置无障碍模式"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                         </LinearLayout>
 
@@ -412,7 +465,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
-                            android:gravity="center|center_horizontal"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -422,7 +475,7 @@
                                 android:layout_weight="1"
                                 android:text="启动时检查无障碍"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <Switch
                                 android:id="@+id/sw_check_access_conf"
@@ -443,7 +496,26 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
-                            android:gravity="center|center_horizontal"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_set_tts_conf"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="打开系统语音设置"
+                                android:textColor="#000000"
+                                android:textSize="18sp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginVertical="15dp"
+                            android:layout_marginBottom="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -452,7 +524,7 @@
                                 android:layout_weight="1"
                                 android:text="默认启用语音播报"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <Switch
                                 android:id="@+id/sw_tts_enable_conf"
@@ -473,7 +545,7 @@
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
                             android:layout_marginBottom="10dp"
-                            android:gravity="center|center_horizontal"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -482,7 +554,7 @@
                                 android:layout_weight="1"
                                 android:text="默认启用连续对话"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                             <Switch
                                 android:id="@+id/sw_def_enable_multi_chat_conf"
@@ -502,6 +574,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -511,7 +584,7 @@
                                 android:layout_weight="1"
                                 android:text="查看帮助"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                         </LinearLayout>
 
@@ -519,6 +592,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -528,7 +602,7 @@
                                 android:layout_weight="1"
                                 android:text="检查更新"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                         </LinearLayout>
 
@@ -536,6 +610,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginVertical="15dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <TextView
@@ -545,7 +620,7 @@
                                 android:layout_weight="1"
                                 android:text="项目主页"
                                 android:textColor="#000000"
-                                android:textSize="20sp" />
+                                android:textSize="18sp" />
 
                         </LinearLayout>
 

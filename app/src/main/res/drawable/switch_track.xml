@@ -3,8 +3,8 @@
     <!--开关按钮关闭时的导轨样式-->
     <item android:state_checked="false">
         <shape>
-            <size android:height="25dp" android:width="60dp" />
-            <corners android:radius="13dp" />
+            <size android:height="20dp" android:width="40dp" />
+            <corners android:radius="10dp" />
             <solid android:color="#A5A5A5" />
         </shape>
     </item>
@@ -12,8 +12,8 @@
     <!--开关按钮打开时的导轨样式-->
     <item android:state_checked="true">
         <shape>
-            <size android:height="25dp" android:width="60dp" />
-            <corners android:radius="13dp" />
+            <size android:height="20dp" android:width="40dp" />
+            <corners android:radius="10dp" />
             <solid android:color="#81C784" />
         </shape>
     </item>

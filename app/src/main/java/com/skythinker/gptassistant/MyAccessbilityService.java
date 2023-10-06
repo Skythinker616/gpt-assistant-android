@@ -77,13 +77,7 @@ public class MyAccessbilityService extends AccessibilityService {
                         if(!MainActivity.isAlive() || !MainActivity.isRunning()) {
                             Intent intent = new Intent(this, MainActivity.class);
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-                            try {
-                                pendingIntent.send();
-                            } catch (PendingIntent.CanceledException e) {
-                                startActivity(intent);
-                                e.printStackTrace();
-                            }
+                            startActivity(intent);
                             Log.d("MyAccessbilityService", "startActivity: MainActivity");
                             isInStartDelay = true;
                             handler.postDelayed(() -> {

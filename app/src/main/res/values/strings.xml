@@ -6,7 +6,8 @@
         本软件为基于ChatGPT的助理软件，用户可以预设多个问题模板，然后使用桌面图标或通知栏快捷按钮调出提问界面。\n\n
         用户需要在设置中填写ChatGPT API的服务地址和自己的API_Key，可以填入官方服务参数，也可以去GitHub的GPT_API_free项目中申请转发Key。\n\n
         若需要使用语音助手功能，需要开启无障碍服务，并允许程序后台运行。此后在任何界面长按音量下键可唤出应用，保持按下并对麦克风说话，松开时就会自动录入识别出的文字。在松开后的3秒内再次短按音量下键，即可直接发送问题到服务器。\n\n
-        语音识别使用百度语音识别API，需要在百度AI开放平台注册账号并创建应用，然后在本应用中填入AppID、APIKey和SecretKey。\n\n
+        软件默认使用内置的华为HMS语音识别接口，用户也可改为使用百度语音接口，需要在百度AI开放平台注册账号并创建应用，然后在本应用中填入AppID、APIKey和SecretKey。\n\n
         注意：部分国内厂商系统默认禁止后台弹出界面，表现为长按音量键后手机震动但不弹出界面，需要用户在设置中手动允许该权限。
     </string>
+    <string name="hms_api_key">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string> <!-- API已限制包名和签名 -->
 </resources>

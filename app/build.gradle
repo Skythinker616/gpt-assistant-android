@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'com.huawei.agconnect'
 }
 
 android {
@@ -10,11 +11,10 @@ android {
         minSdk 26
         targetSdk 32
         versionCode 1
-        versionName "1.4.0"
+        versionName "1.5.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -58,4 +58,5 @@ dependencies {
     implementation"io.noties.markwon:syntax-highlight:$markwon_version"
     annotationProcessor 'io.noties:prism4j-bundler:2.0.0'
     implementation group: 'com.unfbx', name: 'chatgpt-java', version: '1.1.0'
+    implementation 'com.huawei.hms:ml-computer-voice-asr:3.12.0.301'
 }

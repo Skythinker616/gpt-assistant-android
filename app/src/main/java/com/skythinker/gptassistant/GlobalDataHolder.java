@@ -15,6 +15,7 @@ import java.util.List;
 
 public class GlobalDataHolder {
     private static List<PromptTabData> tabDataList = null;
+    private static boolean asrUseBaidu;
     private static String asrAppId;
     private static String asrApiKey;
     private static String asrSecretKey;
@@ -76,18 +77,21 @@ public class GlobalDataHolder {
     }
 
     public static void loadAsrInfo() {
+        asrUseBaidu = sp.getBoolean("asr_use_baidu", false);
         asrAppId = sp.getString("asr_app_id", "");
         asrApiKey = sp.getString("asr_api_key", "");
         asrSecretKey = sp.getString("asr_secret_key", "");
         asrUseRealTime = sp.getBoolean("asr_use_real_time", false);
     }
 
-    public static void saveAsrInfo(String appId, String apiKey, String secretKey, boolean useRealTime) {
+    public static void saveAsrInfo(boolean useBaidu, String appId, String apiKey, String secretKey, boolean useRealTime) {
+        asrUseBaidu = useBaidu;
         asrApiKey = apiKey;
         asrAppId = appId;
         asrSecretKey = secretKey;
         asrUseRealTime = useRealTime;
         SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("asr_use_baidu", asrUseBaidu);
         editor.putString("asr_app_id", asrAppId);
         editor.putString("asr_api_key", asrApiKey);
         editor.putString("asr_secret_key", asrSecretKey);
@@ -144,6 +148,8 @@ public class GlobalDataHolder {
         editor.putBoolean("default_enable_multi_chat", defaultEnableMultiChat);
         editor.apply();
     }
+
+    public static boolean getAsrUseBaidu() { return asrUseBaidu; }
 
     public static String getAsrAppId() { return asrAppId; }
 

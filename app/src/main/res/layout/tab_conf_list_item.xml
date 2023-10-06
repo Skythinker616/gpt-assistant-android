@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/ll_list_item_outer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#FFFFFF"
@@ -33,13 +34,4 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/bt_list_item_edit"
-        android:layout_width="25dp"
-        android:layout_height="match_parent"
-        android:layout_marginLeft="10dp"
-        android:layout_weight="0"
-        android:background="#00FFFFFF"
-        android:scaleType="centerInside"
-        android:src="@drawable/edit_btn" />
 </LinearLayout>

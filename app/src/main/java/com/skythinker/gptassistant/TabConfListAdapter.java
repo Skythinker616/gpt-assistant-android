@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,15 +24,15 @@ public class TabConfListAdapter extends RecyclerView.Adapter<TabConfListAdapter.
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private TextView tvTitle, tvPrompt;
-        private ImageButton btEdit;
+        private LinearLayout llOuter;
         public ViewHolder(View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tv_list_item_title);
             tvPrompt = itemView.findViewById(R.id.tv_list_item_prompt);
-            btEdit = itemView.findViewById(R.id.bt_list_item_edit);
+            llOuter = itemView.findViewById(R.id.ll_list_item_outer);
 
-            btEdit.setOnClickListener(null);
-            btEdit.setOnClickListener(view -> {
+            llOuter.setOnClickListener(null);
+            llOuter.setOnClickListener(view -> {
                 PromptTabData tab = GlobalDataHolder.getTabDataList().get(getAdapterPosition());
                 Intent broadcastIntent = new Intent("com.skythinker.gptassistant.TAB_EDIT");
                 broadcastIntent.putExtra("title", tab.getTitle());

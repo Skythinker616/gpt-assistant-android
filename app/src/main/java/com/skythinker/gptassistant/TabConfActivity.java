@@ -2,6 +2,7 @@ package com.skythinker.gptassistant;
 
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,6 +14,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,6 +24,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -50,6 +53,11 @@ public class TabConfActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_conf);
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
+
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        getWindow().setStatusBarColor(Color.parseColor("#F5F6F7"));
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
         List<PromptTabData> tabDataList = GlobalDataHolder.getTabDataList();
         rvTabList = findViewById(R.id.rv_tab_conf_list);
@@ -178,6 +186,15 @@ public class TabConfActivity extends Activity {
             GlobalDataHolder.saveMultiChatSetting(checked);
         });
 
+        ((Switch) findViewById(R.id.sw_remember_tab_conf)).setChecked(GlobalDataHolder.getSelectedTab() != -1);
+        ((Switch) findViewById(R.id.sw_remember_tab_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            if(checked && GlobalDataHolder.getSelectedTab() == -1) {
+                GlobalDataHolder.saveSelectedTab(0);
+            } else if(!checked && GlobalDataHolder.getSelectedTab() != -1) {
+                GlobalDataHolder.saveSelectedTab(-1);
+            }
+        });
+
         (findViewById(R.id.tv_set_tts_conf)).setOnClickListener(view -> {
             Intent intent = new Intent("com.android.settings.TTS_SETTINGS");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -244,6 +261,10 @@ public class TabConfActivity extends Activity {
             intent.setData(content_url);
             startActivity(intent);
         });
+
+        (findViewById(R.id.bt_back_conf)).setOnClickListener(view -> {
+            finish();
+        });
     }
 
     private void setBaiduAsrItemHidden(boolean hidden) {
@@ -285,5 +306,11 @@ public class TabConfActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(localReceiver);
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
     }
 }

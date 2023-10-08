@@ -93,7 +93,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         GlobalDataHolder.init(this);
+
         markwon = Markwon.builder(this)
                 .usePlugin(SyntaxHighlightPlugin.create(new Prism4j(new GrammarLocatorDef()), Prism4jThemeDefault.create(0)))
                 .usePlugin(JLatexMathPlugin.create(40, builder -> builder.inlinesEnabled(true)))
@@ -101,6 +103,7 @@ public class MainActivity extends Activity {
                 .usePlugin(MarkwonInlineParserPlugin.create())
                 .usePlugin(LinkifyPlugin.create())
                 .build();
+
         tts = new TextToSpeech(this, status -> {
             if(status == TextToSpeech.SUCCESS) {
                 int res = tts.setLanguage(Locale.getDefault());
@@ -113,11 +116,15 @@ public class MainActivity extends Activity {
                 Log.e("TTS", "初始化失败 ErrorCode: " + status);
             }
         });
+
         setContentView(R.layout.activity_main);
+
         overridePendingTransition(R.anim.translate_up_in, R.anim.translate_down_out);
+
         tvGptReply = findViewById(R.id.tv_chat_notice);
         tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
         etUserInput = findViewById(R.id.et_user_input);
+
         Intent activityIntent = getIntent();
         if(activityIntent != null){
             String action = activityIntent.getAction();
@@ -128,13 +135,15 @@ public class MainActivity extends Activity {
                 }
             }
         }
+
         btSend = findViewById(R.id.bt_send);
         svChatArea = findViewById(R.id.sv_chat_list);
         llChatList = findViewById(R.id.ll_chat_list);
-        (findViewById(R.id.cv_settings)).setOnClickListener(view -> {
-            startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
-        });
+
+        if(GlobalDataHolder.getSelectedTab() != -1 && GlobalDataHolder.getSelectedTab() < GlobalDataHolder.getTabDataList().size())
+            selectedTab = GlobalDataHolder.getSelectedTab();
         updateTabListView();
+
         chatApiClient = new ChatApiClient(GlobalDataHolder.getGptApiHost(),
                 GlobalDataHolder.getGptApiKey(),
                 GlobalDataHolder.getGpt4Enable() ? ChatCompletion.Model.GPT_4_0613.getName() : ChatCompletion.Model.GPT_3_5_TURBO_0613.getName(),
@@ -250,6 +259,10 @@ public class MainActivity extends Activity {
             }
         });
 
+        (findViewById(R.id.cv_settings)).setOnClickListener(view -> {
+            startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
+        });
+
         (findViewById(R.id.cv_close)).setOnClickListener(view -> {
             finish();
         });
@@ -363,9 +376,18 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == 0) {
+            int tabNum = GlobalDataHolder.getTabDataList().size();
+            if(selectedTab >= tabNum)
+                selectedTab = tabNum - 1;
+
+            if(GlobalDataHolder.getSelectedTab() != -1)
+                GlobalDataHolder.saveSelectedTab(selectedTab);
+
             updateTabListView();
+
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             chatApiClient.setModel(GlobalDataHolder.getGpt4Enable() ? ChatCompletion.Model.GPT_4_0613.getName() : ChatCompletion.Model.GPT_3_5_TURBO_0613.getName());
+
             if(GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof HmsAsrClient) {
                 setAsrClient("baidu");
             } else if(!GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof BaiduAsrClient) {
@@ -405,6 +427,9 @@ public class MainActivity extends Activity {
             int finalI = i;
             tabBtn.setOnClickListener(view -> {
                 selectedTab = finalI;
+                if(GlobalDataHolder.getSelectedTab() != -1) {
+                    GlobalDataHolder.saveSelectedTab(selectedTab);
+                }
                 updateTabListView();
             });
             tabList.addView(tabBtn);
@@ -546,5 +571,11 @@ public class MainActivity extends Activity {
         tts.stop();
         tts.shutdown();
         super.onDestroy();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(R.anim.translate_up_in, R.anim.translate_down_out);
     }
 }

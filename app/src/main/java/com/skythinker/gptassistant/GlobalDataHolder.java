@@ -26,6 +26,7 @@ public class GlobalDataHolder {
     private static boolean checkAccessOnStart;
     private static boolean defaultEnableTts;
     private static boolean defaultEnableMultiChat;
+    private static int selectedTab;
     private static SharedPreferences sp = null;
 
     public static void init(Context context) {
@@ -40,6 +41,7 @@ public class GlobalDataHolder {
         loadStartUpSetting();
         loadTtsSetting();
         loadMultiChatSetting();
+        loadSelectedTab();
     }
 
     public static List<PromptTabData> getTabDataList() {
@@ -149,6 +151,17 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    public static void loadSelectedTab() {
+        selectedTab = sp.getInt("selected_tab", -1);
+    }
+
+    public static void saveSelectedTab(int tab) {
+        selectedTab = tab;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putInt("selected_tab", selectedTab);
+        editor.apply();
+    }
+
     public static boolean getAsrUseBaidu() { return asrUseBaidu; }
 
     public static String getAsrAppId() { return asrAppId; }
@@ -170,4 +183,6 @@ public class GlobalDataHolder {
     public static boolean getDefaultEnableTts() { return defaultEnableTts; }
 
     public static boolean getDefaultEnableMultiChat() { return defaultEnableMultiChat; }
+
+    public static int getSelectedTab() { return selectedTab; }
 }

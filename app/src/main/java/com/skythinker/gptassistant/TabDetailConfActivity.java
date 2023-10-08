@@ -1,10 +1,11 @@
 package com.skythinker.gptassistant;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 
 public class TabDetailConfActivity extends Activity {
@@ -15,7 +16,14 @@ public class TabDetailConfActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_detail_conf);
+
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        getWindow().setStatusBarColor(Color.parseColor("#F5F6F7"));
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
         etTitle = findViewById(R.id.et_tab_detail_title);
         etPrompt = findViewById(R.id.et_tab_detail_prompt);
@@ -47,5 +55,15 @@ public class TabDetailConfActivity extends Activity {
             setResult(RESULT_OK, intent);
             finish();
         });
+
+        (findViewById(R.id.bt_tab_detail_back)).setOnClickListener(view -> {
+            finish();
+        });
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
     }
 }

@@ -22,6 +22,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -120,6 +121,10 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         overridePendingTransition(R.anim.translate_up_in, R.anim.translate_down_out);
+
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
 
         tvGptReply = findViewById(R.id.tv_chat_notice);
         tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());

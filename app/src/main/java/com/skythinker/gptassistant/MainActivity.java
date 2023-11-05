@@ -10,8 +10,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
@@ -24,6 +26,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.RenderProcessGoneDetail;
+import android.webkit.ValueCallback;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -37,12 +45,14 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.unfbx.chatgpt.entity.chat.ChatCompletion;
 
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import cn.hutool.json.JSONException;
+import cn.hutool.json.JSONObject;
 import io.noties.markwon.Markwon;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
 import io.noties.markwon.ext.tables.TablePlugin;
@@ -90,7 +100,13 @@ public class MainActivity extends Activity {
     AsrClientBase asrClient = null;
     AsrClientBase.IAsrCallback asrCallback = null;
 
-    @SuppressLint("UseCompatLoadingForDrawables")
+    WebView webView = null;
+    Runnable webViewRunnableOnFinish = null;
+    Runnable webViewRunnableOnFail = null;
+    boolean webViewIsLoading = false;
+    int webViewJumpCount = 0;
+
+    @SuppressLint({"UseCompatLoadingForDrawables", "JavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,7 +116,8 @@ public class MainActivity extends Activity {
         markwon = Markwon.builder(this)
                 .usePlugin(SyntaxHighlightPlugin.create(new Prism4j(new GrammarLocatorDef()), Prism4jThemeDefault.create(0)))
                 .usePlugin(JLatexMathPlugin.create(40, builder -> builder.inlinesEnabled(true)))
-                .usePlugin(TablePlugin.create(this))
+//                .usePlugin(TablePlugin.create(this)) // unstable
+//                .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
                 .usePlugin(MarkwonInlineParserPlugin.create())
                 .usePlugin(LinkifyPlugin.create())
                 .build();
@@ -127,6 +144,7 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(Color.TRANSPARENT);
 
         tvGptReply = findViewById(R.id.tv_chat_notice);
+        tvGptReply.setTextIsSelectable(true);
         tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
         etUserInput = findViewById(R.id.et_user_input);
 
@@ -149,21 +167,89 @@ public class MainActivity extends Activity {
             selectedTab = GlobalDataHolder.getSelectedTab();
         updateTabListView();
 
+        webView = new WebView(MainActivity.this);
+        webView.getSettings().setJavaScriptEnabled(true);
+        WebView.setWebContentsDebuggingEnabled(true);
+        webView.setWebViewClient(new WebViewClient() {
+            private void endLoading() {
+                webViewRunnableOnFinish = null;
+                webViewRunnableOnFail = null;
+                webViewIsLoading = false;
+                webViewJumpCount = 0;
+            }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                Log.d("WebView", "shouldOverrideUrlLoading " + url);
+                if(url.startsWith("http://") || url.startsWith("https://") || !url.contains("://")) {
+                    view.loadUrl(url);
+                    webViewJumpCount++;
+                }
+                return true;
+            }
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                Log.d("WebView", "onPageStarted ");
+                super.onPageStarted(view, url, favicon);
+            }
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                Log.d("WebView", "onPageFinished ");
+                if(webViewJumpCount == 1) {
+                    handler.postDelayed(() -> {
+                        if (webViewRunnableOnFinish != null)
+                            webViewRunnableOnFinish.run();
+                        endLoading();
+                    }, 500);
+                }
+                if(webViewJumpCount > 0)
+                    webViewJumpCount--;
+                super.onPageFinished(view, url);
+            }
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                Log.e("WebView", "onReceivedError " + error.getErrorCode() + " " + error.getDescription());
+                if(webViewRunnableOnFail != null)
+                    webViewRunnableOnFail.run();
+                endLoading();
+                super.onReceivedError(view, request, error);
+            }
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                Log.e("WebView", "onRenderProcessGone " + detail);
+                if(webViewRunnableOnFail != null)
+                    webViewRunnableOnFail.run();
+                endLoading();
+                return true;
+            }
+        });
+
+        ((LinearLayout) findViewById(R.id.ll_main_base)).addView(webView, 0);
+        webView.setVisibility(View.INVISIBLE);
+        webView.setLayoutParams(new LinearLayout.LayoutParams(500, 1));
+
         chatApiClient = new ChatApiClient(GlobalDataHolder.getGptApiHost(),
                 GlobalDataHolder.getGptApiKey(),
-                GlobalDataHolder.getGpt4Enable() ? ChatCompletion.Model.GPT_4_0613.getName() : ChatCompletion.Model.GPT_3_5_TURBO_0613.getName(),
+                GlobalDataHolder.getGptModel(),
                 new ChatApiClient.OnReceiveListener() {
+                    private long lastRenderTime = 0;
+
                     @Override
-                    public void onReceive(String message) {
+                    public void onMsgReceive(String message) {
                         chatApiBuffer += message;
                         handler.post(() -> {
-                            boolean isBottom = svChatArea.getChildAt(0).getBottom()
-                                    <= svChatArea.getHeight() + svChatArea.getScrollY();
-
-                            markwon.setMarkdown(tvGptReply, chatApiBuffer);
-
-                            if(isBottom){
-                                scrollChatAreaToBottom();
+                            if(System.currentTimeMillis() - lastRenderTime > 100) {
+                                boolean isBottom = svChatArea.getChildAt(0).getBottom()
+                                        <= svChatArea.getHeight() + svChatArea.getScrollY();
+                                try {
+                                    markwon.setMarkdown(tvGptReply, chatApiBuffer);
+                                } catch (Exception e){
+                                    e.printStackTrace();
+                                }
+                                if(isBottom){
+                                    scrollChatAreaToBottom();
+                                }
+                                lastRenderTime = System.currentTimeMillis();
                             }
 
                             if(ttsEnabled) {
@@ -191,6 +277,11 @@ public class MainActivity extends Activity {
                     @Override
                     public void onFinished() {
                         handler.post(() -> {
+                            try {
+                                markwon.setMarkdown(tvGptReply, chatApiBuffer);
+                            } catch (Exception e){
+                                e.printStackTrace();
+                            }
                             String ttsText = tvGptReply.getText().toString();
                             if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) {
                                 tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
@@ -212,16 +303,100 @@ public class MainActivity extends Activity {
                             btSend.setImageResource(R.drawable.send_btn);
                         });
                     }
+
+                    @Override
+                    public void onFunctionCall(String name, String arg) {
+                        Log.d("FunctionCall", String.format("%s: %s", name, arg));
+                        multiChatList.add(new Pair<>(ChatApiClient.ChatRole.ASSISTANT,
+                                String.format("[Function]%s\n%s", name, arg)));
+                        if (name.equals("get_html_text")) {
+                            try {
+                                JSONObject argJson = new JSONObject(arg);
+                                String url = argJson.getStr("url");
+                                webViewRunnableOnFinish = () -> {
+                                    String jsCode = "(function(){return document.body.innerText;})();";
+                                    webView.evaluateJavascript(jsCode,
+                                            new ValueCallback<String>() {
+                                                @Override
+                                                public void onReceiveValue(String responseText) {
+                                                    responseText = responseText.replaceAll("\\\\n", "\n")
+                                                            .replace("\\u003C", "<")
+                                                            .replace("\\\"", "\"");
+                                                    if (responseText.length() > GlobalDataHolder.getWebMaxCharCount())
+                                                        responseText = responseText.substring(0, GlobalDataHolder.getWebMaxCharCount());
+                                                    if (responseText.isEmpty())
+                                                        responseText = "The response is empty.";
+                                                    postSendFunctionReply(name, responseText);
+//                                                    Log.d("FunctionCall", String.format("Response: %s", responseText));
+                                                }
+                                            });
+                                };
+                                webViewRunnableOnFail = () -> {
+                                    postSendFunctionReply(name, "Failed to get response of this url.");
+                                };
+                                runOnUiThread(() -> {
+                                    markwon.setMarkdown(tvGptReply, String.format("正在访问: [%s](%s)", URLDecoder.decode(url), url));
+                                    webView.loadUrl(url);
+                                    webViewIsLoading = true;
+                                    webViewJumpCount = 1;
+                                    Log.d("FunctionCall", String.format("Loading url: %s", url));
+                                });
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                postSendFunctionReply(name, "Error when getting response.");
+                            }
+//                        } else if (name.equals("start_app")) { // TODO: ADD FUNCTIONS
+//                            try {
+//                                JSONObject argJson = new JSONObject(arg);
+//                                String packageName = argJson.getStr("package");
+//                                Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
+//                                if (intent != null) {
+//                                    startActivity(intent);
+//                                    postSendFunctionReply(name, "App started.");
+//                                } else {
+//                                    postSendFunctionReply(name, "App not found.");
+//                                }
+//                            } catch (JSONException e) {
+//                                e.printStackTrace();
+//                                postSendFunctionReply(name, "Error when starting app.");
+//                            }
+//                        } else if (name.equals("view_uri")) {
+//                            try {
+//                                JSONObject argJson = new JSONObject(arg);
+//                                String uri = argJson.getStr("uri");
+//                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+//                                startActivity(intent);
+//                                postSendFunctionReply(name, "Activity started.");
+//                            } catch (JSONException e) {
+//                                e.printStackTrace();
+//                                postSendFunctionReply(name, "Error when starting activity.");
+//                            }
+                        } else {
+                            postSendFunctionReply(name, "Function not found.");
+                            Log.d("FunctionCall", String.format("Function not found: %s", name));
+                        }
+                    }
                 });
 
+        setFunctions();
+
         btSend.setOnClickListener(view -> {
-            if(chatApiClient.isStreaming()){
+            if (chatApiClient.isStreaming()) {
                 chatApiClient.stop();
+            }else if(webViewIsLoading){
+                webViewRunnableOnFinish = null;
+                webViewRunnableOnFail = null;
+                webView.stopLoading();
+                webViewIsLoading = false;
+                webViewJumpCount = 0;
+                if(tvGptReply != null)
+                    tvGptReply.setText("已取消访问网页。");
+                btSend.setImageResource(R.drawable.send_btn);
             }else{
-                tts.stop();
-                sendQuestion();
-            }
-        });
+                    tts.stop();
+                    sendQuestion();
+                }
+            });
 
         etUserInput.setOnLongClickListener(view -> {
             etUserInput.setText("");
@@ -377,6 +552,17 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void setFunctions() {
+        chatApiClient.clearAllFunctions();
+        if(GlobalDataHolder.getEnableInternetAccess()) {
+            chatApiClient.addFunction("get_html_text", "get all innerText of a web page", "{url: {type: string, description: html url}}");
+        }
+//        if(false) { // TODO: add function
+//            chatApiClient.addFunction("start_app", "start an android app", "{package: {type: string, description: app package name}}");
+//            chatApiClient.addFunction("view_uri", "start an activity using Intent.ACTION_VIEW with giving uri", "{uri: {type: string, description: target uri}}");
+//        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -391,13 +577,15 @@ public class MainActivity extends Activity {
             updateTabListView();
 
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
-            chatApiClient.setModel(GlobalDataHolder.getGpt4Enable() ? ChatCompletion.Model.GPT_4_0613.getName() : ChatCompletion.Model.GPT_3_5_TURBO_0613.getName());
+            chatApiClient.setModel(GlobalDataHolder.getGptModel());
 
             if(GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof HmsAsrClient) {
                 setAsrClient("baidu");
             } else if(!GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof BaiduAsrClient) {
                 setAsrClient("hms");
             }
+
+            setFunctions();
         }
     }
 
@@ -469,6 +657,20 @@ public class MainActivity extends Activity {
             }
         }
 
+        if(GlobalDataHolder.getOnlyLatestWebResult()) {
+            for (int i = 0; i < multiChatList.size(); i++) {
+                Pair<ChatApiClient.ChatRole, String> chatItem = multiChatList.get(i);
+                if (chatItem.first == ChatApiClient.ChatRole.FUNCTION) {
+                    multiChatList.remove(i);
+                    i--;
+                    if(i > 0 && multiChatList.get(i).first == ChatApiClient.ChatRole.ASSISTANT) {
+                        multiChatList.remove(i);
+                        i--;
+                    }
+                }
+            }
+        }
+
         ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(80, 80);
         iconParams.setMargins(10, 30, 10, 30);
 
@@ -487,8 +689,8 @@ public class MainActivity extends Activity {
         userQuestion.setTextSize(16);
         userQuestion.setTextColor(Color.BLACK);
         userQuestion.setLayoutParams(contentParams);
-        userQuestion.setMovementMethod(LinkMovementMethod.getInstance());
         userQuestion.setTextIsSelectable(true);
+        userQuestion.setMovementMethod(LinkMovementMethod.getInstance());
 
         userLinearLayout.addView(userIcon);
         userLinearLayout.addView(userQuestion);
@@ -505,8 +707,8 @@ public class MainActivity extends Activity {
         gptReply.setTextSize(16);
         gptReply.setTextColor(Color.BLACK);
         gptReply.setLayoutParams(contentParams);
-        userQuestion.setMovementMethod(LinkMovementMethod.getInstance());
-        userQuestion.setTextIsSelectable(true);
+        gptReply.setTextIsSelectable(true);
+        gptReply.setMovementMethod(LinkMovementMethod.getInstance());
 
         gptLinearLayout.addView(gptIcon);
         gptLinearLayout.addView(gptReply);
@@ -523,6 +725,14 @@ public class MainActivity extends Activity {
         tvGptReply.setText("正在等待回复...");
         chatApiClient.sendPromptList(multiChatList);
         btSend.setImageResource(R.drawable.cancel_btn);
+    }
+
+    private void postSendFunctionReply(String funcName, String reply) {
+        handler.post(() -> {
+            Log.d("FunctionCall", "postSendFunctionReply: " + funcName);
+            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.FUNCTION, String.format("%s\n%s", funcName, reply)));
+            chatApiClient.sendPromptList(multiChatList);
+        });
     }
 
     public static boolean isAlive() {
@@ -575,6 +785,7 @@ public class MainActivity extends Activity {
         asrClient.destroy();
         tts.stop();
         tts.shutdown();
+        webView.destroy();
         super.onDestroy();
     }
 

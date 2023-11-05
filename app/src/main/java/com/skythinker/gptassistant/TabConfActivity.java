@@ -1,8 +1,6 @@
 package com.skythinker.gptassistant;
 
-import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,17 +16,20 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -114,7 +115,7 @@ public class TabConfActivity extends Activity {
                         host += "/";
                     }
                 }
-                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGpt4Enable());
+                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel());
             }
         });
 
@@ -123,13 +124,24 @@ public class TabConfActivity extends Activity {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGpt4Enable());
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGptModel());
             }
         });
 
-        ((Switch) findViewById(R.id.sw_gpt4_enable_conf)).setChecked(GlobalDataHolder.getGpt4Enable());
-        ((Switch) findViewById(R.id.sw_gpt4_enable_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), checked);
+        ArrayAdapter<CharSequence> modelsAdapter = ArrayAdapter.createFromResource(this, R.array.models, R.layout.model_spinner_item);
+        modelsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ((Spinner) findViewById(R.id.sp_model_conf)).setAdapter(modelsAdapter);
+        for(int i = 0; i < modelsAdapter.getCount(); i++) {
+            if(modelsAdapter.getItem(i).toString().equals(GlobalDataHolder.getGptModel())) {
+                ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(i);
+                break;
+            }
+        }
+        ((Spinner) findViewById(R.id.sp_model_conf)).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString());
+            }
+            public void onNothingSelected(AdapterView<?> adapterView) { }
         });
 
         ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setChecked(GlobalDataHolder.getAsrUseBaidu());
@@ -201,6 +213,38 @@ public class TabConfActivity extends Activity {
             startActivity(intent);
         });
 
+        ((Switch) findViewById(R.id.sw_enable_internet_conf)).setChecked(GlobalDataHolder.getEnableInternetAccess());
+        setInternetItemHidden(!GlobalDataHolder.getEnableInternetAccess());
+        ((Switch) findViewById(R.id.sw_enable_internet_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            if(checked)
+                Toast.makeText(this, "提醒：访问网络时会大幅增加token用量，GPT4请谨慎使用！", Toast.LENGTH_LONG).show();
+            GlobalDataHolder.saveFunctionSetting(checked, GlobalDataHolder.getWebMaxCharCount(), GlobalDataHolder.getOnlyLatestWebResult());
+            setInternetItemHidden(!checked);
+        });
+
+        ((EditText) findViewById(R.id.et_web_max_char_conf)).setText(String.valueOf(GlobalDataHolder.getWebMaxCharCount()));
+        ((EditText) findViewById(R.id.et_web_max_char_conf)).addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+            public void afterTextChanged(Editable editable) {
+                try {
+                    int maxChars = 2000;
+                    if (!editable.toString().isEmpty())
+                        maxChars = Integer.parseInt(editable.toString());
+                    GlobalDataHolder.saveFunctionSetting(GlobalDataHolder.getEnableInternetAccess(), maxChars, GlobalDataHolder.getOnlyLatestWebResult());
+                } catch (NumberFormatException e) {
+                    ((EditText) findViewById(R.id.et_web_max_char_conf)).setText(String.valueOf(GlobalDataHolder.getWebMaxCharCount()));
+                }
+            }
+        });
+
+        ((Switch) findViewById(R.id.sw_only_latest_web_conf)).setChecked(GlobalDataHolder.getOnlyLatestWebResult());
+        ((Switch) findViewById(R.id.sw_only_latest_web_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            if(!checked)
+                Toast.makeText(this, "提醒：一轮对话中的全部网络数据都将在提问时发给GPT，可能产生非常高的Token消耗", Toast.LENGTH_LONG).show();
+            GlobalDataHolder.saveFunctionSetting(GlobalDataHolder.getEnableInternetAccess(), GlobalDataHolder.getWebMaxCharCount(), checked);
+        });
+
         (findViewById(R.id.tv_set_access_conf)).setOnClickListener(view -> {
             Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -220,7 +264,7 @@ public class TabConfActivity extends Activity {
             });
         });
 
-        (findViewById(R.id.tv_check_update_conf)).setOnClickListener(view -> {
+        ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> {
             new Thread(() -> {
                 OkHttpClient client = new OkHttpClient();
                 Request request = new Request.Builder()
@@ -254,7 +298,9 @@ public class TabConfActivity extends Activity {
             }).start();
         });
 
-        (findViewById(R.id.tv_homepage_conf)).setOnClickListener(view -> {
+        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format("当前版本：%s", BuildConfig.VERSION_NAME));
+
+        ((LinearLayout) findViewById(R.id.tv_homepage_conf).getParent()).setOnClickListener(view -> {
             Intent intent = new Intent();
             intent.setAction("android.intent.action.VIEW");
             Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android");
@@ -272,6 +318,11 @@ public class TabConfActivity extends Activity {
         ((LinearLayout) findViewById(R.id.et_asr_api_key_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
         ((LinearLayout) findViewById(R.id.et_asr_secret_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
         ((LinearLayout) findViewById(R.id.sw_asr_real_time_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
+    }
+
+    private void setInternetItemHidden(boolean hidden) {
+        ((LinearLayout) findViewById(R.id.et_web_max_char_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
+        ((LinearLayout) findViewById(R.id.sw_only_latest_web_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
     }
 
     public void startEditTab(String title, String prompt, int position) {

@@ -15,6 +15,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="20dp"
             android:paddingVertical="15dp">
@@ -38,6 +39,7 @@
                 android:text="设置"
                 android:textColor="#3C3C3C"
                 android:textSize="22sp" />
+
         </LinearLayout>
 
         <ScrollView
@@ -216,22 +218,22 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="GPT-4"
+                                    android:layout_marginRight="20dp"
+                                    android:layout_weight="0"
+                                    android:text="选用模型"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
-                                <Switch
-                                    android:id="@+id/sw_gpt4_enable_conf"
+                                <Spinner
+                                    android:id="@+id/sp_model_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:checked="false"
-                                    android:showText="false"
-                                    android:thumb="@drawable/switch_thumb"
-                                    android:track="@drawable/switch_track"
-                                    tools:checked="true"
-                                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+                                    android:background="@color/transparent"
+                                    android:gravity="right"
+                                    android:popupBackground="@color/white"
+                                    android:spinnerMode="dropdown"
+                                    android:textAlignment="textEnd" />
 
                             </LinearLayout>
 
@@ -299,7 +301,7 @@
                                     android:id="@+id/sw_asr_use_baidu_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
+                                    android:layout_weight="0"
                                     android:checked="false"
                                     android:showText="false"
                                     android:thumb="@drawable/switch_thumb"
@@ -428,7 +430,182 @@
                                     android:id="@+id/sw_asr_real_time_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:layout_weight="0"
+                                    android:checked="false"
+                                    android:showText="false"
+                                    android:thumb="@drawable/switch_thumb"
+                                    android:track="@drawable/switch_track"
+                                    tools:checked="true"
+                                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:id="@+id/textView20"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="5dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="2dp"
+                        android:text="联网设置"
+                        android:textColor="#3C3C3C"
+                        android:textSize="14sp" />
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="0dp"
+                        app:contentPaddingBottom="5dp"
+                        app:contentPaddingLeft="20dp"
+                        app:contentPaddingRight="20dp"
+                        app:contentPaddingTop="5dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:divider="#C5C5C5"
+                            android:orientation="vertical"
+                            android:showDividers="middle">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="10dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
                                     android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_enable_internet_conf"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="启用网络访问"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:id="@+id/textView2"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="开启会大幅增加Token用量"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <Switch
+                                    android:id="@+id/sw_enable_internet_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0"
+                                    android:checked="false"
+                                    android:showText="false"
+                                    android:thumb="@drawable/switch_thumb"
+                                    android:track="@drawable/switch_track"
+                                    tools:checked="true"
+                                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="10dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginRight="20dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/textView19"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="单网页最大字符数"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="丢弃超出的字符以缩减Token"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <EditText
+                                    android:id="@+id/et_web_max_char_conf"
+                                    android:layout_width="100dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0"
+                                    android:background="#00FFFFFF"
+                                    android:ems="10"
+                                    android:hint="2000"
+                                    android:inputType="number"
+                                    android:textAlignment="textEnd"
+                                    android:textColor="#5A5A5A"
+                                    android:textSize="16sp" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="10dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_only_latest_web_conf"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="仅发送最新数据"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="丢弃上方对话的网络数据以缩减Token"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <Switch
+                                    android:id="@+id/sw_only_latest_web_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0"
                                     android:checked="false"
                                     android:showText="false"
                                     android:thumb="@drawable/switch_thumb"
@@ -520,7 +697,7 @@
                                     android:id="@+id/sw_check_access_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
+                                    android:layout_weight="0"
                                     android:checked="false"
                                     android:showText="false"
                                     android:thumb="@drawable/switch_thumb"
@@ -565,19 +742,34 @@
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
+                                <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="默认启用语音播报"
-                                    android:textColor="#000000"
-                                    android:textSize="18sp" />
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="默认启用语音"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="设置应用启动时是否开启语音播报"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
 
                                 <Switch
                                     android:id="@+id/sw_tts_enable_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
+                                    android:layout_weight="0"
                                     android:checked="false"
                                     android:showText="false"
                                     android:thumb="@drawable/switch_thumb"
@@ -595,19 +787,34 @@
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
+                                <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="默认启用连续对话"
-                                    android:textColor="#000000"
-                                    android:textSize="18sp" />
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="默认启用对话"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="设置应用启动时是否开启连续对话"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
 
                                 <Switch
                                     android:id="@+id/sw_def_enable_multi_chat_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
+                                    android:layout_weight="0"
                                     android:checked="false"
                                     android:showText="false"
                                     android:thumb="@drawable/switch_thumb"
@@ -625,19 +832,34 @@
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
+                                <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="记住选用的模板"
-                                    android:textColor="#000000"
-                                    android:textSize="18sp" />
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="记住选用的模板"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="应用启动时自动选中上次使用的模板"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
 
                                 <Switch
                                     android:id="@+id/sw_remember_tab_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
+                                    android:layout_weight="0"
                                     android:checked="false"
                                     android:showText="false"
                                     android:thumb="@drawable/switch_thumb"
@@ -680,14 +902,30 @@
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
-                                    android:id="@+id/tv_check_update_conf"
+                                <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="检查更新"
-                                    android:textColor="#000000"
-                                    android:textSize="18sp" />
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_check_update_conf"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="检查更新"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:id="@+id/tv_version_conf"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="当前版本：0.0.0"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
 
                                 <ImageView
                                     android:id="@+id/imageView4"
@@ -706,14 +944,29 @@
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
-                                    android:id="@+id/tv_homepage_conf"
+                                <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="项目主页"
-                                    android:textColor="#000000"
-                                    android:textSize="18sp" />
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_homepage_conf"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="项目主页"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="2023 @skythinker - 欢迎点个Star哦~"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
 
                                 <ImageView
                                     android:id="@+id/imageView5"

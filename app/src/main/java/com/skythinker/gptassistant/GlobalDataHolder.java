@@ -22,11 +22,14 @@ public class GlobalDataHolder {
     private static boolean asrUseRealTime;
     private static String gptApiHost;
     private static String gptApiKey;
-    private static boolean gpt4Enable;
+    private static String gptModel;
     private static boolean checkAccessOnStart;
     private static boolean defaultEnableTts;
     private static boolean defaultEnableMultiChat;
     private static int selectedTab;
+    private static boolean enableInternetAccess;
+    private static int webMaxCharCount;
+    private static boolean onlyLatestWebResult;
     private static SharedPreferences sp = null;
 
     public static void init(Context context) {
@@ -42,6 +45,7 @@ public class GlobalDataHolder {
         loadTtsSetting();
         loadMultiChatSetting();
         loadSelectedTab();
+        loadFunctionSetting();
     }
 
     public static List<PromptTabData> getTabDataList() {
@@ -104,17 +108,17 @@ public class GlobalDataHolder {
     public static void loadGptApiInfo() {
         gptApiHost = sp.getString("gpt_api_host", "");
         gptApiKey = sp.getString("gpt_api_key", "");
-        gpt4Enable = sp.getBoolean("gpt4_enable", false);
+        gptModel = sp.getString("gpt_model", "gpt-3.5-turbo-0613");
     }
 
-    public static void saveGptApiInfo(String host, String key, boolean gpt4) {
+    public static void saveGptApiInfo(String host, String key, String model) {
         gptApiHost = host;
         gptApiKey = key;
-        gpt4Enable = gpt4;
+        gptModel = model;
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("gpt_api_host", gptApiHost);
         editor.putString("gpt_api_key", gptApiKey);
-        editor.putBoolean("gpt4_enable", gpt4Enable);
+        editor.putString("gpt_model", gptModel);
         editor.apply();
     }
 
@@ -162,6 +166,23 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    public static void loadFunctionSetting() {
+        enableInternetAccess = sp.getBoolean("enable_internet", false);
+        webMaxCharCount = sp.getInt("web_max_char_count", 2000);
+        onlyLatestWebResult = sp.getBoolean("only_latest_web_result", true);
+    }
+
+    public static void saveFunctionSetting(boolean enableInternet, int maxCharCount, boolean onlyLatest) {
+        enableInternetAccess = enableInternet;
+        webMaxCharCount = maxCharCount;
+        onlyLatestWebResult = onlyLatest;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("enable_internet", enableInternetAccess);
+        editor.putInt("web_max_char_count", webMaxCharCount);
+        editor.putBoolean("only_latest_web_result", onlyLatestWebResult);
+        editor.apply();
+    }
+
     public static boolean getAsrUseBaidu() { return asrUseBaidu; }
 
     public static String getAsrAppId() { return asrAppId; }
@@ -176,7 +197,7 @@ public class GlobalDataHolder {
 
     public static String getGptApiKey() { return gptApiKey; }
 
-    public static boolean getGpt4Enable() { return gpt4Enable; }
+    public static String getGptModel() { return gptModel; }
 
     public static boolean getCheckAccessOnStart() { return checkAccessOnStart; }
 
@@ -185,4 +206,10 @@ public class GlobalDataHolder {
     public static boolean getDefaultEnableMultiChat() { return defaultEnableMultiChat; }
 
     public static int getSelectedTab() { return selectedTab; }
+
+    public static boolean getEnableInternetAccess() { return enableInternetAccess; }
+
+    public static int getWebMaxCharCount() { return webMaxCharCount; }
+
+    public static boolean getOnlyLatestWebResult() { return onlyLatestWebResult; }
 }

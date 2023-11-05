@@ -6,14 +6,18 @@ import android.util.Pair;
 import androidx.annotation.Nullable;
 
 import com.unfbx.chatgpt.OpenAiStreamClient;
+import com.unfbx.chatgpt.entity.chat.FunctionCall;
+import com.unfbx.chatgpt.entity.chat.Functions;
 import com.unfbx.chatgpt.entity.chat.Message;
 import com.unfbx.chatgpt.entity.chat.ChatCompletion;
+import com.unfbx.chatgpt.entity.chat.Parameters;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import cn.hutool.core.lang.func.Func;
 import cn.hutool.json.JSONObject;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
@@ -23,15 +27,17 @@ import okhttp3.sse.EventSourceListener;
 
 public class ChatApiClient {
     public interface OnReceiveListener {
-        void onReceive(String message);
+        void onMsgReceive(String message);
         void onError(String message);
+        void onFunctionCall(String name, String arg);
         void onFinished();
     }
 
     public enum ChatRole {
         SYSTEM,
         USER,
-        ASSISTANT
+        ASSISTANT,
+        FUNCTION
     }
 
     String url = "";
@@ -41,6 +47,11 @@ public class ChatApiClient {
 
     OkHttpClient httpClient = null;
     OpenAiStreamClient chatGPT = null;
+
+    List<Functions> functions = new ArrayList<>();
+
+    String callingFuncName = "";
+    String callingFuncArg = "";
 
     public ChatApiClient(String url, String apiKey, String model, OnReceiveListener listener) {
         this.listener = listener;
@@ -84,14 +95,42 @@ public class ChatApiClient {
             } else if(prompt.first == ChatRole.USER) {
                 messages.add(Message.builder().role(Message.Role.USER).content(prompt.second).build());
             } else if(prompt.first == ChatRole.ASSISTANT) {
-                messages.add(Message.builder().role(Message.Role.ASSISTANT).content(prompt.second).build());
+                if(prompt.second.startsWith("[Function]")) {
+                    int sepIndex = prompt.second.indexOf("\n");
+                    String funcName = prompt.second.substring("[Function]".length(), sepIndex);
+                    String arguments = prompt.second.substring(sepIndex + 1);
+                    FunctionCall functionCall = FunctionCall.builder()
+                            .name(funcName)
+                            .arguments(arguments)
+                            .build();
+                    messages.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
+                } else {
+                    messages.add(Message.builder().role(Message.Role.ASSISTANT).content(prompt.second).build());
+                }
+            } else if(prompt.first == ChatRole.FUNCTION) {
+                int sepIndex = prompt.second.indexOf("\n");
+                String funcName = prompt.second.substring(0, sepIndex);
+                String reply = prompt.second.substring(sepIndex + 1);
+                messages.add(Message.builder().role(Message.Role.FUNCTION).name(funcName).content(reply).build());
             }
         }
 
-        ChatCompletion chatCompletion = ChatCompletion.builder()
-                .messages(messages)
-                .model(model)
-                .build();
+        ChatCompletion chatCompletion;
+        if(!functions.isEmpty()) {
+            chatCompletion = ChatCompletion.builder()
+                    .messages(messages)
+                    .model(model)
+                    .functions(functions)
+                    .functionCall("auto")
+                    .build();
+        } else {
+            chatCompletion = ChatCompletion.builder()
+                    .messages(messages)
+                    .model(model)
+                    .build();
+        }
+
+        callingFuncName = callingFuncArg = "";
 
         chatGPT.streamChatCompletion(chatCompletion, new EventSourceListener() {
             @Override
@@ -103,11 +142,23 @@ public class ChatApiClient {
             public void onEvent(EventSource eventSource, @Nullable String id, @Nullable String type, String data) {
                 if(data.equals("[DONE]")){
                     Log.d("ChatApiClient", "onEvent: DONE");
-                    listener.onFinished();
+                    if(callingFuncName.isEmpty()) {
+                        listener.onFinished();
+                    } else {
+                        listener.onFunctionCall(callingFuncName, callingFuncArg);
+                    }
                 } else {
-                    String msg = ((JSONObject) (new JSONObject(data)).getJSONArray("choices").get(0)).getJSONObject("delta").getStr("content");
-                    if(msg != null)
-                        listener.onReceive(msg);
+                    JSONObject delta = ((JSONObject) (new JSONObject(data)).getJSONArray("choices").get(0)).getJSONObject("delta");
+                    if (delta.containsKey("function_call")) {
+                        JSONObject functionCall = delta.getJSONObject("function_call");
+                        if(functionCall.containsKey("name"))
+                            callingFuncName = functionCall.getStr("name");
+                        callingFuncArg += functionCall.getStr("arguments");
+                    } else if(delta.containsKey("content")) {
+                        String msg = delta.getStr("content");
+                        if(msg != null)
+                            listener.onMsgReceive(msg);
+                    }
 //                    Log.d("ChatApiClient", "onEvent: " + data);
                 }
             }
@@ -168,5 +219,24 @@ public class ChatApiClient {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public void addFunction(String name, String desc, String params) {
+        Parameters parameters = Parameters.builder()
+                .type("object")
+                .properties(new JSONObject(params))
+                .build();
+
+        Functions functions = Functions.builder()
+                .name(name)
+                .description(desc)
+                .parameters(parameters)
+                .build();
+
+        this.functions.add(functions);
+    }
+
+    public void clearAllFunctions() {
+        this.functions.clear();
     }
 }

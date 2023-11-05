@@ -1,13 +1,20 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">GPTAssistant</string>
     <string name="accessibility_service_label">GPTAssistant</string>
     <string name="help_msg">
         以下为本软件的简要操作说明，详细说明可以在项目主页中查看。\n\n
         本软件为基于ChatGPT的助理软件，用户可以预设多个问题模板，然后使用桌面图标或通知栏快捷按钮调出提问界面。\n\n
-        用户需要在设置中填写ChatGPT API的服务地址和自己的API_Key，可以填入官方服务参数，也可以去GitHub的GPT_API_free项目中申请转发Key。\n\n
+        用户需要在设置中填写OpenAI API的服务地址和自己的API_Key，可以填入官方服务参数，也可以去GitHub的GPT_API_free项目中申请转发Key。\n\n
         若需要使用语音助手功能，需要开启无障碍服务，并允许程序后台运行。此后在任何界面长按音量下键可唤出应用，保持按下并对麦克风说话，松开时就会自动录入识别出的文字。在松开后的3秒内再次短按音量下键，即可直接发送问题到服务器。\n\n
         软件默认使用内置的华为HMS语音识别接口，用户也可改为使用百度语音接口，需要在百度AI开放平台注册账号并创建应用，然后在本应用中填入AppID、APIKey和SecretKey。\n\n
-        注意：部分国内厂商系统默认禁止后台弹出界面，表现为长按音量键后手机震动但不弹出界面，需要用户在设置中手动允许该权限。
+        联网功能开启后软件会将GPT所要求的网页内容返回给GPT，以提高回答准确性。访问网络会极大增加Token消耗，GPT4模型请慎用。\n\n
+        注意：若长按音量键后手机震动但不弹出界面，请手动在设置中允许后台弹出界面权限。
     </string>
+    <string-array name="models">
+        <item>gpt-3.5-turbo-0613</item>
+        <item>gpt-3.5-turbo-16k-0613</item>
+        <item>gpt-4-0613</item>
+        <item>gpt-4-32k-0613</item>
+    </string-array>
     <string name="hms_api_key">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string> <!-- API已限制包名和签名 -->
 </resources>

@@ -8,7 +8,8 @@ GPT Assistant 是一个基于ChatGPT的安卓端语音助手，允许用户通�
 
 ### 项目特性
 
-- 支持用户预设**问题模板**，支持**连续对话**，支持`gpt-3.5-turbo`和`gpt-4`模型
+- 支持用户预设**问题模板**，支持**连续对话**，支持`gpt-3.5-turbo`、`gpt-4`等模型
+- **支持联网**，允许GPT获取在线网页
 - 通过无障碍功能捕获音量键事件，实现在**任意界面唤起**
 - 支持从**全局上下文菜单**（选中文本后弹出的系统菜单）中直接唤起
 - 支持通过状态栏**快捷按钮**唤起
@@ -78,6 +79,23 @@ GPT Assistant 是一个基于ChatGPT的安卓端语音助手，允许用户通�
 	<img src="readme_img/multi_chat.gif" height="400px">
 </div>
 
+**五、支持GPT联网**
+
+本程序实现了OpenAI的Function接口，允许GPT发起联网请求，程序会向GPT自动返回所需的网页数据，使GPT具有联网能力（需先在设置中开启联网选项）
+
+<div align="center">
+	<img src="readme_img/web_time.png" height="120px">
+	<img src="readme_img/web_weather.png" height="120px">
+</div>
+<div align="center">
+	<img src="readme_img/web_zhihu.png" height="200px">
+	<img src="readme_img/web_exchange.png" height="200px">
+</div>
+
+> 注1：上图均为使用`gpt-3.5-turbo-0613`模型的测试结果，建议在提问前加入“百度搜索”、“在线获取”、“从xxx获取”等字样引导GPT，以获得更好的联网效果
+
+> 注2：由于需要将网页内容发送给GPT，联网时会产生大量Token消耗，`gpt-4`模型请谨慎使用
+
 ---
 
 ## 使用方法
@@ -144,6 +162,9 @@ A: 软件调用的是系统自带TTS(Text To Speech)服务，可以通过软件�
 
 A: 经测试，所使用的华为接口（实时语音识别）识别准确度较高，尤其是在中英混说的场景下，但其断句能力则不如百度，仅适合单句识别
 
+**Q: GPT返回的Markdown中表格和图片无法正常显示？**
+A: 所使用的Markdown渲染器无法在测试中产生稳定的结果，因此暂不支持表格和图片
+
 ---
 
 ## 主要功能更新日志
@@ -151,6 +172,7 @@ A: 经测试，所使用的华为接口（实时语音识别）识别准确度�
 - **2023.09.10** 发布第一个版本，支持基础对话、百度语音输入、TTS输出、Markdown渲染等功能
 - **2023.09.13** 支持连续对话、GPT-4、百度长语音识别，上下文菜单唤起
 - **2023.10.06** 添加华为HMS语音识别
+- **2023.11.06** 添加联网功能
 
 ---
 
@@ -160,12 +182,12 @@ A: 经测试，所使用的华为接口（实时语音识别）识别准确度�
 
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
-| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.5.1 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.5.1 |
+| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.6.0 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.4.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.5.0 |
-| 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.5.0 |
+| 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.6.0 |
 | Pixel 2 (模拟器) | Android 12 | Android 12 | 1.2.0 |
 
 ---

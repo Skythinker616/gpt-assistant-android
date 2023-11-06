@@ -1,10 +1,37 @@
-# GPT Assistant
+<div align=center>
+	<img src="readme_img/icon.jpg" height="100px"/>
+	<h1>GPT Assistant</h1>
+</div>
+
+这是一个基于ChatGPT的安卓端语音助手，允许用户通过手机音量键从任意界面唤起并直接进行语音交流，用最快捷的方式询问并获取回复
+
+<div align=center>
+	<font size=3>
+		<b>国内可用 · 免费使用 · 语音交互 · 支持联网</b>
+	</font>
+</div>
+
+<br>
+
+<div align=center>
+	<p>
+		<a href="https://gitee.com/skythinker/gpt-assistant-android">
+			<img src="https://gitee.com/skythinker/gpt-assistant-android/badge/star.svg"/>
+		</a>
+		<img src="https://gitee.com/skythinker/gpt-assistant-android/badge/fork.svg"/>
+		<a href="https://github.com/Skythinker616/gpt-assistant-android">
+			<img src="https://img.shields.io/github/stars/skythinker616/gpt-assistant-android?logo=github"/>
+		</a>
+		<img src="https://img.shields.io/github/forks/skythinker616/gpt-assistant-android?logo=github"/>
+		<img src="https://img.shields.io/badge/License-GPL3.0-red"/>
+	</p>
+</div>
+
+
 
 ---
 
-## 简介
-
-GPT Assistant 是一个基于ChatGPT的安卓端语音助手，允许用户通过手机音量键从任意界面唤起并直接进行语音交流，用最快捷的方式询问并获取回复
+## 介绍
 
 ### 项目特性
 
@@ -162,8 +189,13 @@ A: 软件调用的是系统自带TTS(Text To Speech)服务，可以通过软件�
 
 A: 经测试，所使用的华为接口（实时语音识别）识别准确度较高，尤其是在中英混说的场景下，但其断句能力则不如百度，仅适合单句识别
 
-**Q: GPT返回的Markdown中表格和图片无法正常显示？**
+**Q: GPT返回的内容中表格和图片无法正常显示？**
+
 A: 所使用的Markdown渲染器无法在测试中产生稳定的结果，因此暂不支持表格和图片
+
+**Q: 联网时GPT能访问什么网站？能获取网站中的什么内容？**
+
+A: 程序使用Android WebView加载网页，能用本机浏览器打开的网站都可以访问；目前允许GPT获取网页中的所有纯文本内容，但不包含链接、图片等
 
 ---
 
@@ -173,6 +205,15 @@ A: 所使用的Markdown渲染器无法在测试中产生稳定的结果，因此
 - **2023.09.13** 支持连续对话、GPT-4、百度长语音识别，上下文菜单唤起
 - **2023.10.06** 添加华为HMS语音识别
 - **2023.11.06** 添加联网功能
+
+---
+
+## TODO
+
+- 对话保存功能
+- 优化对渲染时间较长的网页内容的处理
+- 支持渲染Markdown表格、图片等
+- 允许GPT控制手机其他功能
 
 ---
 

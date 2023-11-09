@@ -36,6 +36,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import okhttp3.OkHttpClient;
@@ -131,17 +132,32 @@ public class TabConfActivity extends Activity {
         ArrayAdapter<CharSequence> modelsAdapter = ArrayAdapter.createFromResource(this, R.array.models, R.layout.model_spinner_item);
         modelsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         ((Spinner) findViewById(R.id.sp_model_conf)).setAdapter(modelsAdapter);
+        ((Spinner) findViewById(R.id.sp_model_conf)).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                String model = adapterView.getItemAtPosition(i).toString();
+                if(model.equals("自定义")) {
+                    ((LinearLayout) findViewById(R.id.et_custom_model_conf).getParent()).setVisibility(View.VISIBLE);
+                    ((EditText) findViewById(R.id.et_custom_model_conf)).setText(GlobalDataHolder.getGptModel());
+                } else {
+                    ((LinearLayout) findViewById(R.id.et_custom_model_conf).getParent()).setVisibility(View.GONE);
+                    GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString());
+                }
+            }
+            public void onNothingSelected(AdapterView<?> adapterView) { }
+        });
         for(int i = 0; i < modelsAdapter.getCount(); i++) {
-            if(modelsAdapter.getItem(i).toString().equals(GlobalDataHolder.getGptModel())) {
+            if(modelsAdapter.getItem(i).toString().equals(GlobalDataHolder.getGptModel()) || i == modelsAdapter.getCount() - 1) {
                 ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(i);
                 break;
             }
         }
-        ((Spinner) findViewById(R.id.sp_model_conf)).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString());
+
+        ((EditText) findViewById(R.id.et_custom_model_conf)).addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+            public void afterTextChanged(Editable editable) {
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), editable.toString().trim());
             }
-            public void onNothingSelected(AdapterView<?> adapterView) { }
         });
 
         ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setChecked(GlobalDataHolder.getAsrUseBaidu());
@@ -240,8 +256,6 @@ public class TabConfActivity extends Activity {
 
         ((Switch) findViewById(R.id.sw_only_latest_web_conf)).setChecked(GlobalDataHolder.getOnlyLatestWebResult());
         ((Switch) findViewById(R.id.sw_only_latest_web_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            if(!checked)
-                Toast.makeText(this, "提醒：一轮对话中的全部网络数据都将在提问时发给GPT，可能产生非常高的Token消耗", Toast.LENGTH_LONG).show();
             GlobalDataHolder.saveFunctionSetting(GlobalDataHolder.getEnableInternetAccess(), GlobalDataHolder.getWebMaxCharCount(), checked);
         });
 

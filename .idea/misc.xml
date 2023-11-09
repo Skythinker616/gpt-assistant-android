@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/AppsData/Android/SDK/platforms/android-32/data/res/layout/simple_spinner_dropdown_item.xml" value="0.16875" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.182" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable/hori_sep_line.xml" value="0.1865" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable/main_card_background.xml" value="0.195" />

@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -26,12 +25,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.webkit.RenderProcessGoneDetail;
-import android.webkit.ValueCallback;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -100,11 +93,7 @@ public class MainActivity extends Activity {
     AsrClientBase asrClient = null;
     AsrClientBase.IAsrCallback asrCallback = null;
 
-    WebView webView = null;
-    Runnable webViewRunnableOnFinish = null;
-    Runnable webViewRunnableOnFail = null;
-    boolean webViewIsLoading = false;
-    int webViewJumpCount = 0;
+    WebScraper webScraper = null;
 
     @SuppressLint({"UseCompatLoadingForDrawables", "JavascriptInterface"})
     @Override
@@ -167,66 +156,7 @@ public class MainActivity extends Activity {
             selectedTab = GlobalDataHolder.getSelectedTab();
         updateTabListView();
 
-        webView = new WebView(MainActivity.this);
-        webView.getSettings().setJavaScriptEnabled(true);
-        WebView.setWebContentsDebuggingEnabled(true);
-        webView.setWebViewClient(new WebViewClient() {
-            private void endLoading() {
-                webViewRunnableOnFinish = null;
-                webViewRunnableOnFail = null;
-                webViewIsLoading = false;
-                webViewJumpCount = 0;
-            }
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                Log.d("WebView", "shouldOverrideUrlLoading " + url);
-                if(url.startsWith("http://") || url.startsWith("https://") || !url.contains("://")) {
-                    view.loadUrl(url);
-                    webViewJumpCount++;
-                }
-                return true;
-            }
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                Log.d("WebView", "onPageStarted ");
-                super.onPageStarted(view, url, favicon);
-            }
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                Log.d("WebView", "onPageFinished ");
-                if(webViewJumpCount == 1) {
-                    handler.postDelayed(() -> {
-                        if (webViewRunnableOnFinish != null)
-                            webViewRunnableOnFinish.run();
-                        endLoading();
-                    }, 500);
-                }
-                if(webViewJumpCount > 0)
-                    webViewJumpCount--;
-                super.onPageFinished(view, url);
-            }
-            @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                Log.e("WebView", "onReceivedError " + error.getErrorCode() + " " + error.getDescription());
-                if(webViewRunnableOnFail != null)
-                    webViewRunnableOnFail.run();
-                endLoading();
-                super.onReceivedError(view, request, error);
-            }
-            @Override
-            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
-                Log.e("WebView", "onRenderProcessGone " + detail);
-                if(webViewRunnableOnFail != null)
-                    webViewRunnableOnFail.run();
-                endLoading();
-                return true;
-            }
-        });
-
-        ((LinearLayout) findViewById(R.id.ll_main_base)).addView(webView, 0);
-        webView.setVisibility(View.INVISIBLE);
-        webView.setLayoutParams(new LinearLayout.LayoutParams(500, 1));
+        webScraper = new WebScraper(this, findViewById(R.id.ll_main_base));
 
         chatApiClient = new ChatApiClient(GlobalDataHolder.getGptApiHost(),
                 GlobalDataHolder.getGptApiKey(),
@@ -313,32 +243,20 @@ public class MainActivity extends Activity {
                             try {
                                 JSONObject argJson = new JSONObject(arg);
                                 String url = argJson.getStr("url");
-                                webViewRunnableOnFinish = () -> {
-                                    String jsCode = "(function(){return document.body.innerText;})();";
-                                    webView.evaluateJavascript(jsCode,
-                                            new ValueCallback<String>() {
-                                                @Override
-                                                public void onReceiveValue(String responseText) {
-                                                    responseText = responseText.replaceAll("\\\\n", "\n")
-                                                            .replace("\\u003C", "<")
-                                                            .replace("\\\"", "\"");
-                                                    if (responseText.length() > GlobalDataHolder.getWebMaxCharCount())
-                                                        responseText = responseText.substring(0, GlobalDataHolder.getWebMaxCharCount());
-                                                    if (responseText.isEmpty())
-                                                        responseText = "The response is empty.";
-                                                    postSendFunctionReply(name, responseText);
-//                                                    Log.d("FunctionCall", String.format("Response: %s", responseText));
-                                                }
-                                            });
-                                };
-                                webViewRunnableOnFail = () -> {
-                                    postSendFunctionReply(name, "Failed to get response of this url.");
-                                };
                                 runOnUiThread(() -> {
                                     markwon.setMarkdown(tvGptReply, String.format("正在访问: [%s](%s)", URLDecoder.decode(url), url));
-                                    webView.loadUrl(url);
-                                    webViewIsLoading = true;
-                                    webViewJumpCount = 1;
+                                    webScraper.load(url, new WebScraper.Callback() {
+                                        @Override
+                                        public void onLoadResult(String result) {
+                                            postSendFunctionReply(name, result);
+                                            Log.d("FunctionCall", String.format("Response: %s", result));
+                                        }
+
+                                        @Override
+                                        public void onLoadFail(String message) {
+                                            postSendFunctionReply(name, "Failed to get response of this url.");
+                                        }
+                                    });
                                     Log.d("FunctionCall", String.format("Loading url: %s", url));
                                 });
                             } catch (JSONException e) {
@@ -383,12 +301,8 @@ public class MainActivity extends Activity {
         btSend.setOnClickListener(view -> {
             if (chatApiClient.isStreaming()) {
                 chatApiClient.stop();
-            }else if(webViewIsLoading){
-                webViewRunnableOnFinish = null;
-                webViewRunnableOnFail = null;
-                webView.stopLoading();
-                webViewIsLoading = false;
-                webViewJumpCount = 0;
+            }else if(webScraper.isLoading()){
+                webScraper.stopLoading();
                 if(tvGptReply != null)
                     tvGptReply.setText("已取消访问网页。");
                 btSend.setImageResource(R.drawable.send_btn);
@@ -422,8 +336,7 @@ public class MainActivity extends Activity {
             TextView tv = new TextView(this);
             tv.setTextColor(Color.parseColor("#000000"));
             tv.setTextSize(16);
-            int paddingInPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, getResources().getDisplayMetrics());
-            tv.setPadding(paddingInPx, 0, paddingInPx, 0);
+            tv.setPadding(dpToPx(10), 0, dpToPx(10), 0);
             tv.setText("请向GPT提出问题。");
             tvGptReply = tv;
             llChatList.addView(tv);
@@ -555,7 +468,7 @@ public class MainActivity extends Activity {
     private void setFunctions() {
         chatApiClient.clearAllFunctions();
         if(GlobalDataHolder.getEnableInternetAccess()) {
-            chatApiClient.addFunction("get_html_text", "get all innerText of a web page", "{url: {type: string, description: html url}}");
+            chatApiClient.addFunction("get_html_text", "get all innerText and links of a web page", "{url: {type: string, description: html url}}");
         }
 //        if(false) { // TODO: add function
 //            chatApiClient.addFunction("start_app", "start an android app", "{package: {type: string, description: app package name}}");
@@ -635,26 +548,24 @@ public class MainActivity extends Activity {
             multiChatList.clear();
         }
 
-        if(multiChatList.size() == 0){
-            PromptTabData tabData = GlobalDataHolder.getTabDataList().get(selectedTab);
-            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.SYSTEM, tabData.getPrompt()));
-        }
         String userInput = etUserInput.getText().toString();
-        multiChatList.add(new Pair<>(ChatApiClient.ChatRole.USER, userInput));
+        if(multiChatList.size() == 0){
+            String template = GlobalDataHolder.getTabDataList().get(selectedTab).getPrompt();
+            if(!template.contains("%input%"))
+                template += "%input%";
+            String question = template.replace("%input%", userInput);
+            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.USER, question));
+        }else {
+            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.USER, userInput));
+        }
 
         if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){
             llChatList.removeViewAt(0);
         }
 
-        if(multiChat && multiChatList.size() > 0 && multiChatList.get(0).first == ChatApiClient.ChatRole.SYSTEM){
-            String systemPrompt = multiChatList.get(0).second;
-            multiChatList.remove(0);
+        if(multiChat && multiChatList.size() > 0 && llChatList.getChildCount() > 0){
             String firstUserInput = multiChatList.get(0).second;
-            String newUserInput = systemPrompt + " " + firstUserInput;
-            multiChatList.set(0, new Pair<>(ChatApiClient.ChatRole.USER, newUserInput));
-            if(llChatList.getChildCount() > 0){
-                ((TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1)).setText(newUserInput);
-            }
+            ((TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1)).setText(firstUserInput);
         }
 
         if(GlobalDataHolder.getOnlyLatestWebResult()) {
@@ -671,11 +582,11 @@ public class MainActivity extends Activity {
             }
         }
 
-        ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(80, 80);
-        iconParams.setMargins(10, 30, 10, 30);
+        ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30));
+        iconParams.setMargins(dpToPx(4), dpToPx(12), dpToPx(4), dpToPx(12));
 
         ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        contentParams.setMargins(10, 40, 10, 40);
+        contentParams.setMargins(dpToPx(4), dpToPx(15), dpToPx(4), dpToPx(15));
 
         LinearLayout userLinearLayout = new LinearLayout(this);
         userLinearLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -685,7 +596,10 @@ public class MainActivity extends Activity {
         userIcon.setLayoutParams(iconParams);
 
         TextView userQuestion = new TextView(this);
-        userQuestion.setText(multiChatList.get(multiChatList.size() - 1).second);
+        if(multiChat)
+            userQuestion.setText(multiChatList.get(multiChatList.size() - 1).second);
+        else
+            userQuestion.setText(userInput);
         userQuestion.setTextSize(16);
         userQuestion.setTextColor(Color.BLACK);
         userQuestion.setLayoutParams(contentParams);
@@ -733,6 +647,10 @@ public class MainActivity extends Activity {
             multiChatList.add(new Pair<>(ChatApiClient.ChatRole.FUNCTION, String.format("%s\n%s", funcName, reply)));
             chatApiClient.sendPromptList(multiChatList);
         });
+    }
+
+    private int dpToPx(int dp) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics());
     }
 
     public static boolean isAlive() {
@@ -785,7 +703,7 @@ public class MainActivity extends Activity {
         asrClient.destroy();
         tts.stop();
         tts.shutdown();
-        webView.destroy();
+        webScraper.destroy();
         super.onDestroy();
     }
 

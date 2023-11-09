@@ -237,6 +237,37 @@
 
                             </LinearLayout>
 
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="15dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginRight="20dp"
+                                    android:layout_weight="0"
+                                    android:text="自定义模型"
+                                    android:textColor="#000000"
+                                    android:textSize="18sp" />
+
+                                <EditText
+                                    android:id="@+id/et_custom_model_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:background="#00FFFFFF"
+                                    android:ems="10"
+                                    android:inputType="text"
+                                    android:textAlignment="textEnd"
+                                    android:textColor="#5A5A5A"
+                                    android:textSize="16sp" />
+
+                            </LinearLayout>
+
                         </LinearLayout>
 
                     </androidx.cardview.widget.CardView>

@@ -36,7 +36,7 @@ public class GlobalDataHolder {
         sp = context.getSharedPreferences("gpt_assistant", Context.MODE_PRIVATE);
         loadTabDataList();
         if(tabDataList.size() == 0) {
-            tabDataList.add(new PromptTabData("问答", "请回答这个问题"));
+            tabDataList.add(new PromptTabData("问答", "请回答这个问题："));
             saveTabDataList();
         }
         loadAsrInfo();
@@ -108,7 +108,7 @@ public class GlobalDataHolder {
     public static void loadGptApiInfo() {
         gptApiHost = sp.getString("gpt_api_host", "");
         gptApiKey = sp.getString("gpt_api_key", "");
-        gptModel = sp.getString("gpt_model", "gpt-3.5-turbo-0613");
+        gptModel = sp.getString("gpt_model", "gpt-3.5-turbo");
     }
 
     public static void saveGptApiInfo(String host, String key, String model) {
@@ -169,7 +169,7 @@ public class GlobalDataHolder {
     public static void loadFunctionSetting() {
         enableInternetAccess = sp.getBoolean("enable_internet", false);
         webMaxCharCount = sp.getInt("web_max_char_count", 2000);
-        onlyLatestWebResult = sp.getBoolean("only_latest_web_result", true);
+        onlyLatestWebResult = sp.getBoolean("only_latest_web_result", false);
     }
 
     public static void saveFunctionSetting(boolean enableInternet, int maxCharCount, boolean onlyLatest) {

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import cn.hutool.core.lang.func.Func;
 import cn.hutool.json.JSONObject;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
@@ -176,6 +175,12 @@ public class ChatApiClient {
                         listener.onFinished();
                     } else {
                         String err = throwable.toString();
+                        Log.d("ChatApiClient", "onFailure: " + err);
+                        if(err.equals("java.io.IOException: Canceled")) {
+                            err = "请求已取消";
+                        } else if(err.equals("java.net.SocketTimeoutException: timeout")) {
+                            err = "请求超时";
+                        }
                         listener.onError(err);
                     }
                 } else {

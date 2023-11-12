@@ -29,7 +29,7 @@ public class ChatApiClient {
         void onMsgReceive(String message);
         void onError(String message);
         void onFunctionCall(String name, String arg);
-        void onFinished();
+        void onFinished(boolean completed);
     }
 
     public enum ChatRole {
@@ -142,7 +142,7 @@ public class ChatApiClient {
                 if(data.equals("[DONE]")){
                     Log.d("ChatApiClient", "onEvent: DONE");
                     if(callingFuncName.isEmpty()) {
-                        listener.onFinished();
+                        listener.onFinished(true);
                     } else {
                         listener.onFunctionCall(callingFuncName, callingFuncArg);
                     }
@@ -172,7 +172,7 @@ public class ChatApiClient {
                 if(throwable != null) {
                     if(throwable instanceof StreamResetException) {
                         Log.d("ChatApiClient", "onFailure: Cancelled");
-                        listener.onFinished();
+                        listener.onFinished(false);
                     } else {
                         String err = throwable.toString();
                         Log.d("ChatApiClient", "onFailure: " + err);

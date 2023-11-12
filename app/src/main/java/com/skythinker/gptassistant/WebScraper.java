@@ -86,13 +86,29 @@ public class WebScraper {
             searchWebsiteJsTemplate.replace("<selector>", ".SearchResult-Card")
                 .replace("<linkIndex>", "0")
         ),
+        new WebsiteRule().url("^https://www.zhihu.com/hot").extraDelay(2000).js(
+            searchWebsiteJsTemplate.replace("<selector>", ".HotItem")
+                .replace("<linkIndex>", "0")
+        ),
         new WebsiteRule().url("^https://s.weibo.com/weibo/.*|^https://m.weibo.cn/search\\?.*").extraDelay(2000),
+        new WebsiteRule().url("^https://search.bilibili.com/all\\?.*").desktopMode(true).js(
+            searchWebsiteJsTemplate.replace("<selector>", ".bili-video-card")
+                .replace("<linkIndex>", "0")
+        ),
         new WebsiteRule().url("^https://search.jd.com/Search\\?.*").js(
             searchWebsiteJsTemplate.replace("<selector>", ".gl-item")
                 .replace("<linkIndex>", "0")
         ),
         new WebsiteRule().url("^https://github.com/search\\?.*").js(
             searchWebsiteJsTemplate.replace("<selector>", ".jUbAHB")
+                .replace("<linkIndex>", "0")
+        ),
+        new WebsiteRule().url("^https://scholar.google.com/scholar\\?.*").js(
+            searchWebsiteJsTemplate.replace("<selector>", ".gs_ri")
+                .replace("<linkIndex>", "0")
+        ),
+        new WebsiteRule().url("^https://kns.cnki.net/kns8s/defaultresult/index\\?.*").extraDelay(2000).js(
+            searchWebsiteJsTemplate.replace("<selector>", ".result-table-list tr")
                 .replace("<linkIndex>", "0")
         ),
         new WebsiteRule()

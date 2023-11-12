@@ -6,12 +6,15 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,6 +33,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,6 +60,9 @@ import io.noties.markwon.syntax.SyntaxHighlightPlugin;
 import io.noties.prism4j.Prism4j;
 import io.noties.prism4j.annotations.PrismBundle;
 
+import com.skythinker.gptassistant.ChatApiClient.ChatRole;
+
+@SuppressLint({"UseCompatLoadingForDrawables", "JavascriptInterface", "SetTextI18n"})
 @PrismBundle(includeAll = true)
 public class MainActivity extends Activity {
 
@@ -88,14 +95,13 @@ public class MainActivity extends Activity {
     private int ttsSentenceEndIndex = 0;
 
     private boolean multiChat = false;
-    private List<Pair<ChatApiClient.ChatRole, String>> multiChatList = new ArrayList<>();
+    private List<Pair<ChatRole, String>> multiChatList = new ArrayList<>();
 
     AsrClientBase asrClient = null;
     AsrClientBase.IAsrCallback asrCallback = null;
 
     WebScraper webScraper = null;
 
-    @SuppressLint({"UseCompatLoadingForDrawables", "JavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -205,19 +211,45 @@ public class MainActivity extends Activity {
                     }
 
                     @Override
-                    public void onFinished() {
+                    public void onFinished(boolean completed) {
                         handler.post(() -> {
+                            String referenceStr = "\n\n参考网页：";
+                            int referenceCount = 0;
+                            if(completed) {
+                                int questionIndex = multiChatList.size() - 1;
+                                while(questionIndex >= 0 && multiChatList.get(questionIndex).first != ChatRole.USER) {
+                                    questionIndex--;
+                                }
+                                for(int i = questionIndex + 1; i < multiChatList.size(); i++) {
+                                    if(multiChatList.get(i).first == ChatRole.FUNCTION
+                                        && multiChatList.get(i-1).first == ChatRole.ASSISTANT
+                                        && multiChatList.get(i-1).second.startsWith("[Function]")) {
+                                        String funcRequest = multiChatList.get(i-1).second;
+                                        int sepIndex = funcRequest.indexOf("\n");
+                                        String funcName = funcRequest.substring("[Function]".length(), sepIndex);
+                                        if(funcName.equals("get_html_text")) {
+                                            String url = new JSONObject(funcRequest.substring(sepIndex + 1)).getStr("url");
+                                            referenceStr += String.format("[[%s]](%s) ", ++referenceCount, url);
+                                        }
+                                    }
+                                }
+                            }
                             try {
+                                multiChatList.add(new Pair<>(ChatRole.ASSISTANT, chatApiBuffer));
+                                ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1));
+                                btSend.setImageResource(R.drawable.send_btn);
                                 markwon.setMarkdown(tvGptReply, chatApiBuffer);
+                                String ttsText = tvGptReply.getText().toString();
+                                if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) {
+                                    tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
+                                }
+                                if(referenceCount > 0) {
+                                    chatApiBuffer += referenceStr;
+                                    markwon.setMarkdown(tvGptReply, chatApiBuffer);
+                                }
                             } catch (Exception e){
                                 e.printStackTrace();
                             }
-                            String ttsText = tvGptReply.getText().toString();
-                            if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) {
-                                tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
-                            }
-                            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.ASSISTANT, chatApiBuffer));
-                            btSend.setImageResource(R.drawable.send_btn);
                         });
                     }
 
@@ -237,7 +269,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void onFunctionCall(String name, String arg) {
                         Log.d("FunctionCall", String.format("%s: %s", name, arg));
-                        multiChatList.add(new Pair<>(ChatApiClient.ChatRole.ASSISTANT,
+                        multiChatList.add(new Pair<>(ChatRole.ASSISTANT,
                                 String.format("[Function]%s\n%s", name, arg)));
                         if (name.equals("get_html_text")) {
                             try {
@@ -249,7 +281,7 @@ public class MainActivity extends Activity {
                                         @Override
                                         public void onLoadResult(String result) {
                                             postSendFunctionReply(name, result);
-                                            Log.d("FunctionCall", String.format("Response: %s", result));
+//                                            Log.d("FunctionCall", String.format("Response: %s", result));
                                         }
 
                                         @Override
@@ -307,10 +339,10 @@ public class MainActivity extends Activity {
                     tvGptReply.setText("已取消访问网页。");
                 btSend.setImageResource(R.drawable.send_btn);
             }else{
-                    tts.stop();
-                    sendQuestion();
-                }
-            });
+                tts.stop();
+                sendQuestion(null);
+            }
+        });
 
         etUserInput.setOnLongClickListener(view -> {
             etUserInput.setText("");
@@ -414,7 +446,7 @@ public class MainActivity extends Activity {
                     }
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SEND")) {
                     if(!chatApiClient.isStreaming())
-                        sendQuestion();
+                        sendQuestion(null);
                 } else if(action.equals("com.skythinker.gptassistant.SHOW_KEYBOARD")) {
                     etUserInput.requestFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -542,21 +574,147 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void sendQuestion(){
+    private LinearLayout addChatView(ChatRole role, String content) {
+        ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30));
+        iconParams.setMargins(dpToPx(4), dpToPx(12), dpToPx(4), dpToPx(12));
+
+        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        contentParams.setMargins(dpToPx(4), dpToPx(15), dpToPx(4), dpToPx(15));
+
+        LinearLayout.LayoutParams popupIconParams = new LinearLayout.LayoutParams(dpToPx(30), dpToPx(30));
+        popupIconParams.setMargins(dpToPx(5), dpToPx(5), dpToPx(5), dpToPx(5));
+
+        LinearLayout llOuter = new LinearLayout(this);
+        llOuter.setOrientation(LinearLayout.HORIZONTAL);
+        if(role == ChatRole.ASSISTANT)
+            llOuter.setBackgroundColor(Color.parseColor("#0A000000"));
+
+        ImageView ivIcon = new ImageView(this);
+        if(role == ChatRole.USER)
+            ivIcon.setImageResource(R.drawable.chat_user_icon);
+        else
+            ivIcon.setImageResource(R.drawable.chat_gpt_icon);
+        ivIcon.setLayoutParams(iconParams);
+
+        TextView tvContent = new TextView(this);
+        tvContent.setText(content);
+        tvContent.setTextSize(16);
+        tvContent.setTextColor(Color.BLACK);
+        tvContent.setLayoutParams(contentParams);
+        tvContent.setTextIsSelectable(true);
+        tvContent.setMovementMethod(LinkMovementMethod.getInstance());
+
+        LinearLayout llPopup = new LinearLayout(this);
+        llPopup.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        PaintDrawable popupBackground = new PaintDrawable(Color.TRANSPARENT);
+        llPopup.setBackground(popupBackground);
+        llPopup.setOrientation(LinearLayout.HORIZONTAL);
+
+        PopupWindow popupWindow = new PopupWindow(llPopup, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popupWindow.setOutsideTouchable(true);
+        ivIcon.setTag(popupWindow);
+
+        CardView cvDelete = new CardView(this);
+        cvDelete.setForeground(getDrawable(R.drawable.clear_btn));
+        cvDelete.setOnClickListener(view -> {
+            popupWindow.dismiss();
+            Pair<ChatRole, String> chat = (Pair<ChatRole, String>) llOuter.getTag();
+            if(chat != null) {
+                int index = multiChatList.indexOf(chat);
+                multiChatList.remove(chat);
+                while(--index > 0 && (multiChatList.get(index).first == ChatRole.FUNCTION
+                        || multiChatList.get(index).second.startsWith("[Function]get_html_text")))
+                    multiChatList.remove(index);
+            }
+            if(tvContent == tvGptReply) {
+                if(chatApiClient.isStreaming())
+                    chatApiClient.stop();
+                tts.stop();
+            }
+            llChatList.removeView(llOuter);
+            if(llChatList.getChildCount() == 0)
+                ((CardView) findViewById(R.id.cv_clear_chat)).performClick();
+        });
+        llPopup.addView(cvDelete);
+
+        CardView cvDelBelow = new CardView(this);
+        cvDelBelow.setForeground(getDrawable(R.drawable.del_below_btn));
+        cvDelBelow.setOnClickListener(view -> {
+            popupWindow.dismiss();
+            int index = llChatList.indexOfChild(llOuter);
+            while(llChatList.getChildCount() > index && llChatList.getChildAt(0) instanceof LinearLayout) {
+                PopupWindow pw = (PopupWindow) ((LinearLayout) llChatList.getChildAt(llChatList.getChildCount() - 1)).getChildAt(0).getTag();
+                ((LinearLayout) pw.getContentView()).getChildAt(0).performClick();
+            }
+        });
+        llPopup.addView(cvDelBelow);
+
+        if(role == ChatRole.USER) {
+            CardView cvEdit = new CardView(this);
+            cvEdit.setForeground(getDrawable(R.drawable.edit_btn));
+            cvEdit.setOnClickListener(view -> {
+                popupWindow.dismiss();
+                etUserInput.setText(tvContent.getText().toString());
+                cvDelBelow.performClick();
+            });
+            llPopup.addView(cvEdit);
+
+            CardView cvRetry = new CardView(this);
+            cvRetry.setForeground(getDrawable(R.drawable.retry_btn));
+            cvRetry.setOnClickListener(view -> {
+                popupWindow.dismiss();
+                String text = tvContent.getText().toString();
+                cvDelBelow.performClick();
+                sendQuestion(text);
+            });
+            llPopup.addView(cvRetry);
+        }
+
+        CardView cvCopy = new CardView(this);
+        cvCopy.setForeground(getDrawable(R.drawable.copy_btn));
+        cvCopy.setOnClickListener(view -> {
+            popupWindow.dismiss();
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("chat", tvContent.getText().toString());
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(this, "已复制到剪贴板", Toast.LENGTH_SHORT).show();
+        });
+        llPopup.addView(cvCopy);
+
+        for(int i = 0; i < llPopup.getChildCount(); i++) {
+            CardView cvBtn = (CardView) llPopup.getChildAt(i);
+            cvBtn.setLayoutParams(popupIconParams);
+            cvBtn.setCardBackgroundColor(Color.WHITE);
+            cvBtn.setRadius(dpToPx(5));
+        }
+
+        ivIcon.setOnClickListener(view -> {
+            popupWindow.showAsDropDown(view, dpToPx(30), -dpToPx(35));
+        });
+
+        llOuter.addView(ivIcon);
+        llOuter.addView(tvContent);
+
+        llChatList.addView(llOuter);
+
+        return llOuter;
+    }
+
+    private void sendQuestion(String input){
         if(!multiChat){
             llChatList.removeAllViews();
             multiChatList.clear();
         }
 
-        String userInput = etUserInput.getText().toString();
-        if(multiChatList.size() == 0){
+        String userInput = (input == null) ? etUserInput.getText().toString() : input;
+        if(multiChatList.size() == 0 && input == null){
             String template = GlobalDataHolder.getTabDataList().get(selectedTab).getPrompt();
             if(!template.contains("%input%"))
                 template += "%input%";
             String question = template.replace("%input%", userInput);
-            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.USER, question));
+            multiChatList.add(new Pair<>(ChatRole.USER, question));
         }else {
-            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.USER, userInput));
+            multiChatList.add(new Pair<>(ChatRole.USER, userInput));
         }
 
         if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){
@@ -570,11 +728,11 @@ public class MainActivity extends Activity {
 
         if(GlobalDataHolder.getOnlyLatestWebResult()) {
             for (int i = 0; i < multiChatList.size(); i++) {
-                Pair<ChatApiClient.ChatRole, String> chatItem = multiChatList.get(i);
-                if (chatItem.first == ChatApiClient.ChatRole.FUNCTION) {
+                Pair<ChatRole, String> chatItem = multiChatList.get(i);
+                if (chatItem.first == ChatRole.FUNCTION) {
                     multiChatList.remove(i);
                     i--;
-                    if(i > 0 && multiChatList.get(i).first == ChatApiClient.ChatRole.ASSISTANT) {
+                    if(i > 0 && multiChatList.get(i).first == ChatRole.ASSISTANT) {
                         multiChatList.remove(i);
                         i--;
                     }
@@ -582,61 +740,17 @@ public class MainActivity extends Activity {
             }
         }
 
-        ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30));
-        iconParams.setMargins(dpToPx(4), dpToPx(12), dpToPx(4), dpToPx(12));
+        LinearLayout llInput = addChatView(ChatRole.USER, multiChat ? multiChatList.get(multiChatList.size() - 1).second : userInput);
+        LinearLayout llReply = addChatView(ChatRole.ASSISTANT, "正在等待回复...");
 
-        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        contentParams.setMargins(dpToPx(4), dpToPx(15), dpToPx(4), dpToPx(15));
+        llInput.setTag(multiChatList.get(multiChatList.size() - 1));
 
-        LinearLayout userLinearLayout = new LinearLayout(this);
-        userLinearLayout.setOrientation(LinearLayout.HORIZONTAL);
-
-        ImageView userIcon = new ImageView(this);
-        userIcon.setImageResource(R.drawable.chat_user_icon);
-        userIcon.setLayoutParams(iconParams);
-
-        TextView userQuestion = new TextView(this);
-        if(multiChat)
-            userQuestion.setText(multiChatList.get(multiChatList.size() - 1).second);
-        else
-            userQuestion.setText(userInput);
-        userQuestion.setTextSize(16);
-        userQuestion.setTextColor(Color.BLACK);
-        userQuestion.setLayoutParams(contentParams);
-        userQuestion.setTextIsSelectable(true);
-        userQuestion.setMovementMethod(LinkMovementMethod.getInstance());
-
-        userLinearLayout.addView(userIcon);
-        userLinearLayout.addView(userQuestion);
-
-        LinearLayout gptLinearLayout = new LinearLayout(this);
-        gptLinearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        gptLinearLayout.setBackgroundColor(Color.parseColor("#0A000000"));
-
-        ImageView gptIcon = new ImageView(this);
-        gptIcon.setImageResource(R.drawable.chat_gpt_icon);
-        gptIcon.setLayoutParams(iconParams);
-
-        TextView gptReply = new TextView(this);
-        gptReply.setTextSize(16);
-        gptReply.setTextColor(Color.BLACK);
-        gptReply.setLayoutParams(contentParams);
-        gptReply.setTextIsSelectable(true);
-        gptReply.setMovementMethod(LinkMovementMethod.getInstance());
-
-        gptLinearLayout.addView(gptIcon);
-        gptLinearLayout.addView(gptReply);
-
-        llChatList.addView(userLinearLayout);
-        llChatList.addView(gptLinearLayout);
+        tvGptReply = (TextView) llReply.getChildAt(1);
 
         scrollChatAreaToBottom();
 
-        tvGptReply = gptReply;
-
         chatApiBuffer = "";
         ttsSentenceEndIndex = 0;
-        tvGptReply.setText("正在等待回复...");
         chatApiClient.sendPromptList(multiChatList);
         btSend.setImageResource(R.drawable.cancel_btn);
     }
@@ -644,7 +758,7 @@ public class MainActivity extends Activity {
     private void postSendFunctionReply(String funcName, String reply) {
         handler.post(() -> {
             Log.d("FunctionCall", "postSendFunctionReply: " + funcName);
-            multiChatList.add(new Pair<>(ChatApiClient.ChatRole.FUNCTION, String.format("%s\n%s", funcName, reply)));
+            multiChatList.add(new Pair<>(ChatRole.FUNCTION, String.format("%s\n%s", funcName, reply)));
             chatApiClient.sendPromptList(multiChatList);
         });
     }
@@ -676,7 +790,7 @@ public class MainActivity extends Activity {
                 toApplyList.add(perm);
             }
         }
-        String tmpList[] = new String[toApplyList.size()];
+        String[] tmpList = new String[toApplyList.size()];
         if (!toApplyList.isEmpty()) {
             requestPermissions(toApplyList.toArray(tmpList), 123);
         }

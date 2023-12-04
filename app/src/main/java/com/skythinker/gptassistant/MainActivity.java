@@ -12,22 +12,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
+import android.text.style.ImageSpan;
+import android.util.Base64;
 import android.util.Log;
-import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -35,16 +43,24 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -61,6 +77,7 @@ import io.noties.prism4j.Prism4j;
 import io.noties.prism4j.annotations.PrismBundle;
 
 import com.skythinker.gptassistant.ChatApiClient.ChatRole;
+import com.skythinker.gptassistant.ChatApiClient.ChatMessage;
 
 @SuppressLint({"UseCompatLoadingForDrawables", "JavascriptInterface", "SetTextI18n"})
 @PrismBundle(includeAll = true)
@@ -69,7 +86,8 @@ public class MainActivity extends Activity {
     private int selectedTab = 0;
     private TextView tvGptReply;
     private EditText etUserInput;
-    private ImageButton btSend;
+    private ImageButton btSend, btImage;
+    private Spinner spModels;
     private ScrollView svChatArea;
     private LinearLayout llChatList;
     private Handler handler = new Handler();
@@ -95,12 +113,15 @@ public class MainActivity extends Activity {
     private int ttsSentenceEndIndex = 0;
 
     private boolean multiChat = false;
-    private List<Pair<ChatRole, String>> multiChatList = new ArrayList<>();
+    private List<ChatMessage> multiChatList = new ArrayList<>();
 
     AsrClientBase asrClient = null;
     AsrClientBase.IAsrCallback asrCallback = null;
 
     WebScraper webScraper = null;
+
+    Bitmap selectedImageBitmap = null;
+    Uri photoUri = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,20 +164,43 @@ public class MainActivity extends Activity {
         tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
         etUserInput = findViewById(R.id.et_user_input);
 
+        btSend = findViewById(R.id.bt_send);
+        btImage = findViewById(R.id.bt_image);
+        svChatArea = findViewById(R.id.sv_chat_list);
+        llChatList = findViewById(R.id.ll_chat_list);
+
         Intent activityIntent = getIntent();
         if(activityIntent != null){
             String action = activityIntent.getAction();
-            if(action != null && action.equals("android.intent.action.PROCESS_TEXT")){
+            if(Intent.ACTION_PROCESS_TEXT.equals(action)) {
                 String text = activityIntent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
                 if(text != null){
                     etUserInput.setText(text);
                 }
+            } else if(Intent.ACTION_SEND.equals(action)) {
+                String type = activityIntent.getType();
+                if(type != null && type.startsWith("image/")) {
+                    Uri imageUri = activityIntent.getParcelableExtra(Intent.EXTRA_STREAM);
+                    if(imageUri != null) {
+                        try {
+                            Bitmap bitmap = (Bitmap) BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
+                            selectedImageBitmap = bitmap;
+                            if(GlobalDataHolder.getLimitVisionSize()) {
+                                if (bitmap.getWidth() < bitmap.getHeight())
+                                    selectedImageBitmap = resizeBitmap(bitmap, 512, 2048);
+                                else
+                                    selectedImageBitmap = resizeBitmap(bitmap, 2048, 512);
+                            }
+                            btImage.setImageResource(R.drawable.image_enabled);
+                            if(!GlobalDataHolder.getGptModel().contains("vision"))
+                                Toast.makeText(this, "请选择支持vision的模型以发送图片", Toast.LENGTH_LONG).show();
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
             }
         }
-
-        btSend = findViewById(R.id.bt_send);
-        svChatArea = findViewById(R.id.sv_chat_list);
-        llChatList = findViewById(R.id.ll_chat_list);
 
         if(GlobalDataHolder.getSelectedTab() != -1 && GlobalDataHolder.getSelectedTab() < GlobalDataHolder.getTabDataList().size())
             selectedTab = GlobalDataHolder.getSelectedTab();
@@ -217,25 +261,24 @@ public class MainActivity extends Activity {
                             int referenceCount = 0;
                             if(completed) {
                                 int questionIndex = multiChatList.size() - 1;
-                                while(questionIndex >= 0 && multiChatList.get(questionIndex).first != ChatRole.USER) {
+                                while(questionIndex >= 0 && multiChatList.get(questionIndex).role != ChatRole.USER) {
                                     questionIndex--;
                                 }
                                 for(int i = questionIndex + 1; i < multiChatList.size(); i++) {
-                                    if(multiChatList.get(i).first == ChatRole.FUNCTION
-                                        && multiChatList.get(i-1).first == ChatRole.ASSISTANT
-                                        && multiChatList.get(i-1).second.startsWith("[Function]")) {
-                                        String funcRequest = multiChatList.get(i-1).second;
-                                        int sepIndex = funcRequest.indexOf("\n");
-                                        String funcName = funcRequest.substring("[Function]".length(), sepIndex);
+                                    if(multiChatList.get(i).role == ChatRole.FUNCTION
+                                        && multiChatList.get(i-1).role == ChatRole.ASSISTANT
+                                        && multiChatList.get(i-1).functionName != null) {
+                                        String funcName = multiChatList.get(i-1).functionName;
+                                        String funcArgs = multiChatList.get(i-1).contentText;
                                         if(funcName.equals("get_html_text")) {
-                                            String url = new JSONObject(funcRequest.substring(sepIndex + 1)).getStr("url");
+                                            String url = new JSONObject(funcArgs).getStr("url");
                                             referenceStr += String.format("[[%s]](%s) ", ++referenceCount, url);
                                         }
                                     }
                                 }
                             }
                             try {
-                                multiChatList.add(new Pair<>(ChatRole.ASSISTANT, chatApiBuffer));
+                                multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer));
                                 ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1));
                                 btSend.setImageResource(R.drawable.send_btn);
                                 markwon.setMarkdown(tvGptReply, chatApiBuffer);
@@ -269,8 +312,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void onFunctionCall(String name, String arg) {
                         Log.d("FunctionCall", String.format("%s: %s", name, arg));
-                        multiChatList.add(new Pair<>(ChatRole.ASSISTANT,
-                                String.format("[Function]%s\n%s", name, arg)));
+                        multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setFunction(name).setText(arg));
                         if (name.equals("get_html_text")) {
                             try {
                                 JSONObject argJson = new JSONObject(arg);
@@ -344,6 +386,51 @@ public class MainActivity extends Activity {
             }
         });
 
+        btImage.setOnClickListener(view -> {
+            if (selectedImageBitmap != null) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                LayoutInflater inflater = LayoutInflater.from(this);
+                View dialogView = inflater.inflate(R.layout.image_preview_dialog, null);
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                dialog.getWindow().setContentView(dialogView);
+                ((ImageView) dialogView.findViewById(R.id.iv_image_preview)).setImageBitmap(selectedImageBitmap);
+                ((TextView) dialogView.findViewById(R.id.tv_image_preview_size)).setText(String.format("%s x %s", selectedImageBitmap.getWidth(), selectedImageBitmap.getHeight()));
+                dialogView.findViewById(R.id.bt_image_preview_cancel).setOnClickListener(view1 -> dialog.dismiss());
+                dialogView.findViewById(R.id.bt_image_preview_del).setOnClickListener(view1 -> {
+                    dialog.dismiss();
+                    selectedImageBitmap = null;
+                    btImage.setImageResource(R.drawable.image);
+                });
+                dialogView.findViewById(R.id.bt_image_preview_reselect).setOnClickListener(view1 -> {
+                    dialogView.findViewById(R.id.bt_image_preview_del).performClick();
+                    btImage.performClick();
+                });
+            } else {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                LayoutInflater inflater = LayoutInflater.from(this);
+                View dialogView = inflater.inflate(R.layout.image_method_dialog, null);
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                dialog.getWindow().setContentView(dialogView);
+                dialogView.findViewById(R.id.bt_take_photo).setOnClickListener(view1 -> {
+                    dialog.dismiss();
+                    photoUri = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", new File(getCacheDir(), "photo.jpg"));
+                    Intent intent=new Intent();
+                    intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                    startActivityForResult(intent, 1);
+                });
+                dialogView.findViewById(R.id.bt_select_from_album).setOnClickListener(view1 -> {
+                    dialog.dismiss();
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setType("image/*");
+                    startActivityForResult(intent, 2);
+                });
+                dialogView.findViewById(R.id.bt_image_cancel).setOnClickListener(view1 -> dialog.dismiss());
+            }
+        });
+
         etUserInput.setOnLongClickListener(view -> {
             etUserInput.setText("");
             return true;
@@ -405,6 +492,9 @@ public class MainActivity extends Activity {
             ttsEnabled = false;
             ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
         }
+
+        updateModelSpinner();
+        updateImageButtonVisible();
 
         isAlive = true;
 
@@ -520,6 +610,8 @@ public class MainActivity extends Activity {
                 GlobalDataHolder.saveSelectedTab(selectedTab);
 
             updateTabListView();
+            updateModelSpinner();
+            updateImageButtonVisible();
 
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             chatApiClient.setModel(GlobalDataHolder.getGptModel());
@@ -531,6 +623,21 @@ public class MainActivity extends Activity {
             }
 
             setFunctions();
+        } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) {
+            Uri uri = requestCode == 1 ? photoUri : data.getData();
+            try {
+                Bitmap bitmap = (Bitmap) BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
+                selectedImageBitmap = bitmap;
+                if(GlobalDataHolder.getLimitVisionSize()) {
+                    if (bitmap.getWidth() < bitmap.getHeight())
+                        selectedImageBitmap = resizeBitmap(bitmap, 512, 2048);
+                    else
+                        selectedImageBitmap = resizeBitmap(bitmap, 2048, 512);
+                }
+                btImage.setImageResource(R.drawable.image_enabled);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -541,6 +648,53 @@ public class MainActivity extends Activity {
             if(delta != 0)
                 svChatArea.smoothScrollBy(0, delta);
         });
+    }
+
+    private void updateImageButtonVisible() {
+        if(GlobalDataHolder.getGptModel().contains("vision"))
+            btImage.setVisibility(View.VISIBLE);
+        else
+            btImage.setVisibility(View.GONE);
+    }
+
+    private void updateModelSpinner() {
+        Spinner spModels = findViewById(R.id.sp_main_model);
+        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models)));
+        models.addAll(GlobalDataHolder.getCustomModels());
+        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.main_model_spinner_item, models) {
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
+                if(spModels.getSelectedItemPosition() == position) {
+                    tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                    tv.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.tag_background_unselected));
+                } else {
+                    tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
+                    tv.setBackgroundColor(Color.WHITE);
+                }
+                return tv;
+            }
+        };
+        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item);
+        spModels.setAdapter(modelsAdapter);
+        spModels.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString(), GlobalDataHolder.getCustomModels());
+                chatApiClient.setModel(GlobalDataHolder.getGptModel());
+                updateImageButtonVisible();
+                modelsAdapter.notifyDataSetChanged();
+            }
+            public void onNothingSelected(AdapterView<?> adapterView) { }
+        });
+        for(int i = 0; i < modelsAdapter.getCount(); i++) {
+            if(modelsAdapter.getItem(i).equals(GlobalDataHolder.getGptModel())) {
+                spModels.setSelection(i);
+                break;
+            }
+            if(i == modelsAdapter.getCount() - 1) {
+                spModels.setSelection(0);
+            }
+        }
     }
 
     private void updateTabListView() {
@@ -574,7 +728,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private LinearLayout addChatView(ChatRole role, String content) {
+    private LinearLayout addChatView(ChatRole role, String content, String imageBase64) {
         ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30));
         iconParams.setMargins(dpToPx(4), dpToPx(12), dpToPx(4), dpToPx(12));
 
@@ -597,7 +751,18 @@ public class MainActivity extends Activity {
         ivIcon.setLayoutParams(iconParams);
 
         TextView tvContent = new TextView(this);
-        tvContent.setText(content);
+        SpannableString spannableString = null;
+        if(imageBase64 != null) {
+            spannableString = new SpannableString(content + "\n ");
+            Bitmap bitmap = base64ToBitmap(imageBase64);
+            int maxSize = dpToPx(100);
+            bitmap = resizeBitmap(bitmap, maxSize, maxSize);
+            ImageSpan imageSpan = new ImageSpan(this, bitmap);
+            spannableString.setSpan(imageSpan, content.length()+1, content.length() + 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        } else {
+            spannableString = new SpannableString(content);
+        }
+        tvContent.setText(spannableString);
         tvContent.setTextSize(16);
         tvContent.setTextColor(Color.BLACK);
         tvContent.setLayoutParams(contentParams);
@@ -618,12 +783,12 @@ public class MainActivity extends Activity {
         cvDelete.setForeground(getDrawable(R.drawable.clear_btn));
         cvDelete.setOnClickListener(view -> {
             popupWindow.dismiss();
-            Pair<ChatRole, String> chat = (Pair<ChatRole, String>) llOuter.getTag();
+            ChatMessage chat = (ChatMessage) llOuter.getTag();
             if(chat != null) {
                 int index = multiChatList.indexOf(chat);
                 multiChatList.remove(chat);
-                while(--index > 0 && (multiChatList.get(index).first == ChatRole.FUNCTION
-                        || multiChatList.get(index).second.startsWith("[Function]get_html_text")))
+                while(--index > 0 && (multiChatList.get(index).role == ChatRole.FUNCTION
+                        || multiChatList.get(index).functionName != null && multiChatList.get(index).functionName.equals("get_html_text")))
                     multiChatList.remove(index);
             }
             if(tvContent == tvGptReply) {
@@ -654,7 +819,18 @@ public class MainActivity extends Activity {
             cvEdit.setForeground(getDrawable(R.drawable.edit_btn));
             cvEdit.setOnClickListener(view -> {
                 popupWindow.dismiss();
-                etUserInput.setText(tvContent.getText().toString());
+                ChatMessage chat = (ChatMessage) llOuter.getTag();
+                String text = chat.contentText;
+                if(chat.contentImageBase64 != null) {
+                    if(text.endsWith("\n "))
+                        text = text.substring(0, text.length() - 2);
+                    selectedImageBitmap = base64ToBitmap(chat.contentImageBase64);
+                    btImage.setImageResource(R.drawable.image_enabled);
+                } else {
+                    selectedImageBitmap = null;
+                    btImage.setImageResource(R.drawable.image);
+                }
+                etUserInput.setText(text);
                 cvDelBelow.performClick();
             });
             llPopup.addView(cvEdit);
@@ -663,7 +839,15 @@ public class MainActivity extends Activity {
             cvRetry.setForeground(getDrawable(R.drawable.retry_btn));
             cvRetry.setOnClickListener(view -> {
                 popupWindow.dismiss();
-                String text = tvContent.getText().toString();
+                ChatMessage chat = (ChatMessage) llOuter.getTag();
+                String text = chat.contentText;
+                if(chat.contentImageBase64 != null) {
+                    if(text.endsWith("\n "))
+                        text = text.substring(0, text.length() - 2);
+                    selectedImageBitmap = base64ToBitmap(chat.contentImageBase64);
+                } else {
+                    selectedImageBitmap = null;
+                }
                 cvDelBelow.performClick();
                 sendQuestion(text);
             });
@@ -712,9 +896,17 @@ public class MainActivity extends Activity {
             if(!template.contains("%input%"))
                 template += "%input%";
             String question = template.replace("%input%", userInput);
-            multiChatList.add(new Pair<>(ChatRole.USER, question));
+            multiChatList.add(new ChatMessage(ChatRole.USER).setText(question));
         }else {
-            multiChatList.add(new Pair<>(ChatRole.USER, userInput));
+            multiChatList.add(new ChatMessage(ChatRole.USER).setText(userInput));
+        }
+
+        if(selectedImageBitmap != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            selectedImageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            byte[] bytes = baos.toByteArray();
+            String base64 = Base64.encodeToString(bytes, Base64.NO_WRAP);
+            multiChatList.get(multiChatList.size() - 1).setImage(base64);
         }
 
         if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){
@@ -722,17 +914,17 @@ public class MainActivity extends Activity {
         }
 
         if(multiChat && multiChatList.size() > 0 && llChatList.getChildCount() > 0){
-            String firstUserInput = multiChatList.get(0).second;
+            String firstUserInput = multiChatList.get(0).contentText;
             ((TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1)).setText(firstUserInput);
         }
 
         if(GlobalDataHolder.getOnlyLatestWebResult()) {
             for (int i = 0; i < multiChatList.size(); i++) {
-                Pair<ChatRole, String> chatItem = multiChatList.get(i);
-                if (chatItem.first == ChatRole.FUNCTION) {
+                ChatMessage chatItem = multiChatList.get(i);
+                if (chatItem.role == ChatRole.FUNCTION) {
                     multiChatList.remove(i);
                     i--;
-                    if(i > 0 && multiChatList.get(i).first == ChatRole.ASSISTANT) {
+                    if(i > 0 && multiChatList.get(i).role == ChatRole.ASSISTANT) {
                         multiChatList.remove(i);
                         i--;
                     }
@@ -740,8 +932,8 @@ public class MainActivity extends Activity {
             }
         }
 
-        LinearLayout llInput = addChatView(ChatRole.USER, multiChat ? multiChatList.get(multiChatList.size() - 1).second : userInput);
-        LinearLayout llReply = addChatView(ChatRole.ASSISTANT, "正在等待回复...");
+        LinearLayout llInput = addChatView(ChatRole.USER, multiChat ? multiChatList.get(multiChatList.size() - 1).contentText : userInput, multiChatList.get(multiChatList.size() - 1).contentImageBase64);
+        LinearLayout llReply = addChatView(ChatRole.ASSISTANT, "正在等待回复...", null);
 
         llInput.setTag(multiChatList.get(multiChatList.size() - 1));
 
@@ -752,19 +944,35 @@ public class MainActivity extends Activity {
         chatApiBuffer = "";
         ttsSentenceEndIndex = 0;
         chatApiClient.sendPromptList(multiChatList);
+        btImage.setImageResource(R.drawable.image);
+        selectedImageBitmap = null;
         btSend.setImageResource(R.drawable.cancel_btn);
     }
 
     private void postSendFunctionReply(String funcName, String reply) {
         handler.post(() -> {
             Log.d("FunctionCall", "postSendFunctionReply: " + funcName);
-            multiChatList.add(new Pair<>(ChatRole.FUNCTION, String.format("%s\n%s", funcName, reply)));
+            multiChatList.add(new ChatMessage(ChatRole.FUNCTION).setFunction(funcName).setText(reply));
             chatApiClient.sendPromptList(multiChatList);
         });
     }
 
     private int dpToPx(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics());
+    }
+
+    private Bitmap resizeBitmap(Bitmap bitmap, int maxWidth, int maxHeight) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        float scale = 1;
+        if(width > maxWidth || height > maxHeight)
+            scale = Math.min((float)maxWidth / width, (float)maxHeight / height);
+        return Bitmap.createScaledBitmap(bitmap, (int)(width * scale), (int)(height * scale), true);
+    }
+
+    private Bitmap base64ToBitmap(String base64) {
+        byte[] bytes = Base64.decode(base64, Base64.NO_WRAP);
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
     }
 
     public static boolean isAlive() {

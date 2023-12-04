@@ -15,7 +15,6 @@
         <item>gpt-3.5-turbo-16k</item>
         <item>gpt-4</item>
         <item>gpt-4-32k</item>
-        <item>自定义</item>
     </string-array>
     <string name="hms_api_key">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string> <!-- API已限制包名和签名 -->
 </resources>

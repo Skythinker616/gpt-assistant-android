@@ -232,27 +232,42 @@
                                     android:background="@color/transparent"
                                     android:gravity="right"
                                     android:popupBackground="@color/white"
+                                    android:popupElevation="2dp"
                                     android:spinnerMode="dropdown"
-                                    android:textAlignment="textEnd" />
+                                    android:textAlignment="textEnd"
+                                    tools:ignore="RtlCompat" />
 
                             </LinearLayout>
 
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:layout_marginVertical="15dp"
+                                android:layout_marginVertical="10dp"
                                 android:layout_marginBottom="10dp"
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
+                                <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginRight="20dp"
                                     android:layout_weight="0"
-                                    android:text="自定义模型"
-                                    android:textColor="#000000"
-                                    android:textSize="18sp" />
+                                    android:layout_marginRight="20dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="自定义模型"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="用分号隔开多个模型"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
 
                                 <EditText
                                     android:id="@+id/et_custom_model_conf"
@@ -888,6 +903,51 @@
 
                                 <Switch
                                     android:id="@+id/sw_remember_tab_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0"
+                                    android:checked="false"
+                                    android:showText="false"
+                                    android:thumb="@drawable/switch_thumb"
+                                    android:track="@drawable/switch_track"
+                                    tools:checked="true"
+                                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="15dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="限制图片大小"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="缩放发送的图片到2048x512以内"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <Switch
+                                    android:id="@+id/sw_limit_vision_size_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="0"

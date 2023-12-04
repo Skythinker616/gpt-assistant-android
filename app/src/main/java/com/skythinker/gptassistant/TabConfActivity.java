@@ -1,5 +1,8 @@
 package com.skythinker.gptassistant;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -13,6 +16,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,6 +25,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -36,6 +41,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -116,7 +122,7 @@ public class TabConfActivity extends Activity {
                         host += "/";
                     }
                 }
-                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel());
+                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel(), GlobalDataHolder.getCustomModels());
             }
         });
 
@@ -125,38 +131,57 @@ public class TabConfActivity extends Activity {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGptModel());
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGptModel(), GlobalDataHolder.getCustomModels());
             }
         });
 
-        ArrayAdapter<CharSequence> modelsAdapter = ArrayAdapter.createFromResource(this, R.array.models, R.layout.model_spinner_item);
-        modelsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models)));
+        models.addAll(GlobalDataHolder.getCustomModels());
+        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.model_spinner_item, models) {
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
+                if(((Spinner) findViewById(R.id.sp_model_conf)).getSelectedItemPosition() == position) {
+                    tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                    tv.setBackgroundColor(ContextCompat.getColor(TabConfActivity.this, R.color.tag_background_unselected));
+                } else {
+                    tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
+                    tv.setBackgroundColor(Color.WHITE);
+                }
+                return tv;
+            }
+        };
+        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item);
         ((Spinner) findViewById(R.id.sp_model_conf)).setAdapter(modelsAdapter);
         ((Spinner) findViewById(R.id.sp_model_conf)).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                String model = adapterView.getItemAtPosition(i).toString();
-                if(model.equals("自定义")) {
-                    ((LinearLayout) findViewById(R.id.et_custom_model_conf).getParent()).setVisibility(View.VISIBLE);
-                    ((EditText) findViewById(R.id.et_custom_model_conf)).setText(GlobalDataHolder.getGptModel());
-                } else {
-                    ((LinearLayout) findViewById(R.id.et_custom_model_conf).getParent()).setVisibility(View.GONE);
-                    GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString());
-                }
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString(), GlobalDataHolder.getCustomModels());
+                modelsAdapter.notifyDataSetChanged();
             }
             public void onNothingSelected(AdapterView<?> adapterView) { }
         });
         for(int i = 0; i < modelsAdapter.getCount(); i++) {
-            if(modelsAdapter.getItem(i).toString().equals(GlobalDataHolder.getGptModel()) || i == modelsAdapter.getCount() - 1) {
+            if(modelsAdapter.getItem(i).equals(GlobalDataHolder.getGptModel())) {
                 ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(i);
                 break;
             }
+            if(i == modelsAdapter.getCount() - 1) {
+                ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(0);
+            }
         }
 
+        ((EditText) findViewById(R.id.et_custom_model_conf)).setText(String.join(";", GlobalDataHolder.getCustomModels()));
         ((EditText) findViewById(R.id.et_custom_model_conf)).addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), editable.toString().trim());
+                List<String> modelList = new ArrayList<>(Arrays.asList(editable.toString().trim().split(";")));
+                modelList.removeIf(String::isEmpty);
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel(), modelList);
+                models.clear();
+                models.addAll(Arrays.asList(getResources().getStringArray(R.array.models)));
+                models.addAll(modelList);
+                modelsAdapter.notifyDataSetChanged();
             }
         });
 
@@ -221,6 +246,11 @@ public class TabConfActivity extends Activity {
             } else if(!checked && GlobalDataHolder.getSelectedTab() != -1) {
                 GlobalDataHolder.saveSelectedTab(-1);
             }
+        });
+
+        ((Switch) findViewById(R.id.sw_limit_vision_size_conf)).setChecked(GlobalDataHolder.getLimitVisionSize());
+        ((Switch) findViewById(R.id.sw_limit_vision_size_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            GlobalDataHolder.saveVisionSetting(checked);
         });
 
         (findViewById(R.id.tv_set_tts_conf)).setOnClickListener(view -> {

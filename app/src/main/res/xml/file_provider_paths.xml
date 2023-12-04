@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 用于保存拍照后的图片 -->
+    <cache-path name="external_files" path="." />
+</paths>

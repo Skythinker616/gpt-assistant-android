@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="#F5F5F6F7"
+        app:cardCornerRadius="30dp"
+        app:cardElevation="0dp"
+        app:contentPadding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textView8"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                android:text="图片预览"
+                android:textColor="#000000"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/iv_image_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="5dp"
+                android:layout_weight="1"
+                android:adjustViewBounds="true"
+                android:scaleType="centerInside"
+                tools:srcCompat="@tools:sample/avatars" />
+
+            <TextView
+                android:id="@+id/tv_image_preview_size"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:layout_weight="0"
+                android:text="512 x 512"
+                android:textAlignment="center"
+                android:textColor="#A0A0A0"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                android:gravity="right|center_vertical"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/bt_image_preview_cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="#00FFFFFF"
+                    android:paddingHorizontal="20dp"
+                    android:text="返回"
+                    android:textColor="#3C3C3C"
+                    android:textSize="18sp" />
+
+                <Button
+                    android:id="@+id/bt_image_preview_del"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="#00FFFFFF"
+                    android:paddingHorizontal="20dp"
+                    android:text="移除"
+                    android:textColor="#3C3C3C"
+                    android:textSize="18sp" />
+
+                <Button
+                    android:id="@+id/bt_image_preview_reselect"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="#00FFFFFF"
+                    android:paddingHorizontal="20dp"
+                    android:text="重选"
+                    android:textColor="#3C3C3C"
+                    android:textSize="18sp" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

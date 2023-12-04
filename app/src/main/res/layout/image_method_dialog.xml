@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="#F5F5F6F7"
+        app:cardCornerRadius="30dp"
+        app:cardElevation="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="#C5C5C5"
+            android:orientation="vertical"
+            android:showDividers="middle">
+
+            <Button
+                android:id="@+id/bt_take_photo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#00FFFFFF"
+                android:paddingHorizontal="40dp"
+                android:paddingVertical="15dp"
+                android:text="使用相机拍照"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/bt_select_from_album"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#00FFFFFF"
+                android:paddingHorizontal="40dp"
+                android:paddingVertical="15dp"
+                android:text="从相册选择"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/bt_image_cancel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#00FFFFFF"
+                android:paddingHorizontal="40dp"
+                android:paddingVertical="15dp"
+                android:text="取消"
+                android:textSize="18sp" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class GlobalDataHolder {
@@ -23,6 +24,7 @@ public class GlobalDataHolder {
     private static String gptApiHost;
     private static String gptApiKey;
     private static String gptModel;
+    private static List<String> customModels = null;
     private static boolean checkAccessOnStart;
     private static boolean defaultEnableTts;
     private static boolean defaultEnableMultiChat;
@@ -30,6 +32,7 @@ public class GlobalDataHolder {
     private static boolean enableInternetAccess;
     private static int webMaxCharCount;
     private static boolean onlyLatestWebResult;
+    private static boolean limitVisionSize;
     private static SharedPreferences sp = null;
 
     public static void init(Context context) {
@@ -46,6 +49,7 @@ public class GlobalDataHolder {
         loadMultiChatSetting();
         loadSelectedTab();
         loadFunctionSetting();
+        loadVisionSetting();
     }
 
     public static List<PromptTabData> getTabDataList() {
@@ -109,16 +113,20 @@ public class GlobalDataHolder {
         gptApiHost = sp.getString("gpt_api_host", "");
         gptApiKey = sp.getString("gpt_api_key", "");
         gptModel = sp.getString("gpt_model", "gpt-3.5-turbo");
+        customModels = new ArrayList<>(Arrays.asList(sp.getString("custom_models", "gpt-4-1106-preview;gpt-4-vision-preview").split(";")));
+        customModels.removeIf(String::isEmpty);
     }
 
-    public static void saveGptApiInfo(String host, String key, String model) {
+    public static void saveGptApiInfo(String host, String key, String model, List<String> customModelList) {
         gptApiHost = host;
         gptApiKey = key;
         gptModel = model;
+        customModels = customModelList;
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("gpt_api_host", gptApiHost);
         editor.putString("gpt_api_key", gptApiKey);
         editor.putString("gpt_model", gptModel);
+        editor.putString("custom_models", String.join(";", customModels));
         editor.apply();
     }
 
@@ -183,6 +191,17 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    public static void loadVisionSetting() {
+        limitVisionSize = sp.getBoolean("limit_vision_size", false);
+    }
+
+    public static void saveVisionSetting(boolean limitSize) {
+        limitVisionSize = limitSize;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("limit_vision_size", limitVisionSize);
+        editor.apply();
+    }
+
     public static boolean getAsrUseBaidu() { return asrUseBaidu; }
 
     public static String getAsrAppId() { return asrAppId; }
@@ -199,6 +218,8 @@ public class GlobalDataHolder {
 
     public static String getGptModel() { return gptModel; }
 
+    public static List<String> getCustomModels() { return customModels; }
+
     public static boolean getCheckAccessOnStart() { return checkAccessOnStart; }
 
     public static boolean getDefaultEnableTts() { return defaultEnableTts; }
@@ -212,4 +233,6 @@ public class GlobalDataHolder {
     public static int getWebMaxCharCount() { return webMaxCharCount; }
 
     public static boolean getOnlyLatestWebResult() { return onlyLatestWebResult; }
+
+    public static boolean getLimitVisionSize() { return limitVisionSize; }
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:overScrollMode="ifContentScrolls"
+    android:singleLine="true"
+    android:textAlignment="textEnd"
+    android:textColor="#5A5A5A"
+    android:textSize="12sp"
+    android:textStyle="bold" />

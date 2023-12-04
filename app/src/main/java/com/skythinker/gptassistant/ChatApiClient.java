@@ -6,10 +6,15 @@ import android.util.Pair;
 import androidx.annotation.Nullable;
 
 import com.unfbx.chatgpt.OpenAiStreamClient;
+import com.unfbx.chatgpt.entity.chat.BaseChatCompletion;
+import com.unfbx.chatgpt.entity.chat.ChatCompletionWithPicture;
+import com.unfbx.chatgpt.entity.chat.Content;
 import com.unfbx.chatgpt.entity.chat.FunctionCall;
 import com.unfbx.chatgpt.entity.chat.Functions;
+import com.unfbx.chatgpt.entity.chat.ImageUrl;
 import com.unfbx.chatgpt.entity.chat.Message;
 import com.unfbx.chatgpt.entity.chat.ChatCompletion;
+import com.unfbx.chatgpt.entity.chat.MessagePicture;
 import com.unfbx.chatgpt.entity.chat.Parameters;
 
 import java.io.IOException;
@@ -39,6 +44,28 @@ public class ChatApiClient {
         FUNCTION
     }
 
+    public static class ChatMessage {
+        public ChatRole role;
+        public String contentText;
+        public String contentImageBase64;
+        public String functionName;
+        public ChatMessage(ChatRole role) {
+            this.role = role;
+        }
+        public ChatMessage setText(String text) {
+            this.contentText = text;
+            return this;
+        }
+        public ChatMessage setImage(String base64) {
+            this.contentImageBase64 = base64;
+            return this;
+        }
+        public ChatMessage setFunction(String name) {
+            this.functionName = name;
+            return this;
+        }
+    }
+
     String url = "";
     String apiKey = "";
     String model = "";
@@ -63,19 +90,19 @@ public class ChatApiClient {
         setApiInfo(url, apiKey);
     }
 
-    public void sendPrompt(String systemPrompt, String userPrompt) {
-        if(systemPrompt == null && userPrompt == null) {
-            listener.onError("模板和问题内容均为空");
-            return;
-        }
+//    public void sendPrompt(String systemPrompt, String userPrompt) {
+//        if(systemPrompt == null && userPrompt == null) {
+//            listener.onError("模板和问题内容均为空");
+//            return;
+//        }
+//
+//        sendPromptList(Arrays.asList(
+//            Pair.create(ChatRole.SYSTEM, systemPrompt),
+//            Pair.create(ChatRole.USER, userPrompt)
+//        ));
+//    }
 
-        sendPromptList(Arrays.asList(
-            Pair.create(ChatRole.SYSTEM, systemPrompt),
-            Pair.create(ChatRole.USER, userPrompt)
-        ));
-    }
-
-    public void sendPromptList(List<Pair<ChatRole, String>> promptList) {
+    public void sendPromptList(List<ChatMessage> promptList) {
         if(url.isEmpty()) {
             listener.onError("请在设置中填写服务器地址");
             return;
@@ -87,44 +114,75 @@ public class ChatApiClient {
             return;
         }
 
-        ArrayList<Message> messages = new ArrayList<>();
-        for(Pair<ChatRole, String> prompt : promptList) {
-            if(prompt.first == ChatRole.SYSTEM) {
-                messages.add(Message.builder().role(Message.Role.SYSTEM).content(prompt.second).build());
-            } else if(prompt.first == ChatRole.USER) {
-                messages.add(Message.builder().role(Message.Role.USER).content(prompt.second).build());
-            } else if(prompt.first == ChatRole.ASSISTANT) {
-                if(prompt.second.startsWith("[Function]")) {
-                    int sepIndex = prompt.second.indexOf("\n");
-                    String funcName = prompt.second.substring("[Function]".length(), sepIndex);
-                    String arguments = prompt.second.substring(sepIndex + 1);
-                    FunctionCall functionCall = FunctionCall.builder()
-                            .name(funcName)
-                            .arguments(arguments)
-                            .build();
-                    messages.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
-                } else {
-                    messages.add(Message.builder().role(Message.Role.ASSISTANT).content(prompt.second).build());
-                }
-            } else if(prompt.first == ChatRole.FUNCTION) {
-                int sepIndex = prompt.second.indexOf("\n");
-                String funcName = prompt.second.substring(0, sepIndex);
-                String reply = prompt.second.substring(sepIndex + 1);
-                messages.add(Message.builder().role(Message.Role.FUNCTION).name(funcName).content(reply).build());
-            }
-        }
+        BaseChatCompletion chatCompletion = null;
 
-        ChatCompletion chatCompletion;
-        if(!functions.isEmpty()) {
-            chatCompletion = ChatCompletion.builder()
-                    .messages(messages)
-                    .model(model)
-                    .functions(functions)
-                    .functionCall("auto")
-                    .build();
+        if(!model.contains("vision")) {
+            ArrayList<Message> messageList = new ArrayList<>();
+            for (ChatMessage message : promptList) {
+                if (message.role == ChatRole.SYSTEM) {
+                    messageList.add(Message.builder().role(Message.Role.SYSTEM).content(message.contentText).build());
+                } else if (message.role == ChatRole.USER) {
+                    messageList.add(Message.builder().role(Message.Role.USER).content(message.contentText).build());
+                } else if (message.role == ChatRole.ASSISTANT) {
+                    if (message.functionName != null) {
+                        FunctionCall functionCall = FunctionCall.builder()
+                                .name(message.functionName)
+                                .arguments(message.contentText)
+                                .build();
+                        messageList.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
+                    } else {
+                        messageList.add(Message.builder().role(Message.Role.ASSISTANT).content(message.contentText).build());
+                    }
+                } else if (message.role == ChatRole.FUNCTION) {
+                    messageList.add(Message.builder().role(Message.Role.FUNCTION).name(message.functionName).content(message.contentText).build());
+                }
+            }
+
+            if (!functions.isEmpty()) {
+                chatCompletion = ChatCompletion.builder()
+                        .messages(messageList)
+                        .model(model)
+                        .functions(functions)
+                        .functionCall("auto")
+                        .build();
+            } else {
+                chatCompletion = ChatCompletion.builder()
+                        .messages(messageList)
+                        .model(model)
+                        .build();
+            }
         } else {
-            chatCompletion = ChatCompletion.builder()
-                    .messages(messages)
+            ArrayList<MessagePicture> messageList = new ArrayList<>();
+            for (ChatMessage message : promptList) {
+                List<Content> contentList = new ArrayList<>();
+                if (message.contentText != null) {
+                    contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(message.contentText).build());
+                }
+                if(message.contentImageBase64 != null) {
+                    ImageUrl imageUrl = ImageUrl.builder().url("data:image/jpeg;base64," + message.contentImageBase64).build();
+                    contentList.add(Content.builder().type(Content.Type.IMAGE_URL.getName()).imageUrl(imageUrl).build());
+                }
+                if (message.role == ChatRole.SYSTEM) {
+                    messageList.add(MessagePicture.builder().role(Message.Role.SYSTEM).content(contentList).build());
+                } else if (message.role == ChatRole.USER) {
+                    messageList.add(MessagePicture.builder().role(Message.Role.USER).content(contentList).build());
+                } else if (message.role == ChatRole.ASSISTANT) {
+                    if (message.functionName != null) {
+                        FunctionCall functionCall = FunctionCall.builder()
+                                .name(message.functionName)
+                                .arguments(message.contentText)
+                                .build();
+                        messageList.add(MessagePicture.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
+                    } else {
+                        messageList.add(MessagePicture.builder().role(Message.Role.ASSISTANT).content(contentList).build());
+                    }
+                } else if (message.role == ChatRole.FUNCTION) {
+                    messageList.add(MessagePicture.builder().role(Message.Role.FUNCTION).name(message.functionName).content(contentList).build());
+                }
+            }
+
+            chatCompletion = ChatCompletionWithPicture.builder()
+                    .messages(messageList)
                     .model(model)
                     .build();
         }

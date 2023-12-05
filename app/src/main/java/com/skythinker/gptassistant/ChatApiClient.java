@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import cn.hutool.json.JSONObject;
+import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.internal.http2.StreamResetException;
@@ -86,6 +87,7 @@ public class ChatApiClient {
             .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .connectionSpecs(Arrays.asList(ConnectionSpec.CLEARTEXT, ConnectionSpec.COMPATIBLE_TLS))
             .build();
         setApiInfo(url, apiKey);
     }
@@ -284,10 +286,11 @@ public class ChatApiClient {
         this.model = model;
     }
 
-    public void addFunction(String name, String desc, String params) {
+    public void addFunction(String name, String desc, String params, String[] required) {
         Parameters parameters = Parameters.builder()
                 .type("object")
                 .properties(new JSONObject(params))
+                .required(Arrays.asList(required))
                 .build();
 
         Functions functions = Functions.builder()

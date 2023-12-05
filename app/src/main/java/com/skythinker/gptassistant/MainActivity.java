@@ -66,9 +66,11 @@ import java.util.Locale;
 
 import cn.hutool.json.JSONException;
 import cn.hutool.json.JSONObject;
+import io.noties.markwon.AbstractMarkwonPlugin;
 import io.noties.markwon.Markwon;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
 import io.noties.markwon.ext.tables.TablePlugin;
+import io.noties.markwon.image.ImagesPlugin;
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin;
 import io.noties.markwon.linkify.LinkifyPlugin;
 import io.noties.markwon.syntax.Prism4jThemeDefault;
@@ -134,8 +136,21 @@ public class MainActivity extends Activity {
                 .usePlugin(JLatexMathPlugin.create(40, builder -> builder.inlinesEnabled(true)))
 //                .usePlugin(TablePlugin.create(this)) // unstable
 //                .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
+//                .usePlugin(ImagesPlugin.create())
                 .usePlugin(MarkwonInlineParserPlugin.create())
                 .usePlugin(LinkifyPlugin.create())
+                .usePlugin(new AbstractMarkwonPlugin() {
+                    @NonNull
+                    @Override
+                    public String processMarkdown(@NonNull String markdown) {
+                        String regexDollar = "(?<!\\$)\\$(?!\\$)([^\\n]*?)(?<!\\$)\\$(?!\\$)"; //匹配单行内的“$...$”
+                        String regexBrackets = "(?s)\\\\\\[(.*?)\\\\\\]"; //跨行匹配“\[...\]”
+                        String regexParentheses = "\\\\\\(([^\\n]*?)\\\\\\)"; //匹配单行内的“\(...\)”
+                        String replacement = "\\$\\$$1\\$\\$";//替换为“$$...$$”
+                        markdown =  markdown.replaceAll(regexDollar, replacement).replaceAll(regexBrackets, replacement).replaceAll(regexParentheses, replacement);
+                        return markdown;
+                    }
+                })
                 .build();
 
         tts = new TextToSpeech(this, status -> {
@@ -590,7 +605,7 @@ public class MainActivity extends Activity {
     private void setFunctions() {
         chatApiClient.clearAllFunctions();
         if(GlobalDataHolder.getEnableInternetAccess()) {
-            chatApiClient.addFunction("get_html_text", "get all innerText and links of a web page", "{url: {type: string, description: html url}}");
+            chatApiClient.addFunction("get_html_text", "get all innerText and links of a web page", "{url: {type: string, description: html url}}", new String[]{"url"});
         }
 //        if(false) { // TODO: add function
 //            chatApiClient.addFunction("start_app", "start an android app", "{package: {type: string, description: app package name}}");
@@ -914,8 +929,17 @@ public class MainActivity extends Activity {
         }
 
         if(multiChat && multiChatList.size() > 0 && llChatList.getChildCount() > 0){
+            TextView tvFirst = (TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1);
             String firstUserInput = multiChatList.get(0).contentText;
-            ((TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1)).setText(firstUserInput);
+            if(multiChatList.get(0).contentImageBase64 != null && tvFirst.getText().toString().endsWith("\n ")) {
+                SpannableString oldText = (SpannableString) tvFirst.getText();
+                ImageSpan imgSpan = oldText.getSpans(oldText.length() - 1, oldText.length(), ImageSpan.class)[0];
+                SpannableString newText = new SpannableString(firstUserInput + "\n ");
+                newText.setSpan(imgSpan, newText.length() - 1, newText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                tvFirst.setText(newText);
+            } else {
+                tvFirst.setText(firstUserInput);
+            }
         }
 
         if(GlobalDataHolder.getOnlyLatestWebResult()) {

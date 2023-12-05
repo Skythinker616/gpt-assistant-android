@@ -115,6 +115,8 @@
 	<img src="readme_img/vision.gif" height="400px">
 </div>
 
+经测试，`gpt-4-vision-preview`模型识别效果较好，可以识别较复杂的图片，可用于拍照识物、翻译文字、拍照答题等
+
 > 注：Vision模型一般无法免费使用（如Chatanywhere），有需要的用户可以考虑付费服务
 
 **六、支持GPT联网**
@@ -252,6 +254,7 @@ A: 排除网络因素，该错误一般由OpenAI接口产生，可能由于其�
 
 - 保存对话功能
 - 支持渲染Markdown表格、图片等
+- 连续语音交流
 - 允许GPT控制手机其他功能
 
 ---
@@ -263,7 +266,7 @@ A: 排除网络因素，该错误一般由OpenAI接口产生，可能由于其�
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
 | 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.7.0 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.7.0 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.7.1 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.7.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |

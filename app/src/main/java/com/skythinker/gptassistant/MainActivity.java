@@ -89,7 +89,6 @@ public class MainActivity extends Activity {
     private TextView tvGptReply;
     private EditText etUserInput;
     private ImageButton btSend, btImage;
-    private Spinner spModels;
     private ScrollView svChatArea;
     private LinearLayout llChatList;
     private Handler handler = new Handler();
@@ -105,13 +104,7 @@ public class MainActivity extends Activity {
 
     private TextToSpeech tts = null;
     private boolean ttsEnabled = true;
-    final private List<String> ttsSentenceSeparator = new ArrayList<String>() {{
-        add("。");add(".");
-        add("？");add("?");
-        add("！");add("!");
-        add("……");
-        add("\n");
-    }};
+    final private List<String> ttsSentenceSeparator = Arrays.asList("。", ".", "？", "?", "！", "!", "……", "\n"); // 用于为TTS断句
     private int ttsSentenceEndIndex = 0;
 
     private boolean multiChat = false;
@@ -129,8 +122,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        GlobalDataHolder.init(this);
+        GlobalDataHolder.init(this); // 初始化全局共享数据
 
+        // 初始化Markdown渲染器
         markwon = Markwon.builder(this)
                 .usePlugin(SyntaxHighlightPlugin.create(new Prism4j(new GrammarLocatorDef()), Prism4jThemeDefault.create(0)))
                 .usePlugin(JLatexMathPlugin.create(40, builder -> builder.inlinesEnabled(true)))
@@ -150,9 +144,10 @@ public class MainActivity extends Activity {
                         markdown =  markdown.replaceAll(regexDollar, replacement).replaceAll(regexBrackets, replacement).replaceAll(regexParentheses, replacement);
                         return markdown;
                     }
-                })
+                }) // 解决仅能渲染“$$...$$”公式的问题
                 .build();
 
+        // 初始化TTS
         tts = new TextToSpeech(this, status -> {
             if(status == TextToSpeech.SUCCESS) {
                 int res = tts.setLanguage(Locale.getDefault());
@@ -166,11 +161,9 @@ public class MainActivity extends Activity {
             }
         });
 
-        setContentView(R.layout.activity_main);
-
-        overridePendingTransition(R.anim.translate_up_in, R.anim.translate_down_out);
-
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        setContentView(R.layout.activity_main); // 设置主界面布局
+        overridePendingTransition(R.anim.translate_up_in, R.anim.translate_down_out); // 设置进入动画
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS); // 设置沉浸式状态栏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
 
@@ -178,26 +171,27 @@ public class MainActivity extends Activity {
         tvGptReply.setTextIsSelectable(true);
         tvGptReply.setMovementMethod(LinkMovementMethod.getInstance());
         etUserInput = findViewById(R.id.et_user_input);
-
         btSend = findViewById(R.id.bt_send);
         btImage = findViewById(R.id.bt_image);
         svChatArea = findViewById(R.id.sv_chat_list);
         llChatList = findViewById(R.id.ll_chat_list);
 
+        // 处理启动Intent
         Intent activityIntent = getIntent();
         if(activityIntent != null){
             String action = activityIntent.getAction();
-            if(Intent.ACTION_PROCESS_TEXT.equals(action)) {
+            if(Intent.ACTION_PROCESS_TEXT.equals(action)) { // 全局上下文菜单
                 String text = activityIntent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
                 if(text != null){
                     etUserInput.setText(text);
                 }
-            } else if(Intent.ACTION_SEND.equals(action)) {
+            } else if(Intent.ACTION_SEND.equals(action)) { // 分享图片
                 String type = activityIntent.getType();
                 if(type != null && type.startsWith("image/")) {
-                    Uri imageUri = activityIntent.getParcelableExtra(Intent.EXTRA_STREAM);
+                    Uri imageUri = activityIntent.getParcelableExtra(Intent.EXTRA_STREAM); // 获取图片Uri
                     if(imageUri != null) {
                         try {
+                            // 获取图片Bitmap并缩放
                             Bitmap bitmap = (Bitmap) BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
                             selectedImageBitmap = bitmap;
                             if(GlobalDataHolder.getLimitVisionSize()) {
@@ -217,12 +211,14 @@ public class MainActivity extends Activity {
             }
         }
 
+        // 处理选中的模板
         if(GlobalDataHolder.getSelectedTab() != -1 && GlobalDataHolder.getSelectedTab() < GlobalDataHolder.getTabDataList().size())
             selectedTab = GlobalDataHolder.getSelectedTab();
         updateTabListView();
 
-        webScraper = new WebScraper(this, findViewById(R.id.ll_main_base));
+        webScraper = new WebScraper(this, findViewById(R.id.ll_main_base)); // 初始化网页抓取器
 
+        // 初始化GPT客户端
         chatApiClient = new ChatApiClient(GlobalDataHolder.getGptApiHost(),
                 GlobalDataHolder.getGptApiKey(),
                 GlobalDataHolder.getGptModel(),
@@ -230,36 +226,36 @@ public class MainActivity extends Activity {
                     private long lastRenderTime = 0;
 
                     @Override
-                    public void onMsgReceive(String message) {
+                    public void onMsgReceive(String message) { // 收到GPT回复（增量）
                         chatApiBuffer += message;
                         handler.post(() -> {
-                            if(System.currentTimeMillis() - lastRenderTime > 100) {
+                            if(System.currentTimeMillis() - lastRenderTime > 100) { // 限制最高渲染频率10Hz
                                 boolean isBottom = svChatArea.getChildAt(0).getBottom()
-                                        <= svChatArea.getHeight() + svChatArea.getScrollY();
+                                        <= svChatArea.getHeight() + svChatArea.getScrollY(); // 判断消息布局是否在底部
                                 try {
-                                    markwon.setMarkdown(tvGptReply, chatApiBuffer);
+                                    markwon.setMarkdown(tvGptReply, chatApiBuffer); // 渲染Markdown
                                 } catch (Exception e){
                                     e.printStackTrace();
                                 }
                                 if(isBottom){
-                                    scrollChatAreaToBottom();
+                                    scrollChatAreaToBottom(); // 渲染前在底部则渲染后滚动到底部
                                 }
                                 lastRenderTime = System.currentTimeMillis();
                             }
 
-                            if(ttsEnabled) {
-                                String wholeText = tvGptReply.getText().toString();
+                            if(ttsEnabled) { // 处理TTS
+                                String wholeText = tvGptReply.getText().toString(); // 获取可朗读的文本
                                 if(ttsSentenceEndIndex < wholeText.length()) {
                                     int nextSentenceEndIndex = wholeText.length();
                                     boolean found = false;
-                                    for(String separator : ttsSentenceSeparator) {
+                                    for(String separator : ttsSentenceSeparator) { // 查找最后一个断句分隔符
                                         int index = wholeText.indexOf(separator, ttsSentenceEndIndex);
                                         if(index != -1 && index < nextSentenceEndIndex) {
                                             nextSentenceEndIndex = index + separator.length();
                                             found = true;
                                         }
                                     }
-                                    if(found) {
+                                    if(found) { // 找到断句分隔符则添加到朗读队列
                                         String sentence = wholeText.substring(ttsSentenceEndIndex, nextSentenceEndIndex);
                                         ttsSentenceEndIndex = nextSentenceEndIndex;
                                         tts.speak(sentence, TextToSpeech.QUEUE_ADD, null);
@@ -270,16 +266,16 @@ public class MainActivity extends Activity {
                     }
 
                     @Override
-                    public void onFinished(boolean completed) {
+                    public void onFinished(boolean completed) { // GPT回复完成
                         handler.post(() -> {
                             String referenceStr = "\n\n参考网页：";
                             int referenceCount = 0;
-                            if(completed) {
+                            if(completed) { // 如果是完整回复则添加参考网页
                                 int questionIndex = multiChatList.size() - 1;
-                                while(questionIndex >= 0 && multiChatList.get(questionIndex).role != ChatRole.USER) {
+                                while(questionIndex >= 0 && multiChatList.get(questionIndex).role != ChatRole.USER) { // 找到上一个提问消息
                                     questionIndex--;
                                 }
-                                for(int i = questionIndex + 1; i < multiChatList.size(); i++) {
+                                for(int i = questionIndex + 1; i < multiChatList.size(); i++) { // 依次检查函数调用，并获取网页URL
                                     if(multiChatList.get(i).role == ChatRole.FUNCTION
                                         && multiChatList.get(i-1).role == ChatRole.ASSISTANT
                                         && multiChatList.get(i-1).functionName != null) {
@@ -293,15 +289,15 @@ public class MainActivity extends Activity {
                                 }
                             }
                             try {
-                                multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer));
-                                ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1));
+                                multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer)); // 保存回复内容到聊天数据列表
+                                ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1)); // 绑定该聊天数据到布局
                                 btSend.setImageResource(R.drawable.send_btn);
-                                markwon.setMarkdown(tvGptReply, chatApiBuffer);
+                                markwon.setMarkdown(tvGptReply, chatApiBuffer); // 渲染Markdown
                                 String ttsText = tvGptReply.getText().toString();
-                                if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) {
+                                if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) { // 如果TTS开启则朗读剩余文本
                                     tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
                                 }
-                                if(referenceCount > 0) {
+                                if(referenceCount > 0) { // 添加参考网页
                                     chatApiBuffer += referenceStr;
                                     markwon.setMarkdown(tvGptReply, chatApiBuffer);
                                 }
@@ -325,19 +321,19 @@ public class MainActivity extends Activity {
                     }
 
                     @Override
-                    public void onFunctionCall(String name, String arg) {
+                    public void onFunctionCall(String name, String arg) { // 收到函数调用请求
                         Log.d("FunctionCall", String.format("%s: %s", name, arg));
-                        multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setFunction(name).setText(arg));
-                        if (name.equals("get_html_text")) {
+                        multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setFunction(name).setText(arg)); // 保存请求到聊天数据列表
+                        if (name.equals("get_html_text")) { // 调用联网函数
                             try {
                                 JSONObject argJson = new JSONObject(arg);
-                                String url = argJson.getStr("url");
+                                String url = argJson.getStr("url"); // 获取URL
                                 runOnUiThread(() -> {
                                     markwon.setMarkdown(tvGptReply, String.format("正在访问: [%s](%s)", URLDecoder.decode(url), url));
-                                    webScraper.load(url, new WebScraper.Callback() {
+                                    webScraper.load(url, new WebScraper.Callback() { // 抓取网页内容
                                         @Override
                                         public void onLoadResult(String result) {
-                                            postSendFunctionReply(name, result);
+                                            postSendFunctionReply(name, result); // 返回网页内容给GPT
 //                                            Log.d("FunctionCall", String.format("Response: %s", result));
                                         }
 
@@ -352,32 +348,6 @@ public class MainActivity extends Activity {
                                 e.printStackTrace();
                                 postSendFunctionReply(name, "Error when getting response.");
                             }
-//                        } else if (name.equals("start_app")) { // TODO: ADD FUNCTIONS
-//                            try {
-//                                JSONObject argJson = new JSONObject(arg);
-//                                String packageName = argJson.getStr("package");
-//                                Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
-//                                if (intent != null) {
-//                                    startActivity(intent);
-//                                    postSendFunctionReply(name, "App started.");
-//                                } else {
-//                                    postSendFunctionReply(name, "App not found.");
-//                                }
-//                            } catch (JSONException e) {
-//                                e.printStackTrace();
-//                                postSendFunctionReply(name, "Error when starting app.");
-//                            }
-//                        } else if (name.equals("view_uri")) {
-//                            try {
-//                                JSONObject argJson = new JSONObject(arg);
-//                                String uri = argJson.getStr("uri");
-//                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
-//                                startActivity(intent);
-//                                postSendFunctionReply(name, "Activity started.");
-//                            } catch (JSONException e) {
-//                                e.printStackTrace();
-//                                postSendFunctionReply(name, "Error when starting activity.");
-//                            }
                         } else {
                             postSendFunctionReply(name, "Function not found.");
                             Log.d("FunctionCall", String.format("Function not found: %s", name));
@@ -385,8 +355,9 @@ public class MainActivity extends Activity {
                     }
                 });
 
-        setFunctions();
+        setFunctions(); // 设置GPT函数到API客户端
 
+        // 发送按钮点击事件
         btSend.setOnClickListener(view -> {
             if (chatApiClient.isStreaming()) {
                 chatApiClient.stop();
@@ -401,8 +372,9 @@ public class MainActivity extends Activity {
             }
         });
 
+        // 图片选择按钮点击事件
         btImage.setOnClickListener(view -> {
-            if (selectedImageBitmap != null) {
+            if (selectedImageBitmap != null) { // 当前已选中图片，弹出预览窗口
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 LayoutInflater inflater = LayoutInflater.from(this);
                 View dialogView = inflater.inflate(R.layout.image_preview_dialog, null);
@@ -412,23 +384,23 @@ public class MainActivity extends Activity {
                 ((ImageView) dialogView.findViewById(R.id.iv_image_preview)).setImageBitmap(selectedImageBitmap);
                 ((TextView) dialogView.findViewById(R.id.tv_image_preview_size)).setText(String.format("%s x %s", selectedImageBitmap.getWidth(), selectedImageBitmap.getHeight()));
                 dialogView.findViewById(R.id.bt_image_preview_cancel).setOnClickListener(view1 -> dialog.dismiss());
-                dialogView.findViewById(R.id.bt_image_preview_del).setOnClickListener(view1 -> {
+                dialogView.findViewById(R.id.bt_image_preview_del).setOnClickListener(view1 -> { // 移除当前选择的图片
                     dialog.dismiss();
                     selectedImageBitmap = null;
                     btImage.setImageResource(R.drawable.image);
                 });
-                dialogView.findViewById(R.id.bt_image_preview_reselect).setOnClickListener(view1 -> {
+                dialogView.findViewById(R.id.bt_image_preview_reselect).setOnClickListener(view1 -> { // 重新选择图片
                     dialogView.findViewById(R.id.bt_image_preview_del).performClick();
                     btImage.performClick();
                 });
-            } else {
+            } else { // 当前没有图片被选中，弹出选择窗口
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 LayoutInflater inflater = LayoutInflater.from(this);
                 View dialogView = inflater.inflate(R.layout.image_method_dialog, null);
                 AlertDialog dialog = builder.create();
                 dialog.show();
                 dialog.getWindow().setContentView(dialogView);
-                dialogView.findViewById(R.id.bt_take_photo).setOnClickListener(view1 -> {
+                dialogView.findViewById(R.id.bt_take_photo).setOnClickListener(view1 -> { // 拍照
                     dialog.dismiss();
                     photoUri = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", new File(getCacheDir(), "photo.jpg"));
                     Intent intent=new Intent();
@@ -436,7 +408,7 @@ public class MainActivity extends Activity {
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
                     startActivityForResult(intent, 1);
                 });
-                dialogView.findViewById(R.id.bt_select_from_album).setOnClickListener(view1 -> {
+                dialogView.findViewById(R.id.bt_select_from_album).setOnClickListener(view1 -> { // 从相册选择
                     dialog.dismiss();
                     Intent intent = new Intent(Intent.ACTION_PICK);
                     intent.setType("image/*");
@@ -446,11 +418,13 @@ public class MainActivity extends Activity {
             }
         });
 
+        // 长按输入框清空内容
         etUserInput.setOnLongClickListener(view -> {
             etUserInput.setText("");
             return true;
         });
 
+        // 连续对话按钮点击事件（切换连续对话开关状态）
         (findViewById(R.id.cv_multi_chat)).setOnClickListener(view -> {
             multiChat = !multiChat;
             if(multiChat){
@@ -460,6 +434,7 @@ public class MainActivity extends Activity {
             }
         });
 
+        // 清空对话按钮点击事件
         (findViewById(R.id.cv_clear_chat)).setOnClickListener(view -> {
             if(chatApiClient.isStreaming()){
                 chatApiClient.stop();
@@ -467,7 +442,7 @@ public class MainActivity extends Activity {
             multiChatList.clear();
             llChatList.removeAllViews();
             tts.stop();
-            TextView tv = new TextView(this);
+            TextView tv = new TextView(this); // 清空列表后添加一个占位TextView
             tv.setTextColor(Color.parseColor("#000000"));
             tv.setTextSize(16);
             tv.setPadding(dpToPx(10), 0, dpToPx(10), 0);
@@ -476,6 +451,7 @@ public class MainActivity extends Activity {
             llChatList.addView(tv);
         });
 
+        // TTS开关按钮点击事件（切换TTS开关状态）
         (findViewById(R.id.cv_tts_off)).setOnClickListener(view -> {
             ttsEnabled = !ttsEnabled;
             if(ttsEnabled) {
@@ -486,35 +462,41 @@ public class MainActivity extends Activity {
             }
         });
 
+        // 设置按钮点击事件，跳转到设置页面
         (findViewById(R.id.cv_settings)).setOnClickListener(view -> {
             startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
         });
 
+        // 关闭按钮点击事件，退出程序
         (findViewById(R.id.cv_close)).setOnClickListener(view -> {
             finish();
         });
 
+        // 上方空白区域点击事件，退出程序
         (findViewById(R.id.view_bg_empty)).setOnClickListener(view -> {
             finish();
         });
 
+        // 用户设置为启动时开启连续对话
         if(GlobalDataHolder.getDefaultEnableMultiChat()){
             multiChat = true;
             ((CardView) findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn_enabled));
         }
 
+        // 用户设置为启动时开启TTS
         if(!GlobalDataHolder.getDefaultEnableTts()){
             ttsEnabled = false;
             ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
         }
 
-        updateModelSpinner();
-        updateImageButtonVisible();
+        updateModelSpinner(); // 设置模型选择下拉框
+        updateImageButtonVisible(); // 设置图片按钮是否可见
 
-        isAlive = true;
+        isAlive = true; // 标记当前Activity已启动
 
-        requestPermission();
+        requestPermission(); // 申请动态权限
 
+        // 初始化语音识别回调
         asrCallback = new AsrClientBase.IAsrCallback() {
             @Override
             public void onError(String msg) {
@@ -530,29 +512,30 @@ public class MainActivity extends Activity {
                 etUserInput.setText(result);
             }
         };
-        setAsrClient(GlobalDataHolder.getAsrUseBaidu() ? "baidu" : "hms");
+        setAsrClient(GlobalDataHolder.getAsrUseBaidu() ? "baidu" : "hms"); // 设置使用百度/华为语音识别
 
+        // 设置本地广播接收器
         localReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_START")) {
+                if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_START")) { // 开始语音识别
                     tts.stop();
                     asrClient.startRecongnize();
                     asrStartTime = System.currentTimeMillis();
                     etUserInput.setText("");
                     etUserInput.setHint("正在聆听...");
-                } else if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_STOP")) {
+                } else if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_STOP")) { // 停止语音识别
                     etUserInput.setHint("在此输入问题，长按可清除");
                     if(System.currentTimeMillis() - asrStartTime < 1000) {
                         asrClient.cancelRecongnize();
                     } else {
                         asrClient.stopRecongnize();
                     }
-                } else if(action.equals("com.skythinker.gptassistant.KEY_SEND")) {
+                } else if(action.equals("com.skythinker.gptassistant.KEY_SEND")) { // 发送问题
                     if(!chatApiClient.isStreaming())
                         sendQuestion(null);
-                } else if(action.equals("com.skythinker.gptassistant.SHOW_KEYBOARD")) {
+                } else if(action.equals("com.skythinker.gptassistant.SHOW_KEYBOARD")) { // 弹出软键盘
                     etUserInput.requestFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                     imm.showSoftInput(findViewById(R.id.et_user_input), InputMethodManager.RESULT_UNCHANGED_SHOWN);
@@ -566,8 +549,9 @@ public class MainActivity extends Activity {
         intentFilter.addAction("com.skythinker.gptassistant.SHOW_KEYBOARD");
         LocalBroadcastManager.getInstance(this).registerReceiver(localReceiver, intentFilter);
 
+        // 检查无障碍权限
         if(GlobalDataHolder.getCheckAccessOnStart()) {
-            if(!MyAccessbilityService.isConnected()) {
+            if(!MyAccessbilityService.isConnected()) { // 没有权限则弹窗提醒用户开启
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 LayoutInflater inflater = LayoutInflater.from(this);
                 View view = inflater.inflate(R.layout.ask_accessibility_dialog, null);
@@ -589,6 +573,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 设置当前使用的语音识别接口
     private void setAsrClient(String type) {
         if(asrClient != null) {
             asrClient.destroy();
@@ -602,45 +587,44 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 设置GPT API客户端的可用函数
     private void setFunctions() {
         chatApiClient.clearAllFunctions();
         if(GlobalDataHolder.getEnableInternetAccess()) {
             chatApiClient.addFunction("get_html_text", "get all innerText and links of a web page", "{url: {type: string, description: html url}}", new String[]{"url"});
         }
-//        if(false) { // TODO: add function
-//            chatApiClient.addFunction("start_app", "start an android app", "{package: {type: string, description: app package name}}");
-//            chatApiClient.addFunction("view_uri", "start an activity using Intent.ACTION_VIEW with giving uri", "{uri: {type: string, description: target uri}}");
-//        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 0) {
-            int tabNum = GlobalDataHolder.getTabDataList().size();
+        if(requestCode == 0) { // 从设置界面返回
+            int tabNum = GlobalDataHolder.getTabDataList().size(); // 更新模板列表
             if(selectedTab >= tabNum)
                 selectedTab = tabNum - 1;
-
             if(GlobalDataHolder.getSelectedTab() != -1)
                 GlobalDataHolder.saveSelectedTab(selectedTab);
-
             updateTabListView();
-            updateModelSpinner();
-            updateImageButtonVisible();
 
+            updateModelSpinner(); // 更新模型下拉选框
+            updateImageButtonVisible(); // 更新图片按钮可见性
+
+            // 更新GPT客户端相关设置
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             chatApiClient.setModel(GlobalDataHolder.getGptModel());
 
+            // 更新所使用的语音识别接口
             if(GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof HmsAsrClient) {
                 setAsrClient("baidu");
             } else if(!GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof BaiduAsrClient) {
                 setAsrClient("hms");
             }
 
-            setFunctions();
-        } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) {
-            Uri uri = requestCode == 1 ? photoUri : data.getData();
+            setFunctions(); // 更新GPT客户端的可用函数
+        } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) { // 从相册或相机返回
+            Uri uri = requestCode == 1 ? photoUri : data.getData(); // 获取图片Uri
             try {
+                // 获取Bitmap并缩放
                 Bitmap bitmap = (Bitmap) BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
                 selectedImageBitmap = bitmap;
                 if(GlobalDataHolder.getLimitVisionSize()) {
@@ -649,13 +633,14 @@ public class MainActivity extends Activity {
                     else
                         selectedImageBitmap = resizeBitmap(bitmap, 2048, 512);
                 }
-                btImage.setImageResource(R.drawable.image_enabled);
+                btImage.setImageResource(R.drawable.image_enabled); // 高亮显示图片按钮
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
         }
     }
 
+    // 滚动聊天列表到底部
     private void scrollChatAreaToBottom() {
         svChatArea.post(() -> {
             int delta = svChatArea.getChildAt(0).getBottom()
@@ -665,6 +650,7 @@ public class MainActivity extends Activity {
         });
     }
 
+    // 设置图片选择按钮可见性
     private void updateImageButtonVisible() {
         if(GlobalDataHolder.getGptModel().contains("vision"))
             btImage.setVisibility(View.VISIBLE);
@@ -672,13 +658,14 @@ public class MainActivity extends Activity {
             btImage.setVisibility(View.GONE);
     }
 
+    // 更新模型下拉选框
     private void updateModelSpinner() {
         Spinner spModels = findViewById(R.id.sp_main_model);
-        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models)));
-        models.addAll(GlobalDataHolder.getCustomModels());
-        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.main_model_spinner_item, models) {
+        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models))); // 获取内置模型列表
+        models.addAll(GlobalDataHolder.getCustomModels()); // 添加自定义模型到列表
+        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.main_model_spinner_item, models) { // 设置Spinner样式和列表数据
             @Override
-            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // 设置选中/未选中的选项样式
                 TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
                 if(spModels.getSelectedItemPosition() == position) {
                     tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
@@ -690,9 +677,9 @@ public class MainActivity extends Activity {
                 return tv;
             }
         };
-        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item);
+        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item); // 设置下拉选项样式
         spModels.setAdapter(modelsAdapter);
-        spModels.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spModels.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() { // 设置选项点击事件
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString(), GlobalDataHolder.getCustomModels());
                 chatApiClient.setModel(GlobalDataHolder.getGptModel());
@@ -701,22 +688,23 @@ public class MainActivity extends Activity {
             }
             public void onNothingSelected(AdapterView<?> adapterView) { }
         });
-        for(int i = 0; i < modelsAdapter.getCount(); i++) {
+        for(int i = 0; i < modelsAdapter.getCount(); i++) { // 查找当前选中的选项
             if(modelsAdapter.getItem(i).equals(GlobalDataHolder.getGptModel())) {
                 spModels.setSelection(i);
                 break;
             }
-            if(i == modelsAdapter.getCount() - 1) {
+            if(i == modelsAdapter.getCount() - 1) { // 没有找到选中的选项，默认选中第一个
                 spModels.setSelection(0);
             }
         }
     }
 
+    // 更新模板列表布局
     private void updateTabListView() {
         LinearLayout tabList = findViewById(R.id.tabs_layout);
         tabList.removeAllViews();
-        List<PromptTabData> tabDataList = GlobalDataHolder.getTabDataList();
-        for (int i = 0; i < tabDataList.size(); i++) {
+        List<PromptTabData> tabDataList = GlobalDataHolder.getTabDataList(); // 获取模板列表数据
+        for (int i = 0; i < tabDataList.size(); i++) { // 依次创建按钮并添加到父布局
             PromptTabData tabData = tabDataList.get(i);
             Button tabBtn = new Button(this);
             tabBtn.setText(tabData.getTitle());
@@ -732,7 +720,7 @@ public class MainActivity extends Activity {
             params.setMargins(0, 0, 20, 0);
             tabBtn.setLayoutParams(params);
             int finalI = i;
-            tabBtn.setOnClickListener(view -> {
+            tabBtn.setOnClickListener(view -> { // 按钮点击时选中对应的模板
                 selectedTab = finalI;
                 if(GlobalDataHolder.getSelectedTab() != -1) {
                     GlobalDataHolder.saveSelectedTab(selectedTab);
@@ -743,31 +731,32 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 添加一条聊天记录到聊天列表布局
     private LinearLayout addChatView(ChatRole role, String content, String imageBase64) {
-        ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30));
+        ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30)); // 头像布局参数
         iconParams.setMargins(dpToPx(4), dpToPx(12), dpToPx(4), dpToPx(12));
 
-        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT); // 内容布局参数
         contentParams.setMargins(dpToPx(4), dpToPx(15), dpToPx(4), dpToPx(15));
 
-        LinearLayout.LayoutParams popupIconParams = new LinearLayout.LayoutParams(dpToPx(30), dpToPx(30));
+        LinearLayout.LayoutParams popupIconParams = new LinearLayout.LayoutParams(dpToPx(30), dpToPx(30)); // 弹出的操作按钮布局参数
         popupIconParams.setMargins(dpToPx(5), dpToPx(5), dpToPx(5), dpToPx(5));
 
-        LinearLayout llOuter = new LinearLayout(this);
+        LinearLayout llOuter = new LinearLayout(this); // 包围整条聊天记录的最外层布局
         llOuter.setOrientation(LinearLayout.HORIZONTAL);
-        if(role == ChatRole.ASSISTANT)
+        if(role == ChatRole.ASSISTANT) // 不同角色使用不同背景颜色
             llOuter.setBackgroundColor(Color.parseColor("#0A000000"));
 
-        ImageView ivIcon = new ImageView(this);
+        ImageView ivIcon = new ImageView(this); // 设置头像
         if(role == ChatRole.USER)
             ivIcon.setImageResource(R.drawable.chat_user_icon);
         else
             ivIcon.setImageResource(R.drawable.chat_gpt_icon);
         ivIcon.setLayoutParams(iconParams);
 
-        TextView tvContent = new TextView(this);
+        TextView tvContent = new TextView(this); // 设置内容
         SpannableString spannableString = null;
-        if(imageBase64 != null) {
+        if(imageBase64 != null) { // 如有图片则在末尾添加ImageSpan
             spannableString = new SpannableString(content + "\n ");
             Bitmap bitmap = base64ToBitmap(imageBase64);
             int maxSize = dpToPx(100);
@@ -784,59 +773,59 @@ public class MainActivity extends Activity {
         tvContent.setTextIsSelectable(true);
         tvContent.setMovementMethod(LinkMovementMethod.getInstance());
 
-        LinearLayout llPopup = new LinearLayout(this);
+        LinearLayout llPopup = new LinearLayout(this); // 弹出按钮列表布局
         llPopup.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         PaintDrawable popupBackground = new PaintDrawable(Color.TRANSPARENT);
         llPopup.setBackground(popupBackground);
         llPopup.setOrientation(LinearLayout.HORIZONTAL);
 
-        PopupWindow popupWindow = new PopupWindow(llPopup, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        PopupWindow popupWindow = new PopupWindow(llPopup, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true); // 弹出窗口
         popupWindow.setOutsideTouchable(true);
-        ivIcon.setTag(popupWindow);
+        ivIcon.setTag(popupWindow); // 将弹出窗口绑定到头像上
 
-        CardView cvDelete = new CardView(this);
+        CardView cvDelete = new CardView(this); // 删除单条对话按钮
         cvDelete.setForeground(getDrawable(R.drawable.clear_btn));
         cvDelete.setOnClickListener(view -> {
             popupWindow.dismiss();
-            ChatMessage chat = (ChatMessage) llOuter.getTag();
+            ChatMessage chat = (ChatMessage) llOuter.getTag(); // 获取布局上绑定的聊天记录数据
             if(chat != null) {
                 int index = multiChatList.indexOf(chat);
                 multiChatList.remove(chat);
                 while(--index > 0 && (multiChatList.get(index).role == ChatRole.FUNCTION
-                        || multiChatList.get(index).functionName != null && multiChatList.get(index).functionName.equals("get_html_text")))
+                        || multiChatList.get(index).functionName != null && multiChatList.get(index).functionName.equals("get_html_text"))) // 将上方联网数据也删除
                     multiChatList.remove(index);
             }
-            if(tvContent == tvGptReply) {
+            if(tvContent == tvGptReply) { // 删除的是GPT正在回复的消息框，停止回复和TTS
                 if(chatApiClient.isStreaming())
                     chatApiClient.stop();
                 tts.stop();
             }
             llChatList.removeView(llOuter);
-            if(llChatList.getChildCount() == 0)
+            if(llChatList.getChildCount() == 0) // 如果删除后聊天列表为空，则通过清空按钮显示占位TextView
                 ((CardView) findViewById(R.id.cv_clear_chat)).performClick();
         });
         llPopup.addView(cvDelete);
 
-        CardView cvDelBelow = new CardView(this);
+        CardView cvDelBelow = new CardView(this); // 删除下方所有对话按钮
         cvDelBelow.setForeground(getDrawable(R.drawable.del_below_btn));
         cvDelBelow.setOnClickListener(view -> {
             popupWindow.dismiss();
             int index = llChatList.indexOfChild(llOuter);
-            while(llChatList.getChildCount() > index && llChatList.getChildAt(0) instanceof LinearLayout) {
+            while(llChatList.getChildCount() > index && llChatList.getChildAt(0) instanceof LinearLayout) { // 模拟点击各条记录的删除按钮
                 PopupWindow pw = (PopupWindow) ((LinearLayout) llChatList.getChildAt(llChatList.getChildCount() - 1)).getChildAt(0).getTag();
                 ((LinearLayout) pw.getContentView()).getChildAt(0).performClick();
             }
         });
         llPopup.addView(cvDelBelow);
 
-        if(role == ChatRole.USER) {
-            CardView cvEdit = new CardView(this);
+        if(role == ChatRole.USER) { // USER角色才有的按钮
+            CardView cvEdit = new CardView(this); // 编辑按钮
             cvEdit.setForeground(getDrawable(R.drawable.edit_btn));
             cvEdit.setOnClickListener(view -> {
                 popupWindow.dismiss();
-                ChatMessage chat = (ChatMessage) llOuter.getTag();
+                ChatMessage chat = (ChatMessage) llOuter.getTag(); // 获取布局上绑定的聊天记录数据
                 String text = chat.contentText;
-                if(chat.contentImageBase64 != null) {
+                if(chat.contentImageBase64 != null) { // 若含有图片则设置为选中的图片
                     if(text.endsWith("\n "))
                         text = text.substring(0, text.length() - 2);
                     selectedImageBitmap = base64ToBitmap(chat.contentImageBase64);
@@ -845,33 +834,33 @@ public class MainActivity extends Activity {
                     selectedImageBitmap = null;
                     btImage.setImageResource(R.drawable.image);
                 }
-                etUserInput.setText(text);
-                cvDelBelow.performClick();
+                etUserInput.setText(text); // 添加文本内容到输入框
+                cvDelBelow.performClick(); // 删除下方所有对话
             });
             llPopup.addView(cvEdit);
 
-            CardView cvRetry = new CardView(this);
+            CardView cvRetry = new CardView(this); // 重试按钮
             cvRetry.setForeground(getDrawable(R.drawable.retry_btn));
             cvRetry.setOnClickListener(view -> {
                 popupWindow.dismiss();
-                ChatMessage chat = (ChatMessage) llOuter.getTag();
+                ChatMessage chat = (ChatMessage) llOuter.getTag(); // 获取布局上绑定的聊天记录数据
                 String text = chat.contentText;
-                if(chat.contentImageBase64 != null) {
+                if(chat.contentImageBase64 != null) { // 若含有图片则设置为选中的图片
                     if(text.endsWith("\n "))
                         text = text.substring(0, text.length() - 2);
                     selectedImageBitmap = base64ToBitmap(chat.contentImageBase64);
                 } else {
                     selectedImageBitmap = null;
                 }
-                cvDelBelow.performClick();
-                sendQuestion(text);
+                cvDelBelow.performClick(); // 删除下方所有对话
+                sendQuestion(text); // 重新发送问题
             });
             llPopup.addView(cvRetry);
         }
 
-        CardView cvCopy = new CardView(this);
+        CardView cvCopy = new CardView(this); // 复制按钮
         cvCopy.setForeground(getDrawable(R.drawable.copy_btn));
-        cvCopy.setOnClickListener(view -> {
+        cvCopy.setOnClickListener(view -> { // 复制文本内容到剪贴板
             popupWindow.dismiss();
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData clip = ClipData.newPlainText("chat", tvContent.getText().toString());
@@ -880,14 +869,14 @@ public class MainActivity extends Activity {
         });
         llPopup.addView(cvCopy);
 
-        for(int i = 0; i < llPopup.getChildCount(); i++) {
+        for(int i = 0; i < llPopup.getChildCount(); i++) { // 设置弹出按钮的样式
             CardView cvBtn = (CardView) llPopup.getChildAt(i);
             cvBtn.setLayoutParams(popupIconParams);
             cvBtn.setCardBackgroundColor(Color.WHITE);
             cvBtn.setRadius(dpToPx(5));
         }
 
-        ivIcon.setOnClickListener(view -> {
+        ivIcon.setOnClickListener(view -> { // 点击头像时弹出操作按钮
             popupWindow.showAsDropDown(view, dpToPx(30), -dpToPx(35));
         });
 
@@ -899,14 +888,16 @@ public class MainActivity extends Activity {
         return llOuter;
     }
 
+    // 发送一个提问，input为null时则从输入框获取
     private void sendQuestion(String input){
-        if(!multiChat){
+        if(!multiChat){ // 若为单次对话模式则清空聊天列表
             llChatList.removeAllViews();
             multiChatList.clear();
         }
 
+        // 处理提问文本内容
         String userInput = (input == null) ? etUserInput.getText().toString() : input;
-        if(multiChatList.size() == 0 && input == null){
+        if(multiChatList.size() == 0 && input == null){ // 由用户输入触发的第一次对话需要添加模板内容
             String template = GlobalDataHolder.getTabDataList().get(selectedTab).getPrompt();
             if(!template.contains("%input%"))
                 template += "%input%";
@@ -916,7 +907,7 @@ public class MainActivity extends Activity {
             multiChatList.add(new ChatMessage(ChatRole.USER).setText(userInput));
         }
 
-        if(selectedImageBitmap != null) {
+        if(selectedImageBitmap != null) { // 若有选中的图片则添加到聊天记录数据中
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             selectedImageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
             byte[] bytes = baos.toByteArray();
@@ -924,14 +915,14 @@ public class MainActivity extends Activity {
             multiChatList.get(multiChatList.size() - 1).setImage(base64);
         }
 
-        if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){
+        if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){ // 若有占位TextView则删除
             llChatList.removeViewAt(0);
         }
 
-        if(multiChat && multiChatList.size() > 0 && llChatList.getChildCount() > 0){
+        if(multiChat && multiChatList.size() > 0 && llChatList.getChildCount() > 0){ // 连续对话模式下，将第一条提问改写为添加模板后的内容
             TextView tvFirst = (TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1);
             String firstUserInput = multiChatList.get(0).contentText;
-            if(multiChatList.get(0).contentImageBase64 != null && tvFirst.getText().toString().endsWith("\n ")) {
+            if(multiChatList.get(0).contentImageBase64 != null && tvFirst.getText().toString().endsWith("\n ")) { // 若有附加图片则也要一并添加
                 SpannableString oldText = (SpannableString) tvFirst.getText();
                 ImageSpan imgSpan = oldText.getSpans(oldText.length() - 1, oldText.length(), ImageSpan.class)[0];
                 SpannableString newText = new SpannableString(firstUserInput + "\n ");
@@ -942,13 +933,13 @@ public class MainActivity extends Activity {
             }
         }
 
-        if(GlobalDataHolder.getOnlyLatestWebResult()) {
+        if(GlobalDataHolder.getOnlyLatestWebResult()) { // 若设置为仅保留最新网页数据，删除之前的所有网页数据
             for (int i = 0; i < multiChatList.size(); i++) {
                 ChatMessage chatItem = multiChatList.get(i);
                 if (chatItem.role == ChatRole.FUNCTION) {
                     multiChatList.remove(i);
                     i--;
-                    if(i > 0 && multiChatList.get(i).role == ChatRole.ASSISTANT) {
+                    if(i > 0 && multiChatList.get(i).role == ChatRole.ASSISTANT) { // 也要删除调用Function的Assistant记录
                         multiChatList.remove(i);
                         i--;
                     }
@@ -956,10 +947,11 @@ public class MainActivity extends Activity {
             }
         }
 
+        // 添加对话布局
         LinearLayout llInput = addChatView(ChatRole.USER, multiChat ? multiChatList.get(multiChatList.size() - 1).contentText : userInput, multiChatList.get(multiChatList.size() - 1).contentImageBase64);
         LinearLayout llReply = addChatView(ChatRole.ASSISTANT, "正在等待回复...", null);
 
-        llInput.setTag(multiChatList.get(multiChatList.size() - 1));
+        llInput.setTag(multiChatList.get(multiChatList.size() - 1)); // 将对话数据绑定到布局上
 
         tvGptReply = (TextView) llReply.getChildAt(1);
 
@@ -973,6 +965,7 @@ public class MainActivity extends Activity {
         btSend.setImageResource(R.drawable.cancel_btn);
     }
 
+    // 向GPT返回Function结果
     private void postSendFunctionReply(String funcName, String reply) {
         handler.post(() -> {
             Log.d("FunctionCall", "postSendFunctionReply: " + funcName);
@@ -981,10 +974,12 @@ public class MainActivity extends Activity {
         });
     }
 
+    // 转换dp为px
     private int dpToPx(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics());
     }
 
+    // 等比缩放Bitmap到给定的尺寸范围内
     private Bitmap resizeBitmap(Bitmap bitmap, int maxWidth, int maxHeight) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
@@ -994,6 +989,7 @@ public class MainActivity extends Activity {
         return Bitmap.createScaledBitmap(bitmap, (int)(width * scale), (int)(height * scale), true);
     }
 
+    // 将Base64编码转换为Bitmap
     private Bitmap base64ToBitmap(String base64) {
         byte[] bytes = Base64.decode(base64, Base64.NO_WRAP);
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
@@ -1007,6 +1003,7 @@ public class MainActivity extends Activity {
         return isRunning;
     }
 
+    // 申请动态权限
     private void requestPermission() {
         String[] permissions = {
             Manifest.permission.RECORD_AUDIO,

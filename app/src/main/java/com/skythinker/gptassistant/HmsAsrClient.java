@@ -18,21 +18,21 @@ public class HmsAsrClient extends AsrClientBase{
     public HmsAsrClient(Context context) {
         MLApplication.getInstance().setApiKey(context.getString(R.string.hms_api_key));
         hwAsrRecognizer = MLAsrRecognizer.createAsrRecognizer(context);
-        hwAsrRecognizer.setAsrListener(new MLAsrListener() {
+        hwAsrRecognizer.setAsrListener(new MLAsrListener() { // 设置HMS识别回调
             @Override
-            public void onResults(Bundle bundle) {
+            public void onResults(Bundle bundle) { // 识别完成
                 Log.d("hwAsr", "onResults: " + bundle.getString("results_recognizing"));
                 callback.onResult(bundle.getString("results_recognizing"));
             }
 
             @Override
-            public void onRecognizingResults(Bundle bundle) {
+            public void onRecognizingResults(Bundle bundle) { // 部分识别结果
 //                Log.d("hwAsr", "onRecognizingResults: " + bundle.getString("results_recognizing"));
                 callback.onResult(bundle.getString("results_recognizing"));
             }
 
             @Override
-            public void onError(int code, String msg) {
+            public void onError(int code, String msg) { // 识别错误
                 msg = "code=" + code + "  " + msg ;
                 Log.d("hwAsr", "onError: " +  msg);
                 if(code == 11203 || code == 11219)

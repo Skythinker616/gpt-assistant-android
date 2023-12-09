@@ -23,12 +23,13 @@ public class WebScraper {
         void onLoadFail(String message);
     }
 
+    // 针对特定网站的抓取规则
     private class WebsiteRule {
-        public String urlPattern = ".*";
-        public String jsCode = "(function(){return document.body.innerText;})();";
-        public boolean desktopMode = false;
-        public int extraDelay = 500;
-        public int timeout = 15000;
+        public String urlPattern = ".*"; // URL正则匹配模板
+        public String jsCode = "(function(){return document.body.innerText;})();"; // 加载完毕后抓取内容的JS代码
+        public boolean desktopMode = false; // 是否使用桌面模式加载
+        public int extraDelay = 500; // 加载完成后的抓取延迟时间（等待动态渲染）
+        public int timeout = 15000; // 加载超时时间
 
         public WebsiteRule url(String url) {
             this.urlPattern = url;
@@ -60,6 +61,7 @@ public class WebScraper {
     private boolean isLoading = false;
     private int jumpCount = 0;
 
+    // 针对搜索网页的抓取JS模板
     String searchWebsiteJsTemplate = "(function(){var res='';" +
             "document.querySelectorAll('<selector>').forEach(function(box){" +
             "   res+=box.innerText.replace(/\\n/g,' ')+'\\n';" +
@@ -69,6 +71,7 @@ public class WebScraper {
             "if(res=='')res=document.body.innerText;" +
             "return res;})();";
 
+    // 各网站的抓取规则
     List<WebsiteRule> websiteRules = Arrays.asList(
         new WebsiteRule().url("^https://www.baidu.com/s\\?.*").desktopMode(true).js(
             searchWebsiteJsTemplate.replace("<selector>", ".result.c-container,.result-op.c-container")
@@ -111,7 +114,7 @@ public class WebScraper {
             searchWebsiteJsTemplate.replace("<selector>", ".result-table-list tr")
                 .replace("<linkIndex>", "0")
         ),
-        new WebsiteRule()
+        new WebsiteRule() // 用默认规则匹配其他所有网站
     );
 
     WebsiteRule websiteRule = null;
@@ -119,7 +122,7 @@ public class WebScraper {
     public WebScraper(Context context, LinearLayout parentLayout) {
         handler = new Handler(context.getMainLooper());
 
-        webViewClient = new WebViewClient() {
+        webViewClient = new WebViewClient() { // 初始化WebViewClient事件回调
             private void endLoading() {
                 callback = null;
                 isLoading = false;
@@ -128,12 +131,12 @@ public class WebScraper {
                 webView.stopLoading();
             }
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { // 页面产生了重定向
                 String url = request.getUrl().toString();
                 Log.d("WebView", "shouldOverrideUrlLoading " + url);
                 if(url.startsWith("http://") || url.startsWith("https://") || !url.contains("://")) {
                     view.loadUrl(url);
-                    jumpCount++;
+                    jumpCount++; // 跳转深度+1
                     loadingUrl = url;
                 }
                 return true;
@@ -144,11 +147,12 @@ public class WebScraper {
                 super.onPageStarted(view, url, favicon);
             }
             @Override
-            public void onPageFinished(WebView view, String url) {
+            public void onPageFinished(WebView view, String url) { // 页面加载完成（重定向后原有页面加载完成也会触发）
                 Log.d("WebView", "onPageFinished " + url);
-                if(jumpCount == 1 || url.equals(loadingUrl)) {
+                if(jumpCount == 1 || url.equals(loadingUrl)) { // 判定为最终页面加载完成
                     handler.postDelayed(() -> {
                         if (callback != null){
+                            // 执行JS代码抓取页面内容
                             webView.evaluateJavascript(websiteRule.jsCode,
                                 new ValueCallback<String>() {
                                     @Override
@@ -171,7 +175,7 @@ public class WebScraper {
                     }, websiteRule.extraDelay);
                     loadingUrl = "";
                 }
-                if(jumpCount > 0)
+                if(jumpCount > 0) // 跳转深度减一
                     jumpCount--;
                 super.onPageFinished(view, url);
             }
@@ -196,7 +200,7 @@ public class WebScraper {
             WebSettings webSettings = webView.getSettings();
             webSettings.setJavaScriptEnabled(true);
             webView.setWebViewClient(webViewClient);
-            parentLayout.addView(webView, 0);
+            parentLayout.addView(webView, 0); // 将WebView插入父布局，并设置为不可见
             webView.setVisibility(View.INVISIBLE);
             webView.setLayoutParams(new LinearLayout.LayoutParams(500, 1));
         } catch (Exception e) {
@@ -204,6 +208,7 @@ public class WebScraper {
         }
     }
 
+    // 加载一个URL
     public void load(String url, Callback callback) {
         if(webView == null)
             return;
@@ -216,19 +221,19 @@ public class WebScraper {
         jumpCount = 1;
         loadingUrl = url;
 
-        for(WebsiteRule rule : websiteRules) {
+        for(WebsiteRule rule : websiteRules) { // 进行规则匹配
             if(url.matches(rule.urlPattern)) {
                 websiteRule = rule;
                 break;
             }
         }
-        if(websiteRule.desktopMode)
+        if(websiteRule.desktopMode) // 若需要桌面模式则设置UA
             webView.getSettings().setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
                     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
         else
             webView.getSettings().setUserAgentString(null);
 
-        new Thread(() -> {
+        new Thread(() -> { // 开启超时等待线程
             int timeout = websiteRule.timeout;
             int waitTime = 0;
             while(waitTime < timeout && isLoading) {
@@ -250,6 +255,7 @@ public class WebScraper {
         webView.loadUrl(url);
     }
 
+    // 停止加载
     public void stopLoading(){
         if(webView == null)
             return;
@@ -260,10 +266,12 @@ public class WebScraper {
         loadingUrl = "";
     }
 
+    // 判断是否正在加载
     public boolean isLoading(){
         return isLoading;
     }
 
+    // 销毁所有数据
     public void destroy(){
         if(webView == null)
             return;

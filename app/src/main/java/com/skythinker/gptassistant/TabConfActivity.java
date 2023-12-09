@@ -56,13 +56,18 @@ public class TabConfActivity extends Activity {
     private BroadcastReceiver localReceiver;
     private Handler handler = new Handler();
 
+    private interface CustomTextWatcher extends TextWatcher { // 去掉TextWatcher不需要的方法
+        @Override default void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+        @Override default void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_conf);
-        overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
+        overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out); // 进入动画
 
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS); // 沉浸式状态栏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         getWindow().setStatusBarColor(Color.parseColor("#F5F6F7"));
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
@@ -73,9 +78,10 @@ public class TabConfActivity extends Activity {
         adapter = new TabConfListAdapter(this);
         rvTabList.setAdapter(adapter);
 
-        ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT) {
+        // 模板列表拖拽处理
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT) {
             @Override
-            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder dragged, RecyclerView.ViewHolder target) {
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder dragged, RecyclerView.ViewHolder target) { // 拖拽排序
                 int position_dragged = dragged.getAdapterPosition();
                 int position_target = target.getAdapterPosition();
                 PromptTabData tab = tabDataList.get(position_dragged);
@@ -87,21 +93,20 @@ public class TabConfActivity extends Activity {
             }
 
             @Override
-            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) { // 左滑删除
                 tabDataList.remove(viewHolder.getAdapterPosition());
                 adapter.notifyItemRemoved(viewHolder.getAdapterPosition());
                 GlobalDataHolder.saveTabDataList();
             }
-        });
-        helper.attachToRecyclerView(rvTabList);
+        }).attachToRecyclerView(rvTabList);
 
+        // 接收模板编辑请求广播（来自TabConfListAdapter）
         localReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 startEditTab(intent.getStringExtra("title"), intent.getStringExtra("prompt"), intent.getIntExtra("position", 0));
             }
         };
-
         LocalBroadcastManager.getInstance(this).registerReceiver(localReceiver, new IntentFilter("com.skythinker.gptassistant.TAB_EDIT"));
 
         (findViewById(R.id.bt_add_tab)).setOnClickListener(view -> {
@@ -109,12 +114,10 @@ public class TabConfActivity extends Activity {
         });
 
         ((EditText) findViewById(R.id.et_openai_host_conf)).setText(GlobalDataHolder.getGptApiHost());
-        ((EditText) findViewById(R.id.et_openai_host_conf)).addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+        ((EditText) findViewById(R.id.et_openai_host_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
                 String host = editable.toString().trim();
-                if(!host.isEmpty()) {
+                if(!host.isEmpty()) { // 自动补全URL
                     if(!host.startsWith("http://") && !host.startsWith("https://")) {
                         host = "https://" + host;
                     }
@@ -127,54 +130,50 @@ public class TabConfActivity extends Activity {
         });
 
         ((EditText) findViewById(R.id.et_openai_key_conf)).setText(GlobalDataHolder.getGptApiKey());
-        ((EditText) findViewById(R.id.et_openai_key_conf)).addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+        ((EditText) findViewById(R.id.et_openai_key_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
                 GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGptModel(), GlobalDataHolder.getCustomModels());
             }
         });
 
-        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models)));
-        models.addAll(GlobalDataHolder.getCustomModels());
-        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.model_spinner_item, models) {
+        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models))); // 内置模型列表
+        models.addAll(GlobalDataHolder.getCustomModels()); // 自定义模型列表
+        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.model_spinner_item, models) { // 设置Spinner样式和列表数据
             @Override
-            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // 设置选中/未选中的选项样式
                 TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
-                if(((Spinner) findViewById(R.id.sp_model_conf)).getSelectedItemPosition() == position) {
+                if(((Spinner) findViewById(R.id.sp_model_conf)).getSelectedItemPosition() == position) { // 选中项
                     tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
                     tv.setBackgroundColor(ContextCompat.getColor(TabConfActivity.this, R.color.tag_background_unselected));
-                } else {
+                } else { // 未选中项
                     tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
                     tv.setBackgroundColor(Color.WHITE);
                 }
                 return tv;
             }
         };
-        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item);
+        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item); // 设置下拉选项样式
         ((Spinner) findViewById(R.id.sp_model_conf)).setAdapter(modelsAdapter);
         ((Spinner) findViewById(R.id.sp_model_conf)).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) { // 有选项被选中
                 GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString(), GlobalDataHolder.getCustomModels());
                 modelsAdapter.notifyDataSetChanged();
             }
             public void onNothingSelected(AdapterView<?> adapterView) { }
         });
-        for(int i = 0; i < modelsAdapter.getCount(); i++) {
+        for(int i = 0; i < modelsAdapter.getCount(); i++) { // 根据当前模型名查找选中的选项
             if(modelsAdapter.getItem(i).equals(GlobalDataHolder.getGptModel())) {
                 ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(i);
                 break;
             }
-            if(i == modelsAdapter.getCount() - 1) {
+            if(i == modelsAdapter.getCount() - 1) { // 没有找到当前模型名，默认选中第一项
                 ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(0);
             }
         }
 
         ((EditText) findViewById(R.id.et_custom_model_conf)).setText(String.join(";", GlobalDataHolder.getCustomModels()));
-        ((EditText) findViewById(R.id.et_custom_model_conf)).addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void afterTextChanged(Editable editable) {
+        ((EditText) findViewById(R.id.et_custom_model_conf)).addTextChangedListener(new CustomTextWatcher() {
+            public void afterTextChanged(Editable editable) { // 将输入的自定义模型转为列表存储
                 List<String> modelList = new ArrayList<>(Arrays.asList(editable.toString().trim().split(";")));
                 modelList.removeIf(String::isEmpty);
                 GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel(), modelList);
@@ -193,27 +192,21 @@ public class TabConfActivity extends Activity {
         });
 
         ((EditText) findViewById(R.id.et_asr_app_id_conf)).setText(GlobalDataHolder.getAsrAppId());
-        ((EditText) findViewById(R.id.et_asr_app_id_conf)).addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+        ((EditText) findViewById(R.id.et_asr_app_id_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
                 GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrUseBaidu(), editable.toString().trim(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
             }
         });
 
         ((EditText) findViewById(R.id.et_asr_api_key_conf)).setText(GlobalDataHolder.getAsrApiKey());
-        ((EditText) findViewById(R.id.et_asr_api_key_conf)).addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+        ((EditText) findViewById(R.id.et_asr_api_key_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
                 GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrUseBaidu(), GlobalDataHolder.getAsrAppId(), editable.toString().trim(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
             }
         });
 
         ((EditText) findViewById(R.id.et_asr_secret_conf)).setText(GlobalDataHolder.getAsrSecretKey());
-        ((EditText) findViewById(R.id.et_asr_secret_conf)).addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+        ((EditText) findViewById(R.id.et_asr_secret_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
                 GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrUseBaidu(), GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), editable.toString().trim(), GlobalDataHolder.getAsrUseRealTime());
             }
@@ -256,7 +249,7 @@ public class TabConfActivity extends Activity {
         (findViewById(R.id.tv_set_tts_conf)).setOnClickListener(view -> {
             Intent intent = new Intent("com.android.settings.TTS_SETTINGS");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            startActivity(intent); // 跳转到系统的TTS设置界面
         });
 
         ((Switch) findViewById(R.id.sw_enable_internet_conf)).setChecked(GlobalDataHolder.getEnableInternetAccess());
@@ -269,9 +262,7 @@ public class TabConfActivity extends Activity {
         });
 
         ((EditText) findViewById(R.id.et_web_max_char_conf)).setText(String.valueOf(GlobalDataHolder.getWebMaxCharCount()));
-        ((EditText) findViewById(R.id.et_web_max_char_conf)).addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+        ((EditText) findViewById(R.id.et_web_max_char_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
                 try {
                     int maxChars = 2000;
@@ -295,7 +286,7 @@ public class TabConfActivity extends Activity {
             startActivity(intent);
         });
 
-        (findViewById(R.id.tv_help_conf)).setOnClickListener(view -> {
+        (findViewById(R.id.tv_help_conf)).setOnClickListener(view -> { // 弹出帮助对话框
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             LayoutInflater inflater = LayoutInflater.from(this);
             View v = inflater.inflate(R.layout.help_dialog, null);
@@ -308,7 +299,7 @@ public class TabConfActivity extends Activity {
             });
         });
 
-        ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> {
+        ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> { // 通过Gitee检查更新
             new Thread(() -> {
                 OkHttpClient client = new OkHttpClient();
                 Request request = new Request.Builder()
@@ -330,7 +321,7 @@ public class TabConfActivity extends Activity {
                             intent.setAction("android.intent.action.VIEW");
                             Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android/releases");
                             intent.setData(content_url);
-                            startActivity(intent);
+                            startActivity(intent); // 用默认浏览器打开Releases页面
                         });
                     }
                 } catch (JSONException | IOException e) {
@@ -349,7 +340,7 @@ public class TabConfActivity extends Activity {
             intent.setAction("android.intent.action.VIEW");
             Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android");
             intent.setData(content_url);
-            startActivity(intent);
+            startActivity(intent); // 用默认浏览器打开Gitee主页
         });
 
         (findViewById(R.id.bt_back_conf)).setOnClickListener(view -> {
@@ -357,6 +348,7 @@ public class TabConfActivity extends Activity {
         });
     }
 
+    // 设置百度语音识别子配置项是否隐藏
     private void setBaiduAsrItemHidden(boolean hidden) {
         ((LinearLayout) findViewById(R.id.et_asr_app_id_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
         ((LinearLayout) findViewById(R.id.et_asr_api_key_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
@@ -364,11 +356,13 @@ public class TabConfActivity extends Activity {
         ((LinearLayout) findViewById(R.id.sw_asr_real_time_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
     }
 
+    // 设置联网子配置项是否隐藏
     private void setInternetItemHidden(boolean hidden) {
         ((LinearLayout) findViewById(R.id.et_web_max_char_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
         ((LinearLayout) findViewById(R.id.sw_only_latest_web_conf).getParent()).setVisibility(hidden ? View.GONE : View.VISIBLE);
     }
 
+    // 进入模板编辑页面
     public void startEditTab(String title, String prompt, int position) {
         Intent intent = new Intent(this, TabDetailConfActivity.class);
         intent.putExtra("title", title);
@@ -377,7 +371,7 @@ public class TabConfActivity extends Activity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) { // 处理模板编辑页面返回的数据
         super.onActivityResult(requestCode, resultCode, data);
         if(resultCode == RESULT_OK && data.hasExtra("ok")) {
             if(data.getBooleanExtra("ok", false)) {

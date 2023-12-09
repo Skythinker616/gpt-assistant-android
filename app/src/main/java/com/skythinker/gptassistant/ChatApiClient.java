@@ -31,6 +31,7 @@ import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
 
 public class ChatApiClient {
+    // 消息回调接口
     public interface OnReceiveListener {
         void onMsgReceive(String message);
         void onError(String message);
@@ -38,6 +39,7 @@ public class ChatApiClient {
         void onFinished(boolean completed);
     }
 
+    // 用于标记消息的角色
     public enum ChatRole {
         SYSTEM,
         USER,
@@ -45,6 +47,7 @@ public class ChatApiClient {
         FUNCTION
     }
 
+    // 用于存储一条聊天消息
     public static class ChatMessage {
         public ChatRole role;
         public String contentText;
@@ -92,18 +95,7 @@ public class ChatApiClient {
         setApiInfo(url, apiKey);
     }
 
-//    public void sendPrompt(String systemPrompt, String userPrompt) {
-//        if(systemPrompt == null && userPrompt == null) {
-//            listener.onError("模板和问题内容均为空");
-//            return;
-//        }
-//
-//        sendPromptList(Arrays.asList(
-//            Pair.create(ChatRole.SYSTEM, systemPrompt),
-//            Pair.create(ChatRole.USER, userPrompt)
-//        ));
-//    }
-
+    // 向GPT发送消息列表
     public void sendPromptList(List<ChatMessage> promptList) {
         if(url.isEmpty()) {
             listener.onError("请在设置中填写服务器地址");
@@ -118,8 +110,8 @@ public class ChatApiClient {
 
         BaseChatCompletion chatCompletion = null;
 
-        if(!model.contains("vision")) {
-            ArrayList<Message> messageList = new ArrayList<>();
+        if(!model.contains("vision")) { // 使用非Vision模型
+            ArrayList<Message> messageList = new ArrayList<>(); // 将消息数据转换为ChatGPT需要的格式
             for (ChatMessage message : promptList) {
                 if (message.role == ChatRole.SYSTEM) {
                     messageList.add(Message.builder().role(Message.Role.SYSTEM).content(message.contentText).build());
@@ -140,7 +132,7 @@ public class ChatApiClient {
                 }
             }
 
-            if (!functions.isEmpty()) {
+            if (!functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
                 chatCompletion = ChatCompletion.builder()
                         .messages(messageList)
                         .model(model)
@@ -153,8 +145,8 @@ public class ChatApiClient {
                         .model(model)
                         .build();
             }
-        } else {
-            ArrayList<MessagePicture> messageList = new ArrayList<>();
+        } else { // 使用的是Vision模型
+            ArrayList<MessagePicture> messageList = new ArrayList<>(); // 将消息数据转换为ChatGPT需要的格式
             for (ChatMessage message : promptList) {
                 List<Content> contentList = new ArrayList<>();
                 if (message.contentText != null) {
@@ -191,7 +183,7 @@ public class ChatApiClient {
 
         callingFuncName = callingFuncArg = "";
 
-        chatGPT.streamChatCompletion(chatCompletion, new EventSourceListener() {
+        chatGPT.streamChatCompletion(chatCompletion, new EventSourceListener() { // GPT返回消息回调
             @Override
             public void onOpen(EventSource eventSource, Response response) {
                 Log.d("ChatApiClient", "onOpen");
@@ -199,21 +191,21 @@ public class ChatApiClient {
 
             @Override
             public void onEvent(EventSource eventSource, @Nullable String id, @Nullable String type, String data) {
-                if(data.equals("[DONE]")){
+                if(data.equals("[DONE]")){ // 回复完成
                     Log.d("ChatApiClient", "onEvent: DONE");
                     if(callingFuncName.isEmpty()) {
                         listener.onFinished(true);
                     } else {
                         listener.onFunctionCall(callingFuncName, callingFuncArg);
                     }
-                } else {
+                } else { // 正在回复
                     JSONObject delta = ((JSONObject) (new JSONObject(data)).getJSONArray("choices").get(0)).getJSONObject("delta");
-                    if (delta.containsKey("function_call")) {
+                    if (delta.containsKey("function_call")) { // GPT请求函数调用
                         JSONObject functionCall = delta.getJSONObject("function_call");
                         if(functionCall.containsKey("name"))
                             callingFuncName = functionCall.getStr("name");
                         callingFuncArg += functionCall.getStr("arguments");
-                    } else if(delta.containsKey("content")) {
+                    } else if(delta.containsKey("content")) { // GPT返回普通消息
                         String msg = delta.getStr("content");
                         if(msg != null)
                             listener.onMsgReceive(msg);
@@ -230,13 +222,13 @@ public class ChatApiClient {
             @Override
             public void onFailure(EventSource eventSource, @Nullable Throwable throwable, @Nullable Response response) {
                 if(throwable != null) {
-                    if(throwable instanceof StreamResetException) {
+                    if(throwable instanceof StreamResetException) { // 请求被用户取消，不算错误
                         Log.d("ChatApiClient", "onFailure: Cancelled");
                         listener.onFinished(false);
                     } else {
                         String err = throwable.toString();
                         Log.d("ChatApiClient", "onFailure: " + err);
-                        if(err.equals("java.io.IOException: Canceled")) {
+                        if(err.equals("java.io.IOException: Canceled")) { // 将常见的错误转换为中文
                             err = "请求已取消";
                         } else if(err.equals("java.net.SocketTimeoutException: timeout")) {
                             err = "请求超时";
@@ -261,6 +253,7 @@ public class ChatApiClient {
         });
     }
 
+    // 配置API信息
     public void setApiInfo(String url, String apiKey) {
         if(this.url.equals(url) && this.apiKey.equals(apiKey)) {
             return;
@@ -274,18 +267,22 @@ public class ChatApiClient {
             .build();
     }
 
+    // 获取当前是否正在请求GPT
     public boolean isStreaming() {
         return httpClient.connectionPool().connectionCount() - httpClient.connectionPool().idleConnectionCount() > 0;
     }
 
+    // 中断当前请求
     public void stop() {
         httpClient.dispatcher().cancelAll();
     }
 
+    // 设置使用的模型
     public void setModel(String model) {
         this.model = model;
     }
 
+    // 添加一个函数
     public void addFunction(String name, String desc, String params, String[] required) {
         Parameters parameters = Parameters.builder()
                 .type("object")
@@ -302,6 +299,7 @@ public class ChatApiClient {
         this.functions.add(functions);
     }
 
+    // 删除所有函数
     public void clearAllFunctions() {
         this.functions.clear();
     }

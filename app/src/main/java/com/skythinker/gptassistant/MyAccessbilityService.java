@@ -29,7 +29,9 @@ public class MyAccessbilityService extends AccessibilityService {
     AudioManager audioManager;
     Vibrator vibrator;
 
-    final private int longPressTime = 500, maxConfirmTime = 3000, banCancelInterval = 2000;
+    final private int longPressTime = 500; // 长按判定时间
+    final private int maxConfirmTime = 3000; // 长按到短按的最长间隔
+    final private int banCancelInterval = 2000; // 短按后禁止长按的时间
 
     public MyAccessbilityService() {
     }
@@ -47,20 +49,20 @@ public class MyAccessbilityService extends AccessibilityService {
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
         Log.d("MyAccessbilityService", "onKeyEvent: " + event.toString());
-        if(event.getKeyCode() != KeyEvent.KEYCODE_VOLUME_DOWN) {
+        if(event.getKeyCode() != KeyEvent.KEYCODE_VOLUME_DOWN) { // 非音量下键不处理
             return super.onKeyEvent(event);
         }
 
-        int eventTime = (int) event.getEventTime();
+        int eventTime = (int) event.getEventTime(); // 事件发生的时间戳
         int eventAction = event.getAction();
 
-        if(isBaned) {
+        if(isBaned) { // 当前处于禁用状态（短按后的禁用时间），不拦截事件
             if(eventAction == KeyEvent.ACTION_DOWN) {
                 keyDownTime = eventTime;
                 if(eventTime - keyUpTime < banCancelInterval) {
                     return super.onKeyEvent(event);
                 } else {
-                    isBaned = false;
+                    isBaned = false; // 超出禁用时间，解除禁用
                 }
             } else if(eventAction == KeyEvent.ACTION_UP) {
                 keyUpTime = eventTime;
@@ -68,26 +70,26 @@ public class MyAccessbilityService extends AccessibilityService {
             }
         }
 
-        if(pressCount == 0){
+        if(pressCount == 0){ // 当前处于判定周期的第一次按下（标准情况的一次长按+短按为一个判定周期）
             if(eventAction == KeyEvent.ACTION_DOWN) {
                 keyDownTime = eventTime;
                 isPressing = true;
-                handler.postDelayed(() -> {
-                    if(isPressing) {
-                        if(!MainActivity.isAlive() || !MainActivity.isRunning()) {
+                handler.postDelayed(() -> { // 等待长按时间后进行长按判定
+                    if(isPressing) { // 长按时间后仍然处于按下状态，判定为一次长按
+                        if(!MainActivity.isAlive() || !MainActivity.isRunning()) { // 主活动未运行则唤起
                             Intent intent = new Intent(this, MainActivity.class);
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
                             startActivity(intent);
                             Log.d("MyAccessbilityService", "startActivity: MainActivity");
                             isInStartDelay = true;
-                            handler.postDelayed(() -> {
+                            handler.postDelayed(() -> { // 等待500ms后发送广播，开始语音识别
                                 if(isInStartDelay) {
                                     Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
                                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                                     Log.d("MyAccessbilityService", "broadcast: KEY_SPEECH_START");
                                 }
                             }, 500);
-                        } else {
+                        } else { // 主活动已在运行， 直接发送广播开始语音识别
                             Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
                             LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                             Log.d("MyAccessbilityService", "broadcast: KEY_SPEECH_START");
@@ -100,17 +102,17 @@ public class MyAccessbilityService extends AccessibilityService {
                 keyUpTime = eventTime;
                 isPressing = false;
                 isInStartDelay = false;
-                if(eventTime - keyDownTime < longPressTime) {
+                if(eventTime - keyDownTime < longPressTime) { // 未达到长按时间就松开，用户只是想调音量，进入禁用状态并弹出音量调节界面
                     isBaned = true;
                     audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
                     return true;
-                } else {
-                    pressCount++;
-                    Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_STOP");
+                } else { // 释放时已经超出了长按时间，表明长按结束
+                    pressCount++; // 准备进入判定周期的第二次判定
+                    Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_STOP"); //发送广播，停止语音识别
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                     Log.d("MyAccessbilityService", "broadcast: KEY_SPEECH_STOP");
                     isWaitingConfirm = true;
-                    handler.postDelayed(() -> {
+                    handler.postDelayed(() -> { // 若超出最长短按等待时间，重置判定周期
                         if(isWaitingConfirm) {
                             pressCount = 0;
                         }
@@ -118,24 +120,24 @@ public class MyAccessbilityService extends AccessibilityService {
                     return true;
                 }
             }
-        } else if (pressCount == 1) {
+        } else if (pressCount == 1) { // 当前处于判定周期的第二次按下
             if(eventAction == KeyEvent.ACTION_DOWN) {
                 isWaitingConfirm = false;
                 keyDownTime = eventTime;
-                if(eventTime - keyUpTime < maxConfirmTime) {
+                if(eventTime - keyUpTime < maxConfirmTime) { // 未超出最长短按等待时间，判定为一次短按，发送广播请求向GPT发送提问
                     Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SEND");
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                     Log.d("MyAccessbilityService", "broadcast: KEY_SEND");
                     return true;
-                } else {
+                } else { // 已超出最长短按等待时间，判定为用户的一次普通点击，不拦截事件
                     return super.onKeyEvent(event);
                 }
             } else if(eventAction == KeyEvent.ACTION_UP) {
-                if(keyDownTime - keyUpTime < maxConfirmTime) {
+                if(keyDownTime - keyUpTime < maxConfirmTime) { // 上次按下时被判定为一次成功短按，拦截本次松开事件
                     keyUpTime = eventTime;
                     pressCount = 0;
                     return true;
-                } else {
+                } else { // 上次按下时被判定为一次普通点击，不拦截本次松开事件
                     keyUpTime = eventTime;
                     pressCount = 0;
                     return super.onKeyEvent(event);

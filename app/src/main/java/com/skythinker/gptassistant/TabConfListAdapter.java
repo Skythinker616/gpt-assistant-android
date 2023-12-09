@@ -32,7 +32,7 @@ public class TabConfListAdapter extends RecyclerView.Adapter<TabConfListAdapter.
             llOuter = itemView.findViewById(R.id.ll_list_item_outer);
 
             llOuter.setOnClickListener(null);
-            llOuter.setOnClickListener(view -> {
+            llOuter.setOnClickListener(view -> { // item被点击时广播编辑请求
                 PromptTabData tab = GlobalDataHolder.getTabDataList().get(getAdapterPosition());
                 Intent broadcastIntent = new Intent("com.skythinker.gptassistant.TAB_EDIT");
                 broadcastIntent.putExtra("title", tab.getTitle());

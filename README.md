@@ -113,9 +113,11 @@
 
 <div align="center">
 	<img src="readme_img/vision.gif" height="400px">
+	<img src="readme_img/vision_room.jpg" height="400px">
+	<img src="readme_img/vision_math.jpg" height="400px">
 </div>
 
-经测试，`gpt-4-vision-preview`模型识别效果较好，可以识别较复杂的图片，可用于拍照识物、翻译文字、拍照答题等
+经测试，`gpt-4-vision-preview`模型识别效果较好，可以识别较复杂的图片，可用于拍照识物、翻译文字、拍照答题等场景
 
 > 注：Vision模型一般无法免费使用（如Chatanywhere），有需要的用户可以考虑付费服务
 
@@ -255,7 +257,6 @@ A: 排除网络因素，该错误一般由OpenAI接口产生，可能由于其�
 - 保存对话功能
 - 支持渲染Markdown表格、图片等
 - 连续语音交流
-- 允许GPT控制手机其他功能
 
 ---
 

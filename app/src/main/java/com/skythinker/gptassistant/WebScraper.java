@@ -53,6 +53,114 @@ public class WebScraper {
         }
     }
 
+    private class SearchListJsBuilder {
+        private String outerSelector = "*";
+        private boolean outerAsInner = false;
+        private String innerSelector = "a";
+        private int innerIndex = 0;
+        private String innerProperty = "href";
+        private int maxTextLength = Integer.MAX_VALUE;
+        private int maxLinkLength = Integer.MAX_VALUE;
+        public SearchListJsBuilder outerSelector(String outerSelector) {
+            this.outerSelector = outerSelector;
+            return this;
+        }
+        public SearchListJsBuilder outerAsInner(boolean outerAsInner) {
+            this.outerAsInner = outerAsInner;
+            return this;
+        }
+        public SearchListJsBuilder innerSelector(String innerSelector) {
+            this.innerSelector = innerSelector;
+            return this;
+        }
+        public SearchListJsBuilder innerIndex(int innerIndex) {
+            this.innerIndex = innerIndex;
+            return this;
+        }
+        public SearchListJsBuilder innerProperty(String innerProperty) {
+            this.innerProperty = innerProperty;
+            return this;
+        }
+        public SearchListJsBuilder maxTextLength(int maxTextLength) {
+            this.maxTextLength = maxTextLength;
+            return this;
+        }
+        public SearchListJsBuilder maxLinkLength(int maxLinkLength) {
+            this.maxLinkLength = maxLinkLength;
+            return this;
+        }
+        public String build() {
+            String js = "(function(){var res='';" +
+                    "document.querySelectorAll('<outerSelector>').forEach(function(box){" +
+                    "   res+=box.innerText.replace(/\\n/g,' ').substring(0,<maxTextLength>)+'\\n';" +
+                    "   var inner=box.querySelectorAll('<innerSelector>')[<innerIndex>];" +
+                    "   if(<outerAsInner>) inner=box;" +
+                    "   if(inner&&inner.getAttribute('<innerProperty>')){" +
+                    "       var link=inner.getAttribute('<innerProperty>');" +
+                    "       if(link.length<<maxLinkLength>) res+=link+'\\n';" +
+                    "   }" +
+                    "   res+='---\\n';" +
+                    "});" +
+                    "if(res=='') res=document.body.innerText;" +
+                    "return res;})();";
+            return js.replaceAll("<outerSelector>", outerSelector)
+                    .replaceAll("<outerAsInner>", String.valueOf(outerAsInner))
+                    .replaceAll("<innerSelector>", innerSelector)
+                    .replaceAll("<innerIndex>", String.valueOf(innerIndex))
+                    .replaceAll("<innerProperty>", innerProperty)
+                    .replaceAll("<maxTextLength>", String.valueOf(maxTextLength))
+                    .replaceAll("<maxLinkLength>", String.valueOf(maxLinkLength));
+        }
+    }
+
+    // 各网站的抓取规则
+    List<WebsiteRule> websiteRules = Arrays.asList(
+        new WebsiteRule().url("^https://www.baidu.com/s\\?.*").desktopMode(true).js(
+            new SearchListJsBuilder().outerSelector(".result.c-container,.result-op.c-container").build()
+        ),
+        new WebsiteRule().url("^https://image.baidu.com/search/index\\?.*").desktopMode(true).js(
+            new SearchListJsBuilder().outerSelector(".imgitem").innerSelector("img").innerProperty("data-imgurl").maxLinkLength(500).build()
+        ),
+        new WebsiteRule().url("^https://top.baidu.com.*").desktopMode(true).js(
+            new SearchListJsBuilder().outerSelector(".item-wrap_2oCLZ").outerAsInner(true).build()
+        ),
+        new WebsiteRule().url("^https://www.bing.com/search\\?.*|^https://cn.bing.com/search\\?.*").js(
+            new SearchListJsBuilder().outerSelector(".b_ans,.b_algo").build()
+        ),
+        new WebsiteRule().url("^https://www.google.com/search\\?.*").js(
+            new SearchListJsBuilder().outerSelector(".MjjYud,.TzHB6b").build()
+        ),
+        new WebsiteRule().url("^https://www.zhihu.com/search\\?.*").extraDelay(2000).js(
+            new SearchListJsBuilder().outerSelector(".SearchResult-Card").build()
+        ),
+        new WebsiteRule().url("^https://www.zhihu.com/hot").extraDelay(2000).js(
+            new SearchListJsBuilder().outerSelector(".css-16fcrt8").outerAsInner(true).maxTextLength(200).build()
+        ),
+        new WebsiteRule().url("^https://s.weibo.com/weibo/.*|^https://m.weibo.cn/search\\?.*").extraDelay(2000),
+        new WebsiteRule().url("^https://s.weibo.com/top/summary").desktopMode(true).js(
+            new SearchListJsBuilder().outerSelector(".td-02").build()
+        ),
+        new WebsiteRule().url("^https://search.bilibili.com/all\\?.*").desktopMode(true).js(
+            new SearchListJsBuilder().outerSelector(".bili-video-card").build()
+        ),
+        new WebsiteRule().url("^https://www.bilibili.com/v/popular/rank/all").desktopMode(true).js(
+            new SearchListJsBuilder().outerSelector(".rank-item").build()
+        ),
+        new WebsiteRule().url("^https://search.jd.com/Search\\?.*").js(
+            new SearchListJsBuilder().outerSelector(".gl-item").build()
+        ),
+        new WebsiteRule().url("^https://github.com/search\\?.*").js(
+            new SearchListJsBuilder().outerSelector(".jUbAHB").build()
+        ),
+        new WebsiteRule().url("^https://scholar.google.com/scholar\\?.*").js(
+            new SearchListJsBuilder().outerSelector(".gs_ri").build()
+        ),
+        new WebsiteRule().url("^https://kns.cnki.net/kns8s/defaultresult/index\\?.*").extraDelay(2000).js(
+            new SearchListJsBuilder().outerSelector(".result-table-list tr").build()
+        ),
+        new WebsiteRule() // 用默认规则匹配其他所有网站
+    );
+
     Handler handler = null;
     private WebView webView = null;
     private WebViewClient webViewClient = null;
@@ -60,63 +168,6 @@ public class WebScraper {
     private Callback callback = null;
     private boolean isLoading = false;
     private int jumpCount = 0;
-
-    // 针对搜索网页的抓取JS模板
-    String searchWebsiteJsTemplate = "(function(){var res='';" +
-            "document.querySelectorAll('<selector>').forEach(function(box){" +
-            "   res+=box.innerText.replace(/\\n/g,' ')+'\\n';" +
-            "   var a=box.querySelectorAll('a')[<linkIndex>];" +
-            "   if(a&&a.href) res+=a.href+'\\n';" +
-            "   res+='---\\n';});" +
-            "if(res=='')res=document.body.innerText;" +
-            "return res;})();";
-
-    // 各网站的抓取规则
-    List<WebsiteRule> websiteRules = Arrays.asList(
-        new WebsiteRule().url("^https://www.baidu.com/s\\?.*").desktopMode(true).js(
-            searchWebsiteJsTemplate.replace("<selector>", ".result.c-container,.result-op.c-container")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://www.bing.com/search\\?.*|^https://cn.bing.com/search\\?.*").js(
-            searchWebsiteJsTemplate.replace("<selector>", ".b_ans,.b_algo")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://www.google.com/search\\?.*").js(
-            searchWebsiteJsTemplate.replace("<selector>", ".MjjYud,.TzHB6b")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://www.zhihu.com/search\\?.*").extraDelay(2000).js(
-            searchWebsiteJsTemplate.replace("<selector>", ".SearchResult-Card")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://www.zhihu.com/hot").extraDelay(2000).js(
-            searchWebsiteJsTemplate.replace("<selector>", ".HotItem")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://s.weibo.com/weibo/.*|^https://m.weibo.cn/search\\?.*").extraDelay(2000),
-        new WebsiteRule().url("^https://search.bilibili.com/all\\?.*").desktopMode(true).js(
-            searchWebsiteJsTemplate.replace("<selector>", ".bili-video-card")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://search.jd.com/Search\\?.*").js(
-            searchWebsiteJsTemplate.replace("<selector>", ".gl-item")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://github.com/search\\?.*").js(
-            searchWebsiteJsTemplate.replace("<selector>", ".jUbAHB")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://scholar.google.com/scholar\\?.*").js(
-            searchWebsiteJsTemplate.replace("<selector>", ".gs_ri")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule().url("^https://kns.cnki.net/kns8s/defaultresult/index\\?.*").extraDelay(2000).js(
-            searchWebsiteJsTemplate.replace("<selector>", ".result-table-list tr")
-                .replace("<linkIndex>", "0")
-        ),
-        new WebsiteRule() // 用默认规则匹配其他所有网站
-    );
-
     WebsiteRule websiteRule = null;
 
     public WebScraper(Context context, LinearLayout parentLayout) {

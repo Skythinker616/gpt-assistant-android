@@ -15,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
@@ -68,8 +69,11 @@ import cn.hutool.json.JSONException;
 import cn.hutool.json.JSONObject;
 import io.noties.markwon.AbstractMarkwonPlugin;
 import io.noties.markwon.Markwon;
+import io.noties.markwon.MarkwonConfiguration;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
 import io.noties.markwon.ext.tables.TablePlugin;
+import io.noties.markwon.image.ImageSize;
+import io.noties.markwon.image.ImageSizeResolverDef;
 import io.noties.markwon.image.ImagesPlugin;
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin;
 import io.noties.markwon.linkify.LinkifyPlugin;
@@ -130,21 +134,49 @@ public class MainActivity extends Activity {
                 .usePlugin(JLatexMathPlugin.create(40, builder -> builder.inlinesEnabled(true)))
 //                .usePlugin(TablePlugin.create(this)) // unstable
 //                .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
-//                .usePlugin(ImagesPlugin.create())
+                .usePlugin(ImagesPlugin.create())
                 .usePlugin(MarkwonInlineParserPlugin.create())
                 .usePlugin(LinkifyPlugin.create())
                 .usePlugin(new AbstractMarkwonPlugin() {
                     @NonNull
                     @Override
                     public String processMarkdown(@NonNull String markdown) {
-                        String regexDollar = "(?<!\\$)\\$(?!\\$)([^\\n]*?)(?<!\\$)\\$(?!\\$)"; //匹配单行内的“$...$”
-                        String regexBrackets = "(?s)\\\\\\[(.*?)\\\\\\]"; //跨行匹配“\[...\]”
-                        String regexParentheses = "\\\\\\(([^\\n]*?)\\\\\\)"; //匹配单行内的“\(...\)”
-                        String replacement = "\\$\\$$1\\$\\$";//替换为“$$...$$”
-                        markdown =  markdown.replaceAll(regexDollar, replacement).replaceAll(regexBrackets, replacement).replaceAll(regexParentheses, replacement);
-                        return markdown;
+                        List<String> sepList = new ArrayList<>(Arrays.asList(markdown.split("```", -1)));
+                        for (int i = 0; i < sepList.size(); i += 2) { // 跳过代码块不处理
+                            // 解决仅能渲染“$$...$$”公式的问题
+                            String regexDollar = "(?<!\\$)\\$(?!\\$)([^\\n]*?)(?<!\\$)\\$(?!\\$)"; // 匹配单行内的“$...$”
+                            String regexBrackets = "(?s)\\\\\\[(.*?)\\\\\\]"; // 跨行匹配“\[...\]”
+                            String regexParentheses = "\\\\\\(([^\\n]*?)\\\\\\)"; // 匹配单行内的“\(...\)”
+                            String latexReplacement = "\\$\\$$1\\$\\$"; // 替换为“$$...$$”
+                            // 为图片添加指向同一URL的链接
+                            String regexImage = "!\\[(.*?)\\]\\((.*?)\\)"; // 匹配“![...](...)”
+                            String imageReplacement = "[$0]($2)"; // 替换为“[![...](...)](...)”
+                            // 进行替换
+                            sepList.set(i, sepList.get(i).replaceAll(regexDollar, latexReplacement)
+                                    .replaceAll(regexBrackets, latexReplacement)
+                                    .replaceAll(regexParentheses, latexReplacement)
+                                    .replaceAll(regexImage, imageReplacement));
+                        }
+                        return String.join("```", sepList);
                     }
-                }) // 解决仅能渲染“$$...$$”公式的问题
+                })
+                .usePlugin(new AbstractMarkwonPlugin() {
+                    @Override
+                    public void configureConfiguration(@NonNull MarkwonConfiguration.Builder builder) {
+                        builder.imageSizeResolver(new ImageSizeResolverDef(){
+                            @NonNull @Override
+                            protected Rect resolveImageSize(@Nullable ImageSize imageSize, @NonNull Rect imageBounds, int canvasWidth, float textSize) {
+                                int maxSize = dpToPx(120);
+                                if(imageBounds.width() > maxSize || imageBounds.height() > maxSize) {
+                                    float ratio = Math.min((float)maxSize / imageBounds.width(), (float)maxSize / imageBounds.height());
+                                    imageBounds.right = imageBounds.left + (int)(imageBounds.width() * ratio);
+                                    imageBounds.bottom = imageBounds.top + (int)(imageBounds.height() * ratio);
+                                }
+                                return imageBounds;
+                            }
+                        });
+                    }
+                })
                 .build();
 
         // 初始化TTS
@@ -334,7 +366,7 @@ public class MainActivity extends Activity {
                                         @Override
                                         public void onLoadResult(String result) {
                                             postSendFunctionReply(name, result); // 返回网页内容给GPT
-//                                            Log.d("FunctionCall", String.format("Response: %s", result));
+                                            Log.d("FunctionCall", String.format("Response: %s", result));
                                         }
 
                                         @Override
@@ -759,7 +791,7 @@ public class MainActivity extends Activity {
         if(imageBase64 != null) { // 如有图片则在末尾添加ImageSpan
             spannableString = new SpannableString(content + "\n ");
             Bitmap bitmap = base64ToBitmap(imageBase64);
-            int maxSize = dpToPx(100);
+            int maxSize = dpToPx(120);
             bitmap = resizeBitmap(bitmap, maxSize, maxSize);
             ImageSpan imageSpan = new ImageSpan(this, bitmap);
             spannableString.setSpan(imageSpan, content.length()+1, content.length() + 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);

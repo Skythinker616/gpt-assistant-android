@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+
 public class GlobalDataHolder {
     private static List<PromptTabData> tabDataList = null;
     private static boolean asrUseBaidu;
@@ -33,6 +36,7 @@ public class GlobalDataHolder {
     private static int webMaxCharCount;
     private static boolean onlyLatestWebResult;
     private static boolean limitVisionSize;
+    private static boolean autoSaveHistory;
     private static SharedPreferences sp = null;
 
     public static void init(Context context) {
@@ -50,6 +54,7 @@ public class GlobalDataHolder {
         loadSelectedTab();
         loadFunctionSetting();
         loadVisionSetting();
+        loadHistorySetting();
     }
 
     public static List<PromptTabData> getTabDataList() {
@@ -202,6 +207,17 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    public static void loadHistorySetting() {
+        autoSaveHistory = sp.getBoolean("auto_save_history", true);
+    }
+
+    public static void saveHistorySetting(boolean autoSave) {
+        autoSaveHistory = autoSave;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("auto_save_history", autoSaveHistory);
+        editor.apply();
+    }
+
     public static boolean getAsrUseBaidu() { return asrUseBaidu; }
 
     public static String getAsrAppId() { return asrAppId; }
@@ -235,4 +251,6 @@ public class GlobalDataHolder {
     public static boolean getOnlyLatestWebResult() { return onlyLatestWebResult; }
 
     public static boolean getLimitVisionSize() { return limitVisionSize; }
+
+    public static boolean getAutoSaveHistory() { return autoSaveHistory; }
 }

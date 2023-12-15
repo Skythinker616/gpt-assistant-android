@@ -30,6 +30,9 @@ import okhttp3.internal.http2.StreamResetException;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
 
+import com.skythinker.gptassistant.ChatManager.ChatMessage.ChatRole;
+import com.skythinker.gptassistant.ChatManager.ChatMessage;
+
 public class ChatApiClient {
     // 消息回调接口
     public interface OnReceiveListener {
@@ -37,37 +40,6 @@ public class ChatApiClient {
         void onError(String message);
         void onFunctionCall(String name, String arg);
         void onFinished(boolean completed);
-    }
-
-    // 用于标记消息的角色
-    public enum ChatRole {
-        SYSTEM,
-        USER,
-        ASSISTANT,
-        FUNCTION
-    }
-
-    // 用于存储一条聊天消息
-    public static class ChatMessage {
-        public ChatRole role;
-        public String contentText;
-        public String contentImageBase64;
-        public String functionName;
-        public ChatMessage(ChatRole role) {
-            this.role = role;
-        }
-        public ChatMessage setText(String text) {
-            this.contentText = text;
-            return this;
-        }
-        public ChatMessage setImage(String base64) {
-            this.contentImageBase64 = base64;
-            return this;
-        }
-        public ChatMessage setFunction(String name) {
-            this.functionName = name;
-            return this;
-        }
     }
 
     String url = "";

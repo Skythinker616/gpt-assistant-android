@@ -226,7 +226,7 @@ A: 对于一般网站，仅允许GPT获取纯文本内容，而对于下述特�
 
 A: 网页加载超时(15s)、需要登录、需要验证等原因都可能导致这个问题，你可以尝试再次提问，或要求GPT更换访问的网站
 
-### 其他问题
+### 其他使用问题
 
 **Q: 为什么列表中没有我需要的模型？**
 
@@ -239,6 +239,12 @@ A: 所使用的Markdown渲染器无法在测试中产生稳定的结果，因此
 **Q: 显示获取失败，提示请求超时，或产生错误码502/503？**
 
 A: 排除网络因素，该错误一般由OpenAI接口产生，可能由于其服务器负载过高导致，请重试或等待一段时间后再尝试 [查看OpenAI实时状态](https://status.openai.com/)
+
+### 开发相关
+
+**Q: 编译仓库代码后无法使用华为HMS语音识别？**
+
+A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如果希望自行编译使用，需要根据[华为官方文档](https://developer.huawei.com/consumer/cn/doc/hiai-Guides/ml-asr-0000001050066212#section699935381711)创建AppGallery应用并替换鉴权信息，包括`app/agconnect-services.json`文件和`app/src/main/res/values/strings.xml`中的`hms_api_key`字段
 
 ---
 

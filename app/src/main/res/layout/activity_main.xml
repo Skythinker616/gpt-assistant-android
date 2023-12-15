@@ -56,6 +56,16 @@
                 </androidx.cardview.widget.CardView>
 
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_new_chat"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="5dp"
+                    android:foreground="@drawable/new_chat_btn"
+                    app:cardBackgroundColor="#00DADADA"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp" />
+
+                <androidx.cardview.widget.CardView
                     android:id="@+id/cv_multi_chat"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
@@ -66,22 +76,23 @@
                     app:cardElevation="0dp" />
 
                 <androidx.cardview.widget.CardView
-                    android:id="@+id/cv_clear_chat"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_marginLeft="5dp"
-                    android:foreground="@drawable/clear_btn"
-                    app:cardBackgroundColor="#00DADADA"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="0dp" />
-
-                <androidx.cardview.widget.CardView
                     android:id="@+id/cv_tts_off"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
                     android:layout_marginLeft="5dp"
                     android:background="#FFFFFF"
                     android:foreground="@drawable/tts_off"
+                    app:cardBackgroundColor="#00DADADA"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_history"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="5dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/history_btn"
                     app:cardBackgroundColor="#00DADADA"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp" />
@@ -104,6 +115,7 @@
                     android:layout_marginLeft="5dp"
                     android:background="#FFFFFF"
                     android:foreground="@drawable/close_btn"
+                    android:visibility="gone"
                     app:cardBackgroundColor="#00DADADA"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp" />
@@ -134,7 +146,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingHorizontal="10dp"
-                        android:text="请向GPT提出问题。"
+                        android:paddingVertical="10dp"
+                        android:text="您好！请问我能为您提供什么帮助？"
                         android:textColor="#000000"
                         android:textSize="16sp" />
                 </LinearLayout>

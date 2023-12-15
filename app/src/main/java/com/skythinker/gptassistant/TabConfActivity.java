@@ -241,6 +241,11 @@ public class TabConfActivity extends Activity {
             }
         });
 
+        ((Switch) findViewById(R.id.sw_auto_save_history_conf)).setChecked(GlobalDataHolder.getAutoSaveHistory());
+        ((Switch) findViewById(R.id.sw_auto_save_history_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            GlobalDataHolder.saveHistorySetting(checked);
+        });
+
         ((Switch) findViewById(R.id.sw_limit_vision_size_conf)).setChecked(GlobalDataHolder.getLimitVisionSize());
         ((Switch) findViewById(R.id.sw_limit_vision_size_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
             GlobalDataHolder.saveVisionSetting(checked);
@@ -287,16 +292,13 @@ public class TabConfActivity extends Activity {
         });
 
         (findViewById(R.id.tv_help_conf)).setOnClickListener(view -> { // 弹出帮助对话框
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            LayoutInflater inflater = LayoutInflater.from(this);
-            View v = inflater.inflate(R.layout.help_dialog, null);
-            Button btOk = v.findViewById(R.id.bt_help_dialog_ok);
-            final Dialog dialog = builder.create();
-            dialog.show();
-            dialog.getWindow().setContentView(v);
-            btOk.setOnClickListener(btView -> {
-                dialog.dismiss();
-            });
+            new ConfirmDialog(this)
+                    .setTitle("帮助")
+                    .setContent(getResources().getString(R.string.help_msg))
+                    .setContentAlignment(TextView.TEXT_ALIGNMENT_TEXT_START)
+                    .setOkButtonVisibility(View.GONE)
+                    .setCancelText("返回")
+                    .show();
         });
 
         ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> { // 通过Gitee检查更新

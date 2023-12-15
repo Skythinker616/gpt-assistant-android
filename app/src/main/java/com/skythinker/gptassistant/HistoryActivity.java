@@ -39,7 +39,7 @@ public class HistoryActivity extends Activity {
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
-            Conversation conversation = historyActivity.chatManager.getConversationAtPosition(position + 1);
+            Conversation conversation = historyActivity.chatManager.getConversationAtPosition(position);
             holder.tvTitle.setText(conversation.title);
             holder.tvDetail.setText("");
             for(ChatMessage message : conversation.messages) {
@@ -57,7 +57,7 @@ public class HistoryActivity extends Activity {
 
         @Override
         public int getItemCount() {
-            return (int) historyActivity.chatManager.getConversationCount() - 1;
+            return (int) historyActivity.chatManager.getConversationCount();
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
@@ -71,7 +71,7 @@ public class HistoryActivity extends Activity {
                 llOuter = itemView.findViewById(R.id.ll_history_item_outer);
                 llOuter.setOnClickListener((view) -> {
                     Intent intent = new Intent();
-                    intent.putExtra("id", historyActivity.chatManager.getConversationAtPosition(getAdapterPosition() + 1).id);
+                    intent.putExtra("id", historyActivity.chatManager.getConversationAtPosition(getAdapterPosition()).id);
                     historyActivity.setResult(RESULT_OK, intent);
                     historyActivity.finish();
                 });
@@ -97,7 +97,7 @@ public class HistoryActivity extends Activity {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
         chatManager = new ChatManager(this);
-        chatManager.removeEmptyConversations(false);
+        chatManager.removeEmptyConversations();
 
         rvHistoryList = findViewById(R.id.rv_history_list);
         rvHistoryList.setLayoutManager(new LinearLayoutManager(this));
@@ -113,7 +113,7 @@ public class HistoryActivity extends Activity {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition(); // 获取滑动的item的position
-                chatManager.removeConversation(chatManager.getConversationAtPosition(position + 1).id);
+                chatManager.removeConversation(chatManager.getConversationAtPosition(position).id);
                 historyListAdapter.notifyItemRemoved(position);
             }
         }).attachToRecyclerView(rvHistoryList);
@@ -126,7 +126,7 @@ public class HistoryActivity extends Activity {
             new ConfirmDialog(this)
                     .setContent("确定要清空所有历史记录吗？\n（左滑可删除单条记录）")
                     .setOnConfirmListener(() -> {
-                        chatManager.removeAllConversations(false);
+                        chatManager.removeAllConversations();
                         historyListAdapter.notifyDataSetChanged();
                     }).show();
         });

@@ -114,8 +114,8 @@ public class MainActivity extends Activity {
 
     private boolean multiChat = false;
     ChatManager chatManager = null;
-    private MessageList multiChatList = null;
-    private String currentConversationTitle = "";
+    private Conversation currentConversation = null; // 当前会话信息
+    private MessageList multiChatList = null; // 指向currentConversation.messages
 
     AsrClientBase asrClient = null;
     AsrClientBase.IAsrCallback asrCallback = null;
@@ -483,13 +483,12 @@ public class MainActivity extends Activity {
         // 新建对话按钮点击事件
         (findViewById(R.id.cv_new_chat)).setOnClickListener(view -> {
             clearChatListView();
-            if(multiChatList != null && multiChatList.conversationId == -1)
-                multiChatList.deleteAllImageFiles();
 
-            Conversation conversation = chatManager.newConversation(); // 新建一个对话
-            multiChatList = conversation.messages;
-            if(!GlobalDataHolder.getAutoSaveHistory())
-                multiChatList.conversationId = -1;
+            if(currentConversation != null && multiChatList.size() > 0 && GlobalDataHolder.getAutoSaveHistory()) // 保存当前对话
+                chatManager.addConversation(currentConversation);
+
+            currentConversation = new Conversation();
+            multiChatList = currentConversation.messages;
         });
 
         (findViewById(R.id.cv_new_chat)).performClick(); // 初始化对话列表
@@ -662,18 +661,6 @@ public class MainActivity extends Activity {
             }
 
             setGptFunctions(); // 更新GPT客户端的可用函数
-
-            // 更新聊天自动保存状态
-            if(GlobalDataHolder.getAutoSaveHistory() && multiChatList.conversationId == -1) { // 开启自动保存
-                Conversation conversation = chatManager.newConversation(); // 在数据库新建对话并将当前列表指向该对话id
-                multiChatList.conversationId = conversation.id;
-                multiChatList.update();
-                chatManager.updateTitle(conversation.id, currentConversationTitle);
-            } else if(!GlobalDataHolder.getAutoSaveHistory() && multiChatList.conversationId != -1) { // 关闭自动保存
-                chatManager.removeConversation(multiChatList.conversationId); // 删除数据库中的对话，并将当前列表指向id=-1
-                chatManager.newConversation();
-                multiChatList.conversationId = -1;
-            }
         } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) { // 从相册或相机返回
             Uri uri = requestCode == 1 ? photoUri : data.getData(); // 获取图片Uri
             try {
@@ -970,11 +957,10 @@ public class MainActivity extends Activity {
                 template += "%input%";
             String question = template.replace("%input%", userInput);
             multiChatList.add(new ChatMessage(ChatRole.USER).setText(question));
-            currentConversationTitle = String.format("%s%s%s",
+            currentConversation.title = String.format("%s%s%s",
                     tabData.getTitle(),
                     (!tabData.getTitle().isEmpty() && !userInput.isEmpty()) ? " | " : "",
                     userInput.substring(0, Math.min(100, userInput.length())).replaceAll("\n", " ")); // 保存对话标题
-            chatManager.updateTitle(multiChatList.conversationId, currentConversationTitle);
         }else {
             multiChatList.add(new ChatMessage(ChatRole.USER).setText(userInput));
         }
@@ -985,7 +971,6 @@ public class MainActivity extends Activity {
             byte[] bytes = baos.toByteArray();
             String base64 = Base64.encodeToString(bytes, Base64.NO_WRAP);
             multiChatList.get(multiChatList.size() - 1).setImage(base64);
-            multiChatList.update();
         }
 
         if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){ // 若有占位TextView则删除
@@ -1051,10 +1036,7 @@ public class MainActivity extends Activity {
     private void reloadConversation(Conversation conversation) {
         (findViewById(R.id.cv_new_chat)).performClick(); // 新建一个聊天
 
-        long newId = multiChatList.conversationId;
-        conversation.messages.conversationId = newId;
-        chatManager.updateMessages(newId, conversation.messages);
-        chatManager.updateTitle(newId, conversation.title);
+        currentConversation = conversation;
         multiChatList = conversation.messages;
 
         llChatList.removeViewAt(0); // 删除占位TextView
@@ -1157,9 +1139,9 @@ public class MainActivity extends Activity {
         tts.stop();
         tts.shutdown();
         webScraper.destroy();
-        if(multiChatList.conversationId == -1)
-            multiChatList.deleteAllImageFiles();
-        chatManager.removeEmptyConversations(true);
+        if(multiChatList.size() > 0)
+            chatManager.addConversation(currentConversation);
+        chatManager.removeEmptyConversations();
         chatManager.destroy();
         super.onDestroy();
     }

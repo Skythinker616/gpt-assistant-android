@@ -62,12 +62,18 @@ public class ChatManager{
             return this;
         }
 
+        public ChatMessage setFunction(String name) {
+            this.functionName = name;
+            return this;
+        }
+
         public ChatMessage setImage(String base64) {
             this.contentImageBase64 = base64;
             this.imageUuid = UUID.randomUUID().toString();
             return this;
         }
 
+        // 删除uuid对应的图片文件
         public void deleteImageFile() {
             if(imageUuid != null) {
                 File file = new File(getImagePath(imageUuid));
@@ -77,18 +83,9 @@ public class ChatManager{
             }
         }
 
-        public ChatMessage setFunction(String name) {
-            this.functionName = name;
-            return this;
-        }
-
-        static public String getImagePath(String uuid) {
-            return context.getFilesDir().getAbsolutePath() + "/images/" + uuid + ".jpg";
-        }
-
-        // 将消息转换为json
-        public JSONObject toJson() {
-            if(imageUuid != null) { // 将图片数据保存到文件中，只存储uuid
+        // 保存base64到图片文件
+        public void saveImageFile() {
+            if(imageUuid != null && contentImageBase64 != null) {
                 try {
                     File file = new File(getImagePath(imageUuid));
                     if(!file.exists()) {
@@ -101,6 +98,33 @@ public class ChatManager{
                     e.printStackTrace();
                 }
             }
+        }
+
+        // 根据uuid加载图片文件base64
+        public void loadImageFile() {
+            if(imageUuid != null) {
+                try {
+                    File file = new File(getImagePath(imageUuid));
+                    if(file.exists()) {
+                        FileInputStream fis = new FileInputStream(file);
+                        byte[] buffer = new byte[fis.available()];
+                        fis.read(buffer);
+                        contentImageBase64 = Base64.encodeToString(buffer, Base64.NO_WRAP);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        // 根据uuid拼接图片文件路径
+        static public String getImagePath(String uuid) {
+            return context.getFilesDir().getAbsolutePath() + "/images/" + uuid + ".jpg";
+        }
+
+        // 将消息转换为json
+        public JSONObject toJson() {
+            saveImageFile();
 
             JSONObject json = new JSONObject();
             json.putOpt("role", role.name())
@@ -117,16 +141,8 @@ public class ChatManager{
             msg.imageUuid = json.getStr("image", null);
             msg.functionName = json.getStr("function", null);
 
-            if(loadImage && msg.imageUuid != null) { // 从文件中读取图片数据
-                try {
-                    File file = new File(getImagePath(msg.imageUuid));
-                    byte[] imageBytes = new byte[(int) file.length()];
-                    FileInputStream fis = new FileInputStream(file);
-                    fis.read(imageBytes);
-                    msg.contentImageBase64 = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            if(loadImage) { // 从文件中读取图片数据
+                msg.loadImageFile();
             }
             return msg;
         }
@@ -134,49 +150,6 @@ public class ChatManager{
 
     // 用于存储一轮对话中的一组聊天消息
     public static class MessageList extends ArrayList<ChatMessage> {
-        private ChatManager manager;
-        public long conversationId;
-
-        public MessageList(ChatManager manager, long conversationId) {
-            this.manager = manager;
-            this.conversationId = conversationId;
-        }
-
-        public void update() { manager.updateMessages(conversationId, this); } // 更新数据库
-
-        public boolean addWithoutUpdate(ChatMessage chatMessage) { return super.add(chatMessage); } // 添加条目，但不更新数据库
-
-        @Override
-        public boolean add(ChatMessage chatMessage) {
-            boolean result = super.add(chatMessage);
-            update();
-            return result;
-        }
-
-        @Override
-        public ChatMessage remove(int index) {
-            if(index >= 0 && index < size())
-                get(index).deleteImageFile();
-            ChatMessage result = super.remove(index);
-            update();
-            return result;
-        }
-
-        @Override
-        public boolean remove(@Nullable Object obj) {
-            if(obj instanceof ChatMessage)
-                ((ChatMessage) obj).deleteImageFile();
-            boolean result = super.remove(obj);
-            update();
-            return result;
-        }
-
-        @Override
-        public ChatMessage set(int index, ChatMessage element) {
-            ChatMessage result = super.set(index, element);
-            update();
-            return result;
-        }
 
         public void deleteAllImageFiles() {
             for(ChatMessage msg : this) {
@@ -192,10 +165,10 @@ public class ChatManager{
             return json;
         }
 
-        public static MessageList fromJson(ChatManager manager, long conversationId, JSONArray json, boolean loadImages) {
-            MessageList list = new MessageList(manager, conversationId);
+        public static MessageList fromJson(JSONArray json, boolean loadImages) {
+            MessageList list = new MessageList();
             for(int i = 0; i < json.size(); i++) {
-                list.addWithoutUpdate(ChatMessage.fromJson(json.getJSONObject(i), loadImages));
+                list.add(ChatMessage.fromJson(json.getJSONObject(i), loadImages));
             }
             return list;
         }
@@ -207,6 +180,12 @@ public class ChatManager{
         public LocalDateTime time;
         public String title;
         public MessageList messages;
+        public Conversation() {
+            id = -1;
+            time = LocalDateTime.now();
+            title = "新会话";
+            messages = new MessageList();
+        }
     }
 
     // 数据库管理器
@@ -256,7 +235,7 @@ public class ChatManager{
         conversation.id = cursor.getLong(cursor.getColumnIndex("id"));
         conversation.time = LocalDateTime.parse(cursor.getString(cursor.getColumnIndex("time")), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         conversation.title = cursor.getString(cursor.getColumnIndex("title"));
-        conversation.messages = MessageList.fromJson(this, conversation.id, new JSONArray(cursor.getString(cursor.getColumnIndex("messages"))), loadImages);
+        conversation.messages = MessageList.fromJson(new JSONArray(cursor.getString(cursor.getColumnIndex("messages"))), loadImages);
         return conversation;
     }
     private Conversation getConversationByCursor(Cursor cursor) {
@@ -292,37 +271,25 @@ public class ChatManager{
         return conversations;
     }
 
-    // 新建会话并添加到数据库
-    public Conversation newConversation() {
-        Conversation conversation = new Conversation();
-        conversation.time = LocalDateTime.now();
-        conversation.title = "新会话";
-
+    // 添加会话到数据库
+    public long addConversation(Conversation conversation) {
         ContentValues values = new ContentValues();
         values.put("time", conversation.time.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         values.put("title", conversation.title);
-        values.put("messages", new JSONArray().toString());
-
+        values.put("messages", conversation.messages.toJson().toString());
         conversation.id = db.insert(DatabaseHelper.tableName, null, values);
-        conversation.messages = new MessageList(this, conversation.id);
-        return conversation;
+        return conversation.id;
     }
 
-    // 更新会话的聊天消息
-    public void updateMessages(long id, MessageList messages) {
+    public void updateConversation(Conversation conversation) {
         ContentValues values = new ContentValues();
-        values.put("messages", messages.toJson().toString());
-        db.update(DatabaseHelper.tableName, values, "id=?", new String[]{String.valueOf(id)});
+        values.put("time", conversation.time.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        values.put("title", conversation.title);
+        values.put("messages", conversation.messages.toJson().toString());
+        db.update(DatabaseHelper.tableName, values, "id=?", new String[]{String.valueOf(conversation.id)});
     }
 
-    // 更新会话的标题
-    public void updateTitle(long id, String title) {
-        ContentValues values = new ContentValues();
-        values.put("title", title);
-        db.update(DatabaseHelper.tableName, values, "id=?", new String[]{String.valueOf(id)});
-    }
-
-    // 删除指定ID的会话
+    // 删除指定的会话
     public void removeConversation(long id) {
         Cursor cursor = db.query(DatabaseHelper.tableName, null, "id=?", new String[]{String.valueOf(id)}, null, null, null);
         if (cursor.moveToFirst()) {
@@ -331,50 +298,21 @@ public class ChatManager{
         }
         db.delete(DatabaseHelper.tableName, "id=?", new String[]{String.valueOf(id)});
     }
+    public void removeConversation(Conversation conversation) { removeConversation(conversation.id); }
 
     // 删除所有会话
-    public void removeAllConversations(boolean includeLatest) {
-        if(includeLatest) {
-            File imageDir = new File(ChatMessage.getImagePath("abc")).getParentFile(); // 删除所有图片文件
-            if(imageDir.exists()) {
-                for(File file : imageDir.listFiles()) {
-                    file.delete();
-                }
-            }
-            db.delete(DatabaseHelper.tableName, null, null);
-        } else {
-            Cursor cursor = db.query(DatabaseHelper.tableName, null, null, null, null, null, "id DESC");
-            if (cursor.moveToFirst()) {
-                Conversation conversation = getConversationByCursor(cursor, false); // 获取最新会话的图片MD5列表
-                List<String> imageMD5s = new ArrayList<>();
-                for(ChatMessage message : conversation.messages) {
-                    if(message.imageUuid != null) {
-                        imageMD5s.add(message.imageUuid);
-                    }
-                }
-                File imageDir = new File(ChatMessage.getImagePath("abc")).getParentFile(); // 删除所有不匹配的图片文件
-                if(imageDir.exists()) {
-                    for(File file : imageDir.listFiles()) {
-                        if(!imageMD5s.contains(file.getName().replace(".jpg", ""))) {
-                            file.delete();
-                        }
-                    }
-                }
-                db.delete(DatabaseHelper.tableName, "id!=?", new String[]{String.valueOf(conversation.id)});
+    public void removeAllConversations() {
+        File imageDir = new File(ChatMessage.getImagePath("abc")).getParentFile(); // 删除所有图片文件
+        if(imageDir.exists()) {
+            for(File file : imageDir.listFiles()) {
+                file.delete();
             }
         }
+        db.delete(DatabaseHelper.tableName, null, null);
     }
 
     // 删除所有空会话
-    public void removeEmptyConversations(boolean includeLatest) {
-        if(includeLatest) {
-            db.delete(DatabaseHelper.tableName, "messages=?", new String[]{"[]"});
-        } else {
-            Cursor cursor = db.query(DatabaseHelper.tableName, null, null, null, null, null, "id DESC");
-            if (cursor.moveToFirst()) {
-                long id = cursor.getLong(cursor.getColumnIndex("id"));
-                db.delete(DatabaseHelper.tableName, "id!=? AND messages=?", new String[]{String.valueOf(id), "[]"});
-            }
-        }
+    public void removeEmptyConversations() {
+        db.delete(DatabaseHelper.tableName, "messages=?", new String[]{"[]"});
     }
 }

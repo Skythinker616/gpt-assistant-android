@@ -17,12 +17,12 @@
 	<p>
 		<a href="https://gitee.com/skythinker/gpt-assistant-android">
 			<img src="https://gitee.com/skythinker/gpt-assistant-android/badge/star.svg"/>
+			<img src="https://gitee.com/skythinker/gpt-assistant-android/badge/fork.svg"/>
 		</a>
-		<img src="https://gitee.com/skythinker/gpt-assistant-android/badge/fork.svg"/>
 		<a href="https://github.com/Skythinker616/gpt-assistant-android">
 			<img src="https://img.shields.io/github/stars/skythinker616/gpt-assistant-android?logo=github"/>
+			<img src="https://img.shields.io/github/forks/skythinker616/gpt-assistant-android?logo=github"/>
 		</a>
-		<img src="https://img.shields.io/github/forks/skythinker616/gpt-assistant-android?logo=github"/>
 		<img src="https://img.shields.io/badge/License-GPL3.0-red"/>
 	</p>
 </div>
@@ -232,9 +232,9 @@ A: 网页加载超时(15s)、需要登录、需要验证等原因都可能导致
 
 A: 软件仅内置了少数常用模型，你可以在设置中添加自定义模型（以英文分号分隔），添加后即会出现在列表中
 
-**Q: GPT返回的内容中表格和图片无法正常显示？**
+**Q: GPT返回的内容中表格无法正常显示？**
 
-A: 所使用的Markdown渲染器无法在测试中产生稳定的结果，因此暂不支持表格和图片
+A: 所使用的Markdown渲染器无法在测试中产生稳定的结果，因此暂不支持表格渲染
 
 **Q: 显示获取失败，提示请求超时，或产生错误码502/503？**
 
@@ -260,7 +260,8 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 
 ## TODO
 
-- 支持渲染Markdown表格、图片等
+- 支持渲染Markdown表格
+- 高级模板功能
 - 连续语音交流
 
 ---
@@ -272,7 +273,7 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
 | 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.8.0 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.8.0 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.8.1 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |

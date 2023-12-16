@@ -337,16 +337,17 @@ public class MainActivity extends Activity {
                                 }
                             }
                             try {
-                                if(referenceCount > 0)
-                                    chatApiBuffer += referenceStr; // 添加参考网页
-                                multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer)); // 保存回复内容到聊天数据列表
-                                ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1)); // 绑定该聊天数据到布局
-                                btSend.setImageResource(R.drawable.send_btn);
                                 markwon.setMarkdown(tvGptReply, chatApiBuffer); // 渲染Markdown
                                 String ttsText = tvGptReply.getText().toString();
                                 if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) { // 如果TTS开启则朗读剩余文本
                                     tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
                                 }
+                                if(referenceCount > 0)
+                                    chatApiBuffer += referenceStr; // 添加参考网页
+                                multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer)); // 保存回复内容到聊天数据列表
+                                ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1)); // 绑定该聊天数据到布局
+                                markwon.setMarkdown(tvGptReply, chatApiBuffer); // 再次渲染Markdown添加参考网页
+                                btSend.setImageResource(R.drawable.send_btn);
                             } catch (Exception e){
                                 e.printStackTrace();
                             }
@@ -1139,7 +1140,7 @@ public class MainActivity extends Activity {
         tts.stop();
         tts.shutdown();
         webScraper.destroy();
-        if(multiChatList.size() > 0)
+        if(multiChatList.size() > 0 && GlobalDataHolder.getAutoSaveHistory())
             chatManager.addConversation(currentConversation);
         chatManager.removeEmptyConversations();
         chatManager.destroy();

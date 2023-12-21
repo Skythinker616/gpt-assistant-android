@@ -33,7 +33,7 @@
 
 ### 项目特性
 
-- 支持用户预设**问题模板**，支持**连续对话**，支持`gpt-3.5-turbo`、`gpt-4`等模型
+- 支持预设**提问模板**，包括使用高级模板语法向界面添加下拉选框等控件
 - **支持联网**，允许GPT获取在线网页
 - 支持拍照或从相册中**上传图片**到GPT Vision模型
 - 通过无障碍功能捕获音量键事件，实现在**任意界面唤起**
@@ -105,7 +105,16 @@
 	<img src="readme_img/multi_chat.gif" height="400px">
 </div>
 
-**五、支持上传图片到Vision**
+**五、支持高级模板语法**
+
+高级模板语法通过在模板开头添加参数，可以实现向界面添加下拉选框等操作，具体说明可以在[模板编写说明](template_help.md)中查看，也可以在[讨论社区](https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates)中获取或分享模板
+
+<div align="center">
+	<img src="readme_img/template_code.png" height="140px">
+	<img src="readme_img/template_ui.png" height="140px">
+</div>
+
+**六、支持上传图片到Vision**
 
 当选择的模型中含有`vision`时（如`gpt-4-vision-preview`），输入框左侧会出现图片按钮，点击后可以拍照或从相册中选择图片
 
@@ -121,7 +130,7 @@
 
 > 注：Vision模型一般无法免费使用（如Chatanywhere），有需要的用户可以考虑付费服务
 
-**六、支持GPT联网**
+**七、支持GPT联网**
 
 本程序实现了OpenAI的Function接口，允许GPT发起联网请求，程序会向GPT自动返回所需的网页数据，使GPT具有联网能力（需先在设置中开启联网选项）
 
@@ -134,11 +143,13 @@
 	<img src="readme_img/web_zhihu.png" height="180px">
 </div>
 
-> 注1：上图均为使用`gpt-3.5-turbo`模型的测试结果，建议在提问前加入“百度搜索”、“在线获取”、“从xxx获取”等字样引导GPT，以获得更好的联网效果
+> 注1：上图均为使用`gpt-3.5-turbo`模型的测试结果，建议在提问前加入“百度搜索”、“必应搜索”、“在线获取”、“从xxx获取”等字样引导GPT，以获得更好的联网效果
 > 
-> 注2：由于需要将网页内容发送给GPT，联网时会产生大量Token消耗，`gpt-4`模型请谨慎使用
+> 注2：如果你使用图中的提问但没有获取到正确的回答，可能是由于GPT的随机性导致访问了错误的网址，或是网站内容变化导致抓取失败，你可以尝试修改提问方式
+> 
+> 注3：由于需要将网页内容发送给GPT，联网时会产生大量Token消耗，`gpt-4`模型请谨慎使用
 >
-> 注3：`gpt-4-vision-preview`模型暂不支持联网
+> 注4：`gpt-4-vision-preview`模型暂不支持联网
 
 ---
 
@@ -255,13 +266,13 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 - **2023.10.06** 添加华为HMS语音识别
 - **2023.11.06** 添加联网功能
 - **2023.12.04** 添加Vision识图功能
+- **2023.12.21** 支持高级模板语法
 
 ---
 
 ## TODO
 
 - 支持渲染Markdown表格
-- 高级模板功能
 - 连续语音交流
 
 ---
@@ -272,8 +283,8 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
-| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.8.0 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.8.1 |
+| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.9.0 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.9.0 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |

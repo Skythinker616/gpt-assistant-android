@@ -254,8 +254,10 @@ public class ChatApiClient {
         this.model = model;
     }
 
-    // 添加一个函数
+    // 添加一个函数，有同名函数则覆盖
     public void addFunction(String name, String desc, String params, String[] required) {
+        removeFunction(name); // 删除同名函数
+
         Parameters parameters = Parameters.builder()
                 .type("object")
                 .properties(new JSONObject(params))
@@ -269,6 +271,16 @@ public class ChatApiClient {
                 .build();
 
         this.functions.add(functions);
+    }
+
+    // 删除一个函数
+    public void removeFunction(String name) {
+        for(int i = 0; i < this.functions.size(); i++) {
+            if(this.functions.get(i).getName().equals(name)) {
+                this.functions.remove(i);
+                break;
+            }
+        }
     }
 
     // 删除所有函数

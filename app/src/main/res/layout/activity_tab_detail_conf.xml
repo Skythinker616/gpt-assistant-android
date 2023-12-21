@@ -38,6 +38,16 @@
                 android:text="模板设置"
                 android:textColor="#3C3C3C"
                 android:textSize="22sp" />
+
+            <ImageButton
+                android:id="@+id/bt_tab_detail_help"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_weight="0"
+                android:background="#00000000"
+                android:padding="5dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/help_btn" />
         </LinearLayout>
 
         <LinearLayout
@@ -89,16 +99,6 @@
                     android:hint="在这里输入模板内容"
                     android:inputType="textMultiLine|text" />
             </androidx.cardview.widget.CardView>
-
-            <TextView
-                android:id="@+id/textView7"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:layout_weight="0"
-                android:text="模板中的&quot;%input%&quot;将替换为用户输入"
-                android:textAlignment="center"
-                android:textColor="#919191" />
 
             <LinearLayout
                 android:layout_width="match_parent"

@@ -9,16 +9,20 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.google.android.material.internal.TextWatcherAdapter;
 import com.skythinker.gptassistant.ChatManager.Conversation;
 import com.skythinker.gptassistant.ChatManager.ChatMessage;
 
@@ -39,7 +43,7 @@ public class HistoryActivity extends Activity {
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
-            Conversation conversation = historyActivity.chatManager.getConversationAtPosition(position);
+            Conversation conversation = historyActivity.chatManager.getConversationAtPosition(position, historyActivity.searchKeyword);
             holder.tvTitle.setText(conversation.title);
             holder.tvDetail.setText("");
             for(ChatMessage message : conversation.messages) {
@@ -57,7 +61,7 @@ public class HistoryActivity extends Activity {
 
         @Override
         public int getItemCount() {
-            return (int) historyActivity.chatManager.getConversationCount();
+            return (int) historyActivity.chatManager.getConversationCount(historyActivity.searchKeyword);
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
@@ -71,7 +75,7 @@ public class HistoryActivity extends Activity {
                 llOuter = itemView.findViewById(R.id.ll_history_item_outer);
                 llOuter.setOnClickListener((view) -> {
                     Intent intent = new Intent();
-                    intent.putExtra("id", historyActivity.chatManager.getConversationAtPosition(getAdapterPosition()).id);
+                    intent.putExtra("id", historyActivity.chatManager.getConversationAtPosition(getAdapterPosition(), historyActivity.searchKeyword).id);
                     historyActivity.setResult(RESULT_OK, intent);
                     historyActivity.finish();
                 });
@@ -82,6 +86,7 @@ public class HistoryActivity extends Activity {
     private ChatManager chatManager;
     private RecyclerView rvHistoryList;
     private HistoryListAdapter historyListAdapter;
+    private String searchKeyword = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,10 +118,22 @@ public class HistoryActivity extends Activity {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition(); // 获取滑动的item的position
-                chatManager.removeConversation(chatManager.getConversationAtPosition(position).id);
+                chatManager.removeConversation(chatManager.getConversationAtPosition(position, searchKeyword).id);
                 historyListAdapter.notifyItemRemoved(position);
             }
         }).attachToRecyclerView(rvHistoryList);
+
+        ((EditText) findViewById(R.id.et_history_search)).addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            @Override
+            public void afterTextChanged(Editable editable) {
+                searchKeyword = editable.toString();
+                if(searchKeyword.length() == 0)
+                    searchKeyword = null;
+                historyListAdapter.notifyDataSetChanged();
+            }
+        });
 
         (findViewById(R.id.bt_history_back)).setOnClickListener((view) -> {
             finish();

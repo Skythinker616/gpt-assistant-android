@@ -186,6 +186,9 @@ public class ChatManager{
             title = "新会话";
             messages = new MessageList();
         }
+        public void updateTime() {
+            time = LocalDateTime.now();
+        }
     }
 
     // 数据库管理器
@@ -222,11 +225,21 @@ public class ChatManager{
 
     public void destroy() { db.close(); }
 
+    // 转义like语句中的特殊字符
+    private String escapeLikeText(String text) {
+        return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
     // 获取数据库会话数量
-    public long getConversationCount() {
-        Cursor cursor = db.query(DatabaseHelper.tableName, new String[]{"COUNT(*)"}, null, null, null, null, null);
+    public long getConversationCount(String filterTitleText) {
+        String selection = (filterTitleText == null) ? null : "title LIKE ? ESCAPE '\\'";
+        String[] selectionArgs = (filterTitleText == null) ? null : new String[]{"%" + escapeLikeText(filterTitleText) + "%"};
+        Cursor cursor = db.query(DatabaseHelper.tableName, new String[]{"COUNT(*)"}, selection, selectionArgs, null, null, null);
         cursor.moveToFirst();
         return cursor.getLong(0);
+    }
+    public long getConversationCount() {
+        return getConversationCount(null);
     }
 
     // 从数据库游标中读取会话信息
@@ -252,12 +265,17 @@ public class ChatManager{
     }
 
     // 根据会话在数据库中的位置获取会话（按时间倒序）
-    public Conversation getConversationAtPosition(int position) {
-        Cursor cursor = db.query(DatabaseHelper.tableName, null, null, null, null, null, "id DESC", String.valueOf(position) + ",1");
+    public Conversation getConversationAtPosition(int position, String filterTitleText) {
+        String selection = (filterTitleText == null) ? null : "title LIKE ? ESCAPE '\\'";
+        String[] selectionArgs = (filterTitleText == null) ? null : new String[]{"%" + escapeLikeText(filterTitleText) + "%"};
+        Cursor cursor = db.query(DatabaseHelper.tableName, null, selection, selectionArgs, null, null, "id DESC", String.valueOf(position) + ",1");
         if (cursor.moveToFirst()) {
             return getConversationByCursor(cursor);
         }
         return null;
+    }
+    public Conversation getConversationAtPosition(int position) {
+        return getConversationAtPosition(position, null);
     }
 
     // 获取所有会话（按时间倒序）

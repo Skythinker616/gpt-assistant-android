@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -30,6 +29,7 @@ import android.text.style.ImageSpan;
 import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -64,7 +64,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONException;
 import cn.hutool.json.JSONObject;
 import io.noties.markwon.AbstractMarkwonPlugin;
@@ -116,6 +119,8 @@ public class MainActivity extends Activity {
     ChatManager chatManager = null;
     private Conversation currentConversation = null; // 当前会话信息
     private MessageList multiChatList = null; // 指向currentConversation.messages
+
+    private JSONObject currentTemplateParams = null; // 当前模板参数
 
     AsrClientBase asrClient = null;
     AsrClientBase.IAsrCallback asrCallback = null;
@@ -248,13 +253,6 @@ public class MainActivity extends Activity {
             }
         }
 
-        // 处理选中的模板
-        if(GlobalDataHolder.getSelectedTab() != -1 && GlobalDataHolder.getSelectedTab() < GlobalDataHolder.getTabDataList().size())
-            selectedTab = GlobalDataHolder.getSelectedTab();
-        updateTabListView();
-        Button selectedTabBtn = (Button) ((LinearLayout) findViewById(R.id.tabs_layout)).getChildAt(selectedTab); // 将选中的模板按钮滚动到可见位置
-        selectedTabBtn.getParent().requestChildFocus(selectedTabBtn, selectedTabBtn);
-
         chatManager = new ChatManager(this); // 初始化聊天记录管理器
         ChatMessage.setContext(this); // 设置聊天消息的上下文（用于读写文件）
 //        chatManager.removeAllConversations(true); // 重置聊天记录（调试用）
@@ -291,7 +289,7 @@ public class MainActivity extends Activity {
                                 lastRenderTime = System.currentTimeMillis();
                             }
 
-                            if(ttsEnabled) { // 处理TTS
+                            if(currentTemplateParams.getBool("speak", ttsEnabled)) { // 处理TTS
                                 String wholeText = tvGptReply.getText().toString(); // 获取可朗读的文本
                                 if(ttsSentenceEndIndex < wholeText.length()) {
                                     int nextSentenceEndIndex = wholeText.length();
@@ -339,7 +337,7 @@ public class MainActivity extends Activity {
                             try {
                                 markwon.setMarkdown(tvGptReply, chatApiBuffer); // 渲染Markdown
                                 String ttsText = tvGptReply.getText().toString();
-                                if(ttsEnabled && ttsText.length() > ttsSentenceEndIndex) { // 如果TTS开启则朗读剩余文本
+                                if(currentTemplateParams.getBool("speak", ttsEnabled) && ttsText.length() > ttsSentenceEndIndex) { // 如果TTS开启则朗读剩余文本
                                     tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
                                 }
                                 if(referenceCount > 0)
@@ -348,7 +346,7 @@ public class MainActivity extends Activity {
                                 ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1)); // 绑定该聊天数据到布局
                                 markwon.setMarkdown(tvGptReply, chatApiBuffer); // 再次渲染Markdown添加参考网页
                                 btSend.setImageResource(R.drawable.send_btn);
-                            } catch (Exception e){
+                            } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         });
@@ -401,8 +399,6 @@ public class MainActivity extends Activity {
                         }
                     }
                 });
-
-        setGptFunctions(); // 设置GPT函数到API客户端
 
         // 发送按钮点击事件
         btSend.setOnClickListener(view -> {
@@ -485,7 +481,9 @@ public class MainActivity extends Activity {
         (findViewById(R.id.cv_new_chat)).setOnClickListener(view -> {
             clearChatListView();
 
-            if(currentConversation != null && multiChatList.size() > 0 && GlobalDataHolder.getAutoSaveHistory()) // 保存当前对话
+            if(currentConversation != null &&
+                    ((multiChatList.size() > 0 && multiChatList.get(0).role != ChatRole.SYSTEM) || (multiChatList.size() > 1 && multiChatList.get(0).role == ChatRole.SYSTEM)) &&
+                    GlobalDataHolder.getAutoSaveHistory()) // 包含有效对话则保存当前对话
                 chatManager.addConversation(currentConversation);
 
             currentConversation = new Conversation();
@@ -536,6 +534,13 @@ public class MainActivity extends Activity {
             ttsEnabled = false;
             ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
         }
+
+        // 处理选中的模板
+        if(GlobalDataHolder.getSelectedTab() != -1 && GlobalDataHolder.getSelectedTab() < GlobalDataHolder.getTabDataList().size())
+            selectedTab = GlobalDataHolder.getSelectedTab();
+        switchToTemplate(selectedTab);
+        Button selectedTabBtn = (Button) ((LinearLayout) findViewById(R.id.tabs_layout)).getChildAt(selectedTab); // 将选中的模板按钮滚动到可见位置
+        selectedTabBtn.getParent().requestChildFocus(selectedTabBtn, selectedTabBtn);
 
         updateModelSpinner(); // 设置模型选择下拉框
         updateImageButtonVisible(); // 设置图片按钮是否可见
@@ -628,11 +633,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    // 设置GPT API客户端的可用函数
-    private void setGptFunctions() {
-        chatApiClient.clearAllFunctions();
-        if(GlobalDataHolder.getEnableInternetAccess()) {
+    // 设置是否允许GPT联网
+    private void setNetworkEnabled(boolean enabled) {
+        if(enabled) {
             chatApiClient.addFunction("get_html_text", "get all innerText and links of a web page", "{url: {type: string, description: html url}}", new String[]{"url"});
+        } else {
+            chatApiClient.removeFunction("get_html_text");
         }
     }
 
@@ -643,16 +649,14 @@ public class MainActivity extends Activity {
             int tabNum = GlobalDataHolder.getTabDataList().size(); // 更新模板列表
             if(selectedTab >= tabNum)
                 selectedTab = tabNum - 1;
-            if(GlobalDataHolder.getSelectedTab() != -1)
-                GlobalDataHolder.saveSelectedTab(selectedTab);
-            updateTabListView();
+            switchToTemplate(selectedTab);
 
             updateModelSpinner(); // 更新模型下拉选框
             updateImageButtonVisible(); // 更新图片按钮可见性
 
             // 更新GPT客户端相关设置
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
-            chatApiClient.setModel(GlobalDataHolder.getGptModel());
+            chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
 
             // 更新所使用的语音识别接口
             if(GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof HmsAsrClient) {
@@ -661,7 +665,7 @@ public class MainActivity extends Activity {
                 setAsrClient("hms");
             }
 
-            setGptFunctions(); // 更新GPT客户端的可用函数
+            setNetworkEnabled(GlobalDataHolder.getEnableInternetAccess()); // 更新GPT联网设置
         } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) { // 从相册或相机返回
             Uri uri = requestCode == 1 ? photoUri : data.getData(); // 获取图片Uri
             try {
@@ -686,6 +690,7 @@ public class MainActivity extends Activity {
                 Log.d("MainActivity", "onActivityResult 3: id=" + id);
                 Conversation conversation = chatManager.getConversation(id);
                 chatManager.removeConversation(id);
+                conversation.updateTime();
                 reloadConversation(conversation);
             }
         }
@@ -703,7 +708,7 @@ public class MainActivity extends Activity {
 
     // 设置图片选择按钮可见性
     private void updateImageButtonVisible() {
-        if(GlobalDataHolder.getGptModel().contains("vision"))
+        if(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()).contains("vision"))
             btImage.setVisibility(View.VISIBLE);
         else
             btImage.setVisibility(View.GONE);
@@ -720,10 +725,8 @@ public class MainActivity extends Activity {
                 TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
                 if(spModels.getSelectedItemPosition() == position) {
                     tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-                    tv.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.tag_background_unselected));
                 } else {
                     tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
-                    tv.setBackgroundColor(Color.WHITE);
                 }
                 return tv;
             }
@@ -733,7 +736,7 @@ public class MainActivity extends Activity {
         spModels.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() { // 设置选项点击事件
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString(), GlobalDataHolder.getCustomModels());
-                chatApiClient.setModel(GlobalDataHolder.getGptModel());
+                chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
                 updateImageButtonVisible();
                 modelsAdapter.notifyDataSetChanged();
             }
@@ -772,14 +775,112 @@ public class MainActivity extends Activity {
             tabBtn.setLayoutParams(params);
             int finalI = i;
             tabBtn.setOnClickListener(view -> { // 按钮点击时选中对应的模板
-                selectedTab = finalI;
-                if(GlobalDataHolder.getSelectedTab() != -1) {
-                    GlobalDataHolder.saveSelectedTab(selectedTab);
+                if(finalI != selectedTab) {
+                    switchToTemplate(finalI);
+                    if(multiChatList.size() > 0)
+                        (findViewById(R.id.cv_new_chat)).performClick();
                 }
-                updateTabListView();
             });
             tabList.addView(tabBtn);
         }
+    }
+
+    // 更新模板参数控件
+    private void updateTemplateParamsView() {
+        LinearLayout llParams = findViewById(R.id.ll_template_params);
+        llParams.removeAllViews();
+        if(currentTemplateParams.containsKey("input")) {
+            for (String inputKey : currentTemplateParams.getJSONObject("input").keySet()) {
+                LinearLayout llOuter = new LinearLayout(this); // 外层布局，包含参数名和参数控件
+                llOuter.setOrientation(LinearLayout.HORIZONTAL);
+                llOuter.setGravity(Gravity.CENTER);
+                llOuter.setPadding(dpToPx(10), dpToPx(10), dpToPx(10), dpToPx(10));
+                TextView tv = new TextView(this); // 参数名
+                tv.setText(inputKey);
+                tv.setTextColor(Color.BLACK);
+                tv.setTextSize(16);
+                tv.setPadding(0, 0, dpToPx(10), 0);
+                tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0));
+                llOuter.addView(tv);
+                JSONObject inputItem = currentTemplateParams.getJSONObject("input").getJSONObject(inputKey);
+                if(inputItem.getStr("type").equals("text")) { // 输入型参数控件
+                    EditText et = new EditText(this);
+                    et.setBackgroundColor(Color.TRANSPARENT);
+                    et.setTextSize(16);
+                    et.setHint("请输入");
+                    et.setTextColor(Color.BLACK);
+                    et.setSingleLine(false);
+                    et.setMaxHeight(dpToPx(80));
+                    et.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                    et.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                    et.setPadding(0, 0, 0, 0);
+                    llOuter.addView(et);
+                } else if(inputItem.getStr("type").equals("select")) { // 下拉选择型参数控件
+                    Spinner sp = new Spinner(this, Spinner.MODE_DROPDOWN);
+                    sp.setBackgroundColor(Color.TRANSPARENT);
+                    sp.setPadding(0, 0, 0, 0);
+                    sp.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                    sp.setPopupBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.spinner_dropdown_background));
+                    List<String> options = new ArrayList<>(inputItem.getJSONArray("items").toList(String.class));
+                    ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.param_spinner_item, options) {
+                        @Override
+                        public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                            TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
+                            if(sp.getSelectedItemPosition() == position) { // 选中项
+                                tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                            } else { // 未选中项
+                                tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
+                            }
+                            return tv;
+                        }
+                    };
+                    adapter.setDropDownViewResource(R.layout.param_spinner_dropdown_item);
+                    sp.setAdapter(adapter);
+                    llOuter.addView(sp);
+                }
+                llOuter.setTag(inputKey);
+                llParams.addView(llOuter);
+            }
+        }
+
+        if(llParams.getChildCount() == 0) { // 没有参数，隐藏参数布局
+            ((CardView) llParams.getParent()).setVisibility(View.GONE);
+        } else {
+            ((CardView) llParams.getParent()).setVisibility(View.VISIBLE);
+        }
+    }
+
+    // 从界面上获取模板参数
+    private JSONObject getTemplateParamsFromView() {
+        JSONObject params = new JSONObject();
+        LinearLayout llParams = findViewById(R.id.ll_template_params);
+        for (int i = 0; i < llParams.getChildCount(); i++) {
+            LinearLayout llOuter = (LinearLayout) llParams.getChildAt(i);
+            String inputKey = (String) llOuter.getTag();
+            if(llOuter.getChildAt(1) instanceof EditText) {
+                EditText et = (EditText) llOuter.getChildAt(1);
+                params.putOpt(inputKey, et.getText().toString());
+            } else if(llOuter.getChildAt(1) instanceof Spinner) {
+                Spinner sp = (Spinner) llOuter.getChildAt(1);
+                params.putOpt(inputKey, sp.getSelectedItem());
+            }
+        }
+        return params;
+    }
+
+    // 切换到指定的模板
+    private void switchToTemplate(int tabIndex) {
+        selectedTab = tabIndex;
+        if(GlobalDataHolder.getSelectedTab() != -1) {
+            GlobalDataHolder.saveSelectedTab(selectedTab);
+        }
+        currentTemplateParams = GlobalDataHolder.getTabDataList().get(selectedTab).parseParams();
+        Log.d("MainActivity", "switch template: params=" + currentTemplateParams);
+        chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
+        setNetworkEnabled(currentTemplateParams.getBool("network", GlobalDataHolder.getEnableInternetAccess()));
+        updateTabListView();
+        updateTemplateParamsView();
+        updateImageButtonVisible();
     }
 
     // 添加一条聊天记录到聊天列表布局
@@ -945,24 +1046,31 @@ public class MainActivity extends Activity {
 
     // 发送一个提问，input为null时则从输入框获取
     private void sendQuestion(String input){
-        if(!multiChat){ // 若为单次对话模式则新建一个聊天
+        boolean isMultiChat = currentTemplateParams.getBool("chat", multiChat);
+
+        if(!isMultiChat) { // 若为单次对话模式则新建一个聊天
             ((CardView) findViewById(R.id.cv_new_chat)).performClick();
         }
 
         // 处理提问文本内容
         String userInput = (input == null) ? etUserInput.getText().toString() : input;
-        if(multiChatList.size() == 0 && input == null){ // 由用户输入触发的第一次对话需要添加模板内容
+        if(multiChatList.size() == 0 && input == null) { // 由用户输入触发的第一次对话需要添加模板内容
             PromptTabData tabData = GlobalDataHolder.getTabDataList().get(selectedTab);
-            String template = tabData.getPrompt();
-            if(!template.contains("%input%"))
-                template += "%input%";
-            String question = template.replace("%input%", userInput);
-            multiChatList.add(new ChatMessage(ChatRole.USER).setText(question));
+            String template = tabData.getFormattedPrompt(getTemplateParamsFromView());
+            if(currentTemplateParams.getBool("system", false)) {
+                multiChatList.add(new ChatMessage(ChatRole.SYSTEM).setText(template));
+                multiChatList.add(new ChatMessage(ChatRole.USER).setText(userInput));
+            } else {
+                if(!template.contains("%input%") && !template.contains("${input}"))
+                    template += "${input}";
+                String question = template.replace("%input%", userInput).replace("${input}", userInput);
+                multiChatList.add(new ChatMessage(ChatRole.USER).setText(question));
+            }
             currentConversation.title = String.format("%s%s%s",
                     tabData.getTitle(),
                     (!tabData.getTitle().isEmpty() && !userInput.isEmpty()) ? " | " : "",
                     userInput.substring(0, Math.min(100, userInput.length())).replaceAll("\n", " ")); // 保存对话标题
-        }else {
+        } else {
             multiChatList.add(new ChatMessage(ChatRole.USER).setText(userInput));
         }
 
@@ -974,21 +1082,24 @@ public class MainActivity extends Activity {
             multiChatList.get(multiChatList.size() - 1).setImage(base64);
         }
 
-        if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView){ // 若有占位TextView则删除
+        if(llChatList.getChildCount() > 0 && llChatList.getChildAt(0) instanceof TextView) { // 若有占位TextView则删除
             llChatList.removeViewAt(0);
         }
 
-        if(multiChat && multiChatList.size() > 0 && llChatList.getChildCount() > 0){ // 连续对话模式下，将第一条提问改写为添加模板后的内容
-            TextView tvFirst = (TextView) ((LinearLayout) llChatList.getChildAt(0)).getChildAt(1);
-            String firstUserInput = multiChatList.get(0).contentText;
-            if(multiChatList.get(0).contentImageBase64 != null && tvFirst.getText().toString().endsWith("\n ")) { // 若有附加图片则也要一并添加
-                SpannableString oldText = (SpannableString) tvFirst.getText();
-                ImageSpan imgSpan = oldText.getSpans(oldText.length() - 1, oldText.length(), ImageSpan.class)[0];
-                SpannableString newText = new SpannableString(firstUserInput + "\n ");
-                newText.setSpan(imgSpan, newText.length() - 1, newText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                tvFirst.setText(newText);
-            } else {
-                tvFirst.setText(firstUserInput);
+        if(isMultiChat && llChatList.getChildCount() > 0) { // 连续对话模式下，将第一条提问改写为添加模板后的内容
+            LinearLayout llFirst = (LinearLayout) llChatList.getChildAt(0);
+            TextView tvFirst = (TextView) llFirst.getChildAt(1);
+            ChatMessage firstChat = (ChatMessage) llFirst.getTag();
+            if(firstChat.role == ChatRole.USER) {
+                if (firstChat.contentImageBase64 != null && tvFirst.getText().toString().endsWith("\n ")) { // 若有附加图片则也要一并添加
+                    SpannableString oldText = (SpannableString) tvFirst.getText();
+                    ImageSpan imgSpan = oldText.getSpans(oldText.length() - 1, oldText.length(), ImageSpan.class)[0];
+                    SpannableString newText = new SpannableString(firstChat.contentText + "\n ");
+                    newText.setSpan(imgSpan, newText.length() - 1, newText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    tvFirst.setText(newText);
+                } else {
+                    tvFirst.setText(firstChat.contentText);
+                }
             }
         }
 
@@ -1007,7 +1118,7 @@ public class MainActivity extends Activity {
         }
 
         // 添加对话布局
-        LinearLayout llInput = addChatView(ChatRole.USER, multiChat ? multiChatList.get(multiChatList.size() - 1).contentText : userInput, multiChatList.get(multiChatList.size() - 1).contentImageBase64);
+        LinearLayout llInput = addChatView(ChatRole.USER, isMultiChat ? multiChatList.get(multiChatList.size() - 1).contentText : userInput, multiChatList.get(multiChatList.size() - 1).contentImageBase64);
         LinearLayout llReply = addChatView(ChatRole.ASSISTANT, "正在等待回复...", null);
 
         llInput.setTag(multiChatList.get(multiChatList.size() - 1)); // 将对话数据绑定到布局上
@@ -1088,10 +1199,12 @@ public class MainActivity extends Activity {
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
     }
 
+    // onDestroy->false onCreate->true
     public static boolean isAlive() {
         return isAlive;
     }
 
+    // onPause->false onResume->true
     public static boolean isRunning() {
         return isRunning;
     }
@@ -1140,7 +1253,8 @@ public class MainActivity extends Activity {
         tts.stop();
         tts.shutdown();
         webScraper.destroy();
-        if(multiChatList.size() > 0 && GlobalDataHolder.getAutoSaveHistory())
+        if(((multiChatList.size() > 0 && multiChatList.get(0).role != ChatRole.SYSTEM) || (multiChatList.size() > 1 && multiChatList.get(0).role == ChatRole.SYSTEM)) &&
+                GlobalDataHolder.getAutoSaveHistory()) // 包含有效对话则保存当前对话
             chatManager.addConversation(currentConversation);
         chatManager.removeEmptyConversations();
         chatManager.destroy();

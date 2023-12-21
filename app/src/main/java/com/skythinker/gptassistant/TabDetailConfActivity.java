@@ -3,6 +3,7 @@ package com.skythinker.gptassistant;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -54,6 +55,14 @@ public class TabDetailConfActivity extends Activity {
             intent.putExtra("prompt", etPrompt.getText().toString());
             setResult(RESULT_OK, intent);
             finish();
+        });
+
+        (findViewById(R.id.bt_tab_detail_help)).setOnClickListener(view -> { // 用默认浏览器打开模板说明页面
+            Intent intent = new Intent();
+            intent.setAction("android.intent.action.VIEW");
+            Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android/blob/master/template_help.md");
+            intent.setData(content_url);
+            startActivity(intent);
         });
 
         (findViewById(R.id.bt_tab_detail_back)).setOnClickListener(view -> {

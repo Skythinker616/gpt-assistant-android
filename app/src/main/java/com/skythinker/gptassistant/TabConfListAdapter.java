@@ -56,7 +56,7 @@ public class TabConfListAdapter extends RecyclerView.Adapter<TabConfListAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         PromptTabData tab = GlobalDataHolder.getTabDataList().get(position);
         holder.tvTitle.setText(tab.getTitle());
-        holder.tvPrompt.setText(tab.getPrompt());
+        holder.tvPrompt.setText(tab.getContentWithoutParams());
     }
 
     @Override

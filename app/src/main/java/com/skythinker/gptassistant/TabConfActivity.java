@@ -2,15 +2,12 @@ package com.skythinker.gptassistant;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,13 +20,11 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -144,10 +139,8 @@ public class TabConfActivity extends Activity {
                 TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
                 if(((Spinner) findViewById(R.id.sp_model_conf)).getSelectedItemPosition() == position) { // 选中项
                     tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-                    tv.setBackgroundColor(ContextCompat.getColor(TabConfActivity.this, R.color.tag_background_unselected));
                 } else { // 未选中项
                     tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
-                    tv.setBackgroundColor(Color.WHITE);
                 }
                 return tv;
             }
@@ -301,38 +294,36 @@ public class TabConfActivity extends Activity {
                     .show();
         });
 
-        ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> { // 通过Gitee检查更新
-            new Thread(() -> {
-                OkHttpClient client = new OkHttpClient();
-                Request request = new Request.Builder()
-                        .url("https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest")
-                        .build();
-                try {
-                    Response response = client.newCall(request).execute();
-                    String json = response.body().string();
-                    JSONObject jsonObject = new JSONObject(json);
-                    String version = jsonObject.getString("tag_name").replace("v", "");
-                    if(version.equals(BuildConfig.VERSION_NAME)){
-                        handler.post(() -> {
-                            Toast.makeText(this, String.format("已是最新版本 (v%s)", version), Toast.LENGTH_LONG).show();
-                        });
-                    } else {
-                        handler.post(() -> {
-                            Toast.makeText(this, String.format("发现新版本 v%s (当前版本 v%s)", version, BuildConfig.VERSION_NAME), Toast.LENGTH_LONG).show();
-                            Intent intent = new Intent();
-                            intent.setAction("android.intent.action.VIEW");
-                            Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android/releases");
-                            intent.setData(content_url);
-                            startActivity(intent); // 用默认浏览器打开Releases页面
-                        });
-                    }
-                } catch (JSONException | IOException e) {
+        new Thread(() -> { // 通过Gitee检查更新
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url("https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest")
+                    .build();
+            try {
+                Response response = client.newCall(request).execute();
+                String json = response.body().string();
+                JSONObject jsonObject = new JSONObject(json);
+                String version = jsonObject.getString("tag_name").replace("v", "");
+                if(version.equals(BuildConfig.VERSION_NAME)){
                     handler.post(() -> {
-                        Toast.makeText(this, "检查更新失败", Toast.LENGTH_SHORT).show();
+                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format("当前版本：%s · 已是最新版本", version));
                     });
-                    e.printStackTrace();
+                } else {
+                    handler.post(() -> {
+                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format("有可用更新：%s -> %s", BuildConfig.VERSION_NAME, version));
+                    });
                 }
-            }).start();
+            } catch (JSONException | IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> {
+            Intent intent = new Intent();
+            intent.setAction("android.intent.action.VIEW");
+            Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android/releases");
+            intent.setData(content_url);
+            startActivity(intent); // 用默认浏览器打开Releases页面
         });
 
         ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format("当前版本：%s", BuildConfig.VERSION_NAME));

@@ -231,8 +231,8 @@
                                     android:layout_weight="1"
                                     android:background="@color/transparent"
                                     android:gravity="right"
-                                    android:popupBackground="@color/white"
-                                    android:popupElevation="2dp"
+                                    android:popupBackground="@drawable/spinner_dropdown_background"
+                                    android:popupElevation="0dp"
                                     android:spinnerMode="dropdown"
                                     android:textAlignment="textEnd"
                                     tools:ignore="RtlCompat" />
@@ -1049,7 +1049,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="检查更新"
+                                        android:text="查看更新"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 

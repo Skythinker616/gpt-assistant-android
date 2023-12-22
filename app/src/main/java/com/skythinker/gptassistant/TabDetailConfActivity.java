@@ -52,7 +52,7 @@ public class TabDetailConfActivity extends Activity {
             Intent intent = new Intent();
             intent.putExtra("ok", true);
             intent.putExtra("title", etTitle.getText().toString());
-            intent.putExtra("prompt", etPrompt.getText().toString());
+            intent.putExtra("prompt", etPrompt.getText().toString().replaceAll("\\r", ""));
             setResult(RESULT_OK, intent);
             finish();
         });

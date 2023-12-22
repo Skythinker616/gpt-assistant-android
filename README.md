@@ -283,8 +283,8 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 
 | 机型 | 系统版本 | Android 版本 | 本程序版本 |
 | :--: | :-----: | :----------: | :-------: |
-| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.9.0 |
-| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.9.0 |
+| 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.9.1 |
+| 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.9.1 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |
@@ -310,3 +310,19 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 
 - [Markwon](https://github.com/noties/Markwon): Android上的Markdown渲染器
 - [chatgpt-java](https://github.com/Grt1228/chatgpt-java): OpenAI API的Java封装
+
+---
+
+## 捐赠
+
+<details>
+<summary>点击展开</summary>
+
+<p>开发和维护本项目花费了很多时间和精力，如果你觉得本项目对你有帮助，可以请我喝杯奶茶，非常感谢你的支持！</p>
+
+<div align="center">
+	<img src="readme_img/wechat.png" height="180px">
+	<img src="readme_img/alipay.jpg" height="180px">
+</div>
+
+</details>

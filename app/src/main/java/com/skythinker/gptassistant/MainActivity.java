@@ -665,7 +665,7 @@ public class MainActivity extends Activity {
                 setAsrClient("hms");
             }
 
-            setNetworkEnabled(GlobalDataHolder.getEnableInternetAccess()); // 更新GPT联网设置
+            setNetworkEnabled(currentTemplateParams.getBool("network", GlobalDataHolder.getEnableInternetAccess())); // 更新GPT联网设置
         } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) { // 从相册或相机返回
             Uri uri = requestCode == 1 ? photoUri : data.getData(); // 获取图片Uri
             try {
@@ -821,7 +821,11 @@ public class MainActivity extends Activity {
                     sp.setPadding(0, 0, 0, 0);
                     sp.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
                     sp.setPopupBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.spinner_dropdown_background));
-                    List<String> options = new ArrayList<>(inputItem.getJSONArray("items").toList(String.class));
+                    List<String> options = new ArrayList<>();
+                    JSONArray itemsArray = inputItem.getJSONArray("items");
+                    for(int i = 0; i < itemsArray.size(); i++) {
+                        options.add(itemsArray.getJSONObject(i).getStr("name"));
+                    }
                     ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.param_spinner_item, options) {
                         @Override
                         public View getDropDownView(int position, View convertView, ViewGroup parent) {

@@ -52,14 +52,24 @@ public class PromptTabData implements Serializable {
                         params.putOpt(name, value);
                     } else if (Arrays.asList("system", "speak", "chat", "network").contains(name)) { // 布尔型参数
                         params.putOpt(name, value.equals("true"));
-                    } else if (name.equals("input")) { // 输入型参数
+                    } else if (name.equals("input")) { // 输入型参数 {inputName: {type: "text"}}
                         inputObject.putOpt(value, new JSONObject().putOpt("type", "text"));
-                    } else if (name.equals("select")) { // 选择型参数
+                    } else if (name.equals("select")) { // 选择型参数 {selectName: {type: "select", items: [{name: "name1", value: "item1"}]}}
                         String[] selectParams = value.split("\\|");
                         if (selectParams.length > 0) {
                             JSONArray itemsArray = new JSONArray();
                             for (int i = 1; i < selectParams.length; i++) {
-                                itemsArray.put(selectParams[i].trim());
+                                String item = selectParams[i].trim();
+                                JSONObject itemObject = new JSONObject();
+                                Matcher itemMatcher = Pattern.compile("^\\[(.*?)\\](.*?)$").matcher(item);
+                                if (itemMatcher.find()) {
+                                    itemObject.putOpt("name", itemMatcher.group(1));
+                                    itemObject.putOpt("value", itemMatcher.group(2));
+                                } else {
+                                    itemObject.putOpt("name", item);
+                                    itemObject.putOpt("value", item);
+                                }
+                                itemsArray.put(itemObject);
                             }
                             inputObject.putOpt(selectParams[0].trim(), new JSONObject().putOpt("type", "select").putOpt("items", itemsArray));
                         }
@@ -83,10 +93,27 @@ public class PromptTabData implements Serializable {
     }
 
     // 将参数填充到模板中
-    public String getFormattedPrompt(JSONObject params) {
+    public String getFormattedPrompt(JSONObject inputValues) {
+        JSONObject inputParams = parseParams().getJSONObject("input");
         String template = getContentWithoutParams();
-        for(String key : params.keySet()) {
-            template = template.replace("${" + key + "}", params.getStr(key));
+        if (inputParams != null) {
+            for (String key : inputValues.keySet()) {
+                JSONObject paramObject = inputParams.getJSONObject(key);
+                if(paramObject != null) {
+                    if(paramObject.getStr("type").equals("select")) {
+                        JSONArray items = paramObject.getJSONArray("items");
+                        for (int i = 0; i < items.size(); i++) {
+                            JSONObject item = items.getJSONObject(i);
+                            if (item.getStr("name").equals(inputValues.getStr(key))) {
+                                template = template.replace("${" + key + "}", item.getStr("value"));
+                                break;
+                            }
+                        }
+                    } else if(paramObject.getStr("type").equals("text")) {
+                        template = template.replace("${" + key + "}", inputValues.getStr(key));
+                    }
+                }
+            }
         }
         return template;
     }

@@ -287,7 +287,7 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 | 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.9.1 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
-| 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.2.0 |
+| 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.9.1 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.5.0 |
 | 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.7.0 |
 | Pixel 2 (模拟器) | Android 12 | Android 12 | 1.7.0 |
@@ -313,16 +313,17 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 
 ---
 
-## 捐赠
+## 支持/捐赠
+
+如果你觉得 GPT Assistant 不错，可以点个Star，也可以捐赠请我喝杯奶茶，非常感谢你的支持！
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Skythinker616/gpt-assistant-android&type=Date)](https://star-history.com/#Skythinker616/gpt-assistant-android&Date)
 
 <details>
-<summary>点击展开</summary>
-
-<p>开发和维护本项目花费了很多时间和精力，如果你觉得本项目对你有帮助，可以请我喝杯奶茶，非常感谢你的支持！</p>
-
-<div align="center">
-	<img src="readme_img/wechat.png" height="180px">
-	<img src="readme_img/alipay.jpg" height="180px">
-</div>
-
+	<summary>查看捐赠码</summary>
+	<div align="center">
+		<img src="readme_img/wechat.png" height="180px">
+		<img src="readme_img/alipay.jpg" height="180px">
+	</div>
+	<br>
 </details>

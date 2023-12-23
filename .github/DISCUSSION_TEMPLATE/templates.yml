@@ -15,7 +15,7 @@ body:
       required: true
   - type: textarea
     attributes:
-      lable: 模板描述
+      label: 模板描述
       placeholder: 在这里填写模板描述，包括模板的使用场景、使用方法等
     validations:
       required: true

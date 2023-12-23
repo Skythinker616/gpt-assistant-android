@@ -1,0 +1,32 @@
+title: "[模板] 在这里填写分享标题"
+body:
+  - type: input
+    attributes:
+      label: 模板标题
+      placeholder: 在这里填写模板标题
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 模板内容
+      placeholder: 在这里填写模板内容
+      render: plain text
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      lable: 模板描述
+      placeholder: 在这里填写模板描述，包括模板的使用场景、使用方法等
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 使用效果
+      placeholder: （可选）描述模板的使用效果，可以在这里上传截图
+  - type: textarea
+    attributes:
+      label: 其他说明
+      placeholder: （可选）分点列写其他说明，例如：建议使用的模型、编写提问的注意事项等
+  - type: markdown
+    attributes:
+      value: "**非常感谢你为社区做出的贡献！**"

@@ -80,4 +80,4 @@
 
 ## 社区交流
 
-在[GitHub讨论社区](https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates)中，你可以分享自己的模板，也可以在其中找到其他用户分享的模板，欢迎各位参与！
+在GitHub讨论社区中，你可以找到[其他用户分享的模板](https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates)，也可以[分享自己的模板](https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates)，欢迎各位参与！

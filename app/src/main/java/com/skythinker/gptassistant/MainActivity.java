@@ -21,6 +21,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -64,8 +65,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONException;
@@ -244,7 +243,7 @@ public class MainActivity extends Activity {
                             }
                             btImage.setImageResource(R.drawable.image_enabled);
                             if(!GlobalDataHolder.getGptModel().contains("vision"))
-                                Toast.makeText(this, "请选择支持vision的模型以发送图片", Toast.LENGTH_LONG).show();
+                                Toast.makeText(this, R.string.toast_use_vision_model, Toast.LENGTH_LONG).show();
                         } catch (FileNotFoundException e) {
                             e.printStackTrace();
                         }
@@ -265,7 +264,8 @@ public class MainActivity extends Activity {
         webScraper = new WebScraper(this, findViewById(R.id.ll_main_base)); // 初始化网页抓取器
 
         // 初始化GPT客户端
-        chatApiClient = new ChatApiClient(GlobalDataHolder.getGptApiHost(),
+        chatApiClient = new ChatApiClient(this,
+                GlobalDataHolder.getGptApiHost(),
                 GlobalDataHolder.getGptApiKey(),
                 GlobalDataHolder.getGptModel(),
                 new ChatApiClient.OnReceiveListener() {
@@ -314,7 +314,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void onFinished(boolean completed) { // GPT回复完成
                         handler.post(() -> {
-                            String referenceStr = "\n\n参考网页：";
+                            String referenceStr = "\n\n" + getString(R.string.text_ref_web_prefix);
                             int referenceCount = 0;
                             if(completed) { // 如果是完整回复则添加参考网页
                                 int questionIndex = multiChatList.size() - 1;
@@ -355,7 +355,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void onError(String message) {
                         handler.post(() -> {
-                            String errText = String.format("获取失败: %s", message);
+                            String errText = String.format(getString(R.string.text_gpt_error_prefix) + "%s", message);
                             if(tvGptReply != null){
                                 tvGptReply.setText(errText);
                             }else{
@@ -374,7 +374,7 @@ public class MainActivity extends Activity {
                                 JSONObject argJson = new JSONObject(arg);
                                 String url = argJson.getStr("url"); // 获取URL
                                 runOnUiThread(() -> {
-                                    markwon.setMarkdown(tvGptReply, String.format("正在访问: [%s](%s)", URLDecoder.decode(url), url));
+                                    markwon.setMarkdown(tvGptReply, String.format(getString(R.string.text_visiting_web_prefix) + "[%s](%s)", URLDecoder.decode(url), url));
                                     webScraper.load(url, new WebScraper.Callback() { // 抓取网页内容
                                         @Override
                                         public void onLoadResult(String result) {
@@ -407,7 +407,7 @@ public class MainActivity extends Activity {
             }else if(webScraper.isLoading()){
                 webScraper.stopLoading();
                 if(tvGptReply != null)
-                    tvGptReply.setText("已取消访问网页。");
+                    tvGptReply.setText(R.string.text_cancel_web);
                 btSend.setImageResource(R.drawable.send_btn);
             }else{
                 tts.stop();
@@ -554,9 +554,9 @@ public class MainActivity extends Activity {
             @Override
             public void onError(String msg) {
                 if(tvGptReply != null) {
-                    tvGptReply.setText(String.format("语音识别出错: %s", msg));
+                    tvGptReply.setText(getString(R.string.text_asr_error_prefix) + msg);
                 }else{
-                    Toast.makeText(MainActivity.this, String.format("语音识别出错: %s", msg), Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, getString(R.string.text_asr_error_prefix) + msg, Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -577,9 +577,9 @@ public class MainActivity extends Activity {
                     asrClient.startRecongnize();
                     asrStartTime = System.currentTimeMillis();
                     etUserInput.setText("");
-                    etUserInput.setHint("正在聆听...");
+                    etUserInput.setHint(R.string.text_listening_hint);
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_STOP")) { // 停止语音识别
-                    etUserInput.setHint("在此输入问题，长按可清除");
+                    etUserInput.setHint(R.string.text_input_hint);
                     if(System.currentTimeMillis() - asrStartTime < 1000) {
                         asrClient.cancelRecongnize();
                     } else {
@@ -606,13 +606,13 @@ public class MainActivity extends Activity {
         if(GlobalDataHolder.getCheckAccessOnStart()) {
             if(!MyAccessbilityService.isConnected()) { // 没有权限则弹窗提醒用户开启
                 new ConfirmDialog(this)
-                    .setContent("请前往开启无障碍服务")
+                    .setContent(getString(R.string.text_access_notice))
                     .setOnConfirmListener(() -> {
-                        Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
                         startActivity(intent);
                     })
                     .setOnCancelListener(() -> {
-                        Toast.makeText(MainActivity.this, "无障碍服务未开启，无法使用音量键控制", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, getString(R.string.toast_access_error), Toast.LENGTH_SHORT).show();
                     })
                     .show();
             }
@@ -1025,7 +1025,7 @@ public class MainActivity extends Activity {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData clip = ClipData.newPlainText("chat", tvContent.getText().toString());
             clipboard.setPrimaryClip(clip);
-            Toast.makeText(this, "已复制到剪贴板", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_clipboard, Toast.LENGTH_SHORT).show();
         });
         llPopup.addView(cvCopy);
 
@@ -1123,7 +1123,7 @@ public class MainActivity extends Activity {
 
         // 添加对话布局
         LinearLayout llInput = addChatView(ChatRole.USER, isMultiChat ? multiChatList.get(multiChatList.size() - 1).contentText : userInput, multiChatList.get(multiChatList.size() - 1).contentImageBase64);
-        LinearLayout llReply = addChatView(ChatRole.ASSISTANT, "正在等待回复...", null);
+        LinearLayout llReply = addChatView(ChatRole.ASSISTANT, getString(R.string.text_waiting_reply), null);
 
         llInput.setTag(multiChatList.get(multiChatList.size() - 1)); // 将对话数据绑定到布局上
 
@@ -1177,7 +1177,7 @@ public class MainActivity extends Activity {
         tv.setTextColor(Color.parseColor("#000000"));
         tv.setTextSize(16);
         tv.setPadding(dpToPx(10), dpToPx(10), dpToPx(10), dpToPx(10));
-        tv.setText("您好！请问我能为您提供什么帮助？");
+        tv.setText(R.string.default_greeting);
         tvGptReply = tv;
         llChatList.addView(tv);
     }

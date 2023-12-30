@@ -23,7 +23,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="0"
-                android:text="提示"
+                android:text="@string/confirm_dialog_default_title"
                 android:textAlignment="center"
                 android:textColor="#000000"
                 android:textSize="22sp"
@@ -74,7 +74,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:paddingHorizontal="20dp"
-                        android:text="取消"
+                        android:text="@string/confirm_dialog_default_cancel_text"
                         android:textColor="#3C3C3C"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -97,7 +97,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:paddingHorizontal="20dp"
-                        android:text="确定"
+                        android:text="@string/confirm_dialog_default_ok_text"
                         android:textColor="#408E44"
                         android:textSize="18sp"
                         android:textStyle="bold" />

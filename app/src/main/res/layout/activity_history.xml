@@ -35,7 +35,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="历史记录"
+                android:text="@string/history_activity_title"
                 android:textColor="#3C3C3C"
                 android:textSize="22sp" />
 
@@ -71,7 +71,7 @@
                     android:layout_height="wrap_content"
                     android:background="@color/transparent"
                     android:ems="10"
-                    android:hint="搜索对话标题"
+                    android:hint="@string/history_search_hint"
                     android:inputType="text"
                     android:paddingHorizontal="15dp"
                     android:paddingVertical="8dp"

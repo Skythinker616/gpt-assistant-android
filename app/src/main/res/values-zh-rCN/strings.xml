@@ -1,0 +1,109 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">GPTAssistant</string>
+    <string name="accessibility_service_label">GPTAssistant</string>
+    <string name="help_msg">
+        以下为本软件的简要操作说明，详细说明可以在项目主页中查看。\n\n
+        本软件为基于ChatGPT的助理软件，用户可以预设多个问题模板，然后使用桌面图标或通知栏快捷按钮调出提问界面。\n\n
+        用户需要在设置中填写OpenAI API的服务地址和自己的API_Key，可以填入官方服务参数，也可以去GitHub的GPT_API_free项目中申请转发Key。\n\n
+        若需要使用语音助手功能，需要开启无障碍服务，并允许程序后台运行。此后在任何界面长按音量下键可唤出应用，保持按下并对麦克风说话，松开时就会自动录入识别出的文字。在松开后的3秒内再次短按音量下键，即可直接发送问题到服务器。\n\n
+        软件默认使用内置的华为HMS语音识别接口，用户也可改为使用百度语音接口，需要在百度AI开放平台注册账号并创建应用，然后在本应用中填入AppID、APIKey和SecretKey。\n\n
+        联网功能开启后软件会将GPT所要求的网页内容返回给GPT，以提高回答准确性。访问网络会极大增加Token消耗，GPT4模型请慎用。\n\n
+        注意：若长按音量键后手机震动但不弹出界面，请手动在设置中允许后台弹出界面权限。
+    </string>
+    <string-array name="models">
+        <item>gpt-3.5-turbo</item>
+        <item>gpt-3.5-turbo-16k</item>
+        <item>gpt-4</item>
+        <item>gpt-4-32k</item>
+    </string-array>
+    <!-- HMS语音识别API_KEY 已限制包名和签名 -->
+    <string name="hms_api_key">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string>
+    <!--  软件界面字符串  -->
+    <string name="conf_tab_list_title">模板设置</string>
+    <string name="conf_tab_list_subtitle">| 长按拖动排序，左滑删除</string>
+    <string name="conf_openai_title">OpenAI 设置</string>
+    <string name="conf_opanai_key_item">Key</string>
+    <string name="conf_openai_host_item">网址</string>
+    <string name="conf_model_select_item">选用模型</string>
+    <string name="conf_custom_model_item">自定义模型</string>
+    <string name="conf_custom_model_tip">用分号隔开多个模型</string>
+    <string name="conf_baidu_asr_title">百度语音设置</string>
+    <string name="conf_baidu_asr_subtitle">| 关闭百度接口则使用内置华为接口</string>
+    <string name="conf_use_baidu_asr_item">使用百度接口</string>
+    <string name="conf_baidu_appid_item">AppID</string>
+    <string name="conf_baidu_apikey_item">ApiKey</string>
+    <string name="conf_baidu_secret_item">Secret</string>
+    <string name="conf_baidu_realtime_item">启用长语音</string>
+    <string name="conf_network_title">联网设置</string>
+    <string name="conf_enable_network_item">启用网络访问</string>
+    <string name="conf_enable_network_tip">开启会大幅增加Token用量</string>
+    <string name="conf_web_max_char_item">单网页最大字符数</string>
+    <string name="conf_web_max_char_tip">丢弃超出的字符以缩减Token</string>
+    <string name="conf_only_latest_web_item">仅发送最新数据</string>
+    <string name="conf_only_latest_web_tip">丢弃上方对话的网络数据以缩减Token</string>
+    <string name="conf_others_title">其他选项</string>
+    <string name="conf_set_access_item">设置无障碍模式</string>
+    <string name="conf_startup_check_access_item">启动时检查无障碍</string>
+    <string name="conf_set_tts_item">打开系统语音设置</string>
+    <string name="conf_tts_enable_item">默认启用语音</string>
+    <string name="conf_tts_enable_tip">设置应用启动时是否开启语音播报</string>
+    <string name="conf_def_enable_chat_item">默认启用对话</string>
+    <string name="conf_def_enable_chat_tip">设置应用启动时是否开启连续对话</string>
+    <string name="conf_remember_tab_item">记住选用的模板</string>
+    <string name="conf_remember_tab_tip">应用启动时自动选中上次使用的模板</string>
+    <string name="conf_auto_save_history_item">自动保存对话</string>
+    <string name="conf_auto_save_history_tip">新建对话时保存当前对话到历史记录</string>
+    <string name="conf_limit_vision_size_item">发送图片大小限制</string>
+    <string name="conf_limit_vision_size_tip">开:2048x512 关:2048x2048</string>
+    <string name="conf_help_item">查看帮助</string>
+    <string name="conf_check_update_item">查看更新</string>
+    <string name="conf_check_update_tip_empty">当前版本：0.0.0</string>
+    <string name="conf_homepage_item">项目主页</string>
+    <string name="conf_homepage_tip">2023 @skythinker - 欢迎点个Star哦~</string>
+    <string name="default_greeting">您好！请问我能为您提供什么帮助？</string>
+    <string name="conf_activity_title">设置</string>
+    <string name="history_activity_title">历史记录</string>
+    <string name="history_search_hint">搜索对话标题</string>
+    <string name="dialog_clear_history">确定要清空所有历史记录吗？\n（左滑可删除单条记录）</string>
+    <string name="tab_detail_activity_title">模板设置</string>
+    <string name="tab_detail_cancel_text">取消</string>
+    <string name="tab_detail_confirm_text">确定</string>
+    <string name="tab_detail_title_hint">在这里输入标题</string>
+    <string name="tab_detail_content_hint">在这里输入模板内容</string>
+    <string name="confirm_dialog_default_title">提示</string>
+    <string name="confirm_dialog_default_cancel_text">取消</string>
+    <string name="confirm_dialog_default_ok_text">确定</string>
+    <string name="img_dialog_form_camera">使用相机拍照</string>
+    <string name="img_dialog_from_album">从相册选择</string>
+    <string name="img_dialog_cancel">取消</string>
+    <string name="img_preview_title">图片预览</string>
+    <string name="img_preview_cancel">返回</string>
+    <string name="img_preview_delete">移除</string>
+    <string name="img_preview_reselect">重选</string>
+    <string name="toast_use_vision_model">请选择支持vision的模型以发送图片</string>
+    <string name="text_ref_web_prefix">"参考网页: "</string>
+    <string name="text_gpt_error_prefix">"获取失败: "</string>
+    <string name="text_visiting_web_prefix">"正在访问: "</string>
+    <string name="text_cancel_web">已取消访问网页。</string>
+    <string name="text_asr_error_prefix">"语音识别出错: "</string>
+    <string name="text_input_hint">在此输入问题，长按可清除</string>
+    <string name="text_listening_hint">正在聆听...</string>
+    <string name="text_access_notice">请前往开启无障碍服务</string>
+    <string name="toast_access_error">无障碍服务未开启，无法使用音量键控制</string>
+    <string name="toast_clipboard">已复制到剪贴板</string>
+    <string name="text_waiting_reply">正在等待回复...</string>
+    <string name="toast_enable_network">提醒：访问网络时会大幅增加token用量，GPT4请谨慎使用！</string>
+    <string name="dialog_help_title">帮助</string>
+    <string name="dialog_help_cancel">返回</string>
+    <string name="format_version_latest">当前版本：%s · 已是最新版本</string>
+    <string name="format_version_available">有可用更新：%s -> %s</string>
+    <string name="format_version_normal">当前版本：%s</string>
+    <string name="homepage_url">https://gitee.com/skythinker/gpt-assistant-android</string>
+    <string name="release_url">https://gitee.com/skythinker/gpt-assistant-android/releases</string>
+    <string name="check_update_url">https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest</string>
+    <string name="text_default_tab_title">问答</string>
+    <string name="text_default_tab_content">请回答这个问题：</string>
+    <string name="text_gpt_cancel">请求已取消</string>
+    <string name="text_gpt_timeout">请求超时</string>
+    <string name="text_gpt_unknown_error">未知错误</string>
+</resources>

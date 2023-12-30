@@ -36,7 +36,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="设置"
+                android:text="@string/conf_activity_title"
                 android:textColor="#3C3C3C"
                 android:textSize="22sp" />
 
@@ -63,7 +63,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingHorizontal="10dp"
-                        android:text="模板设置"
+                        android:text="@string/conf_tab_list_title"
                         android:textColor="#3C3C3C"
                         android:textSize="14sp" />
 
@@ -73,7 +73,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="5dp"
                         android:paddingHorizontal="10dp"
-                        android:text="| 长按拖动排序，左滑删除"
+                        android:text="@string/conf_tab_list_subtitle"
                         android:textColor="#6A6A6A"
                         android:textSize="12sp" />
 
@@ -118,7 +118,7 @@
                         android:layout_marginBottom="5dp"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="2dp"
-                        android:text="OpenAI 设置"
+                        android:text="@string/conf_openai_title"
                         android:textColor="#3C3C3C"
                         android:textSize="14sp" />
 
@@ -154,7 +154,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginRight="20dp"
                                     android:layout_weight="0"
-                                    android:text="Key"
+                                    android:text="@string/conf_opanai_key_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -188,7 +188,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginRight="20dp"
                                     android:layout_weight="0"
-                                    android:text="网址"
+                                    android:text="@string/conf_openai_host_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -220,7 +220,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginRight="20dp"
                                     android:layout_weight="0"
-                                    android:text="选用模型"
+                                    android:text="@string/conf_model_select_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -257,14 +257,14 @@
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="自定义模型"
+                                        android:text="@string/conf_custom_model_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="用分号隔开多个模型"
+                                        android:text="@string/conf_custom_model_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -276,6 +276,7 @@
                                     android:layout_weight="1"
                                     android:background="#00FFFFFF"
                                     android:ems="10"
+                                    android:hint="model1;model2"
                                     android:inputType="text"
                                     android:textAlignment="textEnd"
                                     android:textColor="#5A5A5A"
@@ -294,7 +295,7 @@
                         android:layout_marginTop="10dp"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="2dp"
-                        android:text="百度语音设置"
+                        android:text="@string/conf_baidu_asr_title"
                         android:textColor="#3C3C3C"
                         android:textSize="14sp" />
 
@@ -304,7 +305,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="5dp"
                         android:paddingHorizontal="10dp"
-                        android:text="| 关闭百度接口则使用内置华为接口"
+                        android:text="@string/conf_baidu_asr_subtitle"
                         android:textColor="#6A6A6A"
                         android:textSize="12sp" />
 
@@ -339,7 +340,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="使用百度接口"
+                                    android:text="@string/conf_use_baidu_asr_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -371,7 +372,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginRight="20dp"
                                     android:layout_weight="0"
-                                    android:text="AppID"
+                                    android:text="@string/conf_baidu_appid_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -403,7 +404,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginRight="20dp"
                                     android:layout_weight="0"
-                                    android:text="ApiKey"
+                                    android:text="@string/conf_baidu_apikey_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -436,7 +437,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginRight="20dp"
                                     android:layout_weight="0"
-                                    android:text="Secret"
+                                    android:text="@string/conf_baidu_secret_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -468,7 +469,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="启用长语音"
+                                    android:text="@string/conf_baidu_realtime_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -498,7 +499,7 @@
                         android:layout_marginBottom="5dp"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="2dp"
-                        android:text="联网设置"
+                        android:text="@string/conf_network_title"
                         android:textColor="#3C3C3C"
                         android:textSize="14sp" />
 
@@ -539,7 +540,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="启用网络访问"
+                                        android:text="@string/conf_enable_network_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -548,7 +549,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="开启会大幅增加Token用量"
+                                        android:text="@string/conf_enable_network_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -579,7 +580,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginRight="20dp"
-                                    android:layout_weight="1"
+                                    android:layout_weight="0"
                                     android:orientation="vertical">
 
                                     <TextView
@@ -587,7 +588,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="单网页最大字符数"
+                                        android:text="@string/conf_web_max_char_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -595,7 +596,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="丢弃超出的字符以缩减Token"
+                                        android:text="@string/conf_web_max_char_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -604,7 +605,7 @@
                                     android:id="@+id/et_web_max_char_conf"
                                     android:layout_width="100dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="0"
+                                    android:layout_weight="1"
                                     android:background="#00FFFFFF"
                                     android:ems="10"
                                     android:hint="2000"
@@ -634,7 +635,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="仅发送最新数据"
+                                        android:text="@string/conf_only_latest_web_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -642,7 +643,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="丢弃上方对话的网络数据以缩减Token"
+                                        android:text="@string/conf_only_latest_web_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -673,7 +674,7 @@
                         android:layout_marginBottom="5dp"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="2dp"
-                        android:text="其他选项"
+                        android:text="@string/conf_others_title"
                         android:textColor="#3C3C3C"
                         android:textSize="14sp" />
 
@@ -708,7 +709,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="设置无障碍模式"
+                                    android:text="@string/conf_set_access_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -735,7 +736,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="启动时检查无障碍"
+                                    android:text="@string/conf_startup_check_access_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -766,7 +767,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="打开系统语音设置"
+                                    android:text="@string/conf_set_tts_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -798,7 +799,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="默认启用语音"
+                                        android:text="@string/conf_tts_enable_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -806,7 +807,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="设置应用启动时是否开启语音播报"
+                                        android:text="@string/conf_tts_enable_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -843,7 +844,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="默认启用对话"
+                                        android:text="@string/conf_def_enable_chat_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -851,7 +852,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="设置应用启动时是否开启连续对话"
+                                        android:text="@string/conf_def_enable_chat_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -888,7 +889,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="记住选用的模板"
+                                        android:text="@string/conf_remember_tab_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -896,7 +897,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="应用启动时自动选中上次使用的模板"
+                                        android:text="@string/conf_remember_tab_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -933,7 +934,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="自动保存对话"
+                                        android:text="@string/conf_auto_save_history_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -941,7 +942,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="新建对话时保存当前对话到历史记录"
+                                        android:text="@string/conf_auto_save_history_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -978,7 +979,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="发送图片大小限制"
+                                        android:text="@string/conf_limit_vision_size_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -986,7 +987,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="开:2048x512 关:2048x2048"
+                                        android:text="@string/conf_limit_vision_size_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -1017,7 +1018,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="查看帮助"
+                                    android:text="@string/conf_help_item"
                                     android:textColor="#000000"
                                     android:textSize="18sp" />
 
@@ -1049,7 +1050,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="查看更新"
+                                        android:text="@string/conf_check_update_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -1058,7 +1059,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="当前版本：0.0.0"
+                                        android:text="@string/conf_check_update_tip_empty"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>
@@ -1091,7 +1092,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="项目主页"
+                                        android:text="@string/conf_homepage_item"
                                         android:textColor="#000000"
                                         android:textSize="18sp" />
 
@@ -1099,7 +1100,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:text="2023 @skythinker - 欢迎点个Star哦~"
+                                        android:text="@string/conf_homepage_tip"
                                         android:textColor="#6A6A6A"
                                         android:textSize="12sp" />
                                 </LinearLayout>

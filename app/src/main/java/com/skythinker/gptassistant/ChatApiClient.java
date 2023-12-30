@@ -1,5 +1,6 @@
 package com.skythinker.gptassistant;
 
+import android.content.Context;
 import android.util.Log;
 import android.util.Pair;
 
@@ -55,7 +56,10 @@ public class ChatApiClient {
     String callingFuncName = "";
     String callingFuncArg = "";
 
-    public ChatApiClient(String url, String apiKey, String model, OnReceiveListener listener) {
+    Context context = null;
+
+    public ChatApiClient(Context context, String url, String apiKey, String model, OnReceiveListener listener) {
+        this.context = context;
         this.listener = listener;
         this.model = model;
         httpClient = new OkHttpClient.Builder()
@@ -200,10 +204,10 @@ public class ChatApiClient {
                     } else {
                         String err = throwable.toString();
                         Log.d("ChatApiClient", "onFailure: " + err);
-                        if(err.equals("java.io.IOException: Canceled")) { // 将常见的错误转换为中文
-                            err = "请求已取消";
+                        if(err.equals("java.io.IOException: Canceled")) { // 解释常见的错误
+                            err = context.getString(R.string.text_gpt_cancel);
                         } else if(err.equals("java.net.SocketTimeoutException: timeout")) {
-                            err = "请求超时";
+                            err = context.getString(R.string.text_gpt_timeout);
                         }
                         listener.onError(err);
                     }
@@ -218,7 +222,7 @@ public class ChatApiClient {
                             listener.onError(err);
                         } catch (IOException ignore) { }
                     } else {
-                        listener.onError("未知错误");
+                        listener.onError(context.getString(R.string.text_gpt_unknown_error));
                     }
                 }
             }

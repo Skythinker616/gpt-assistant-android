@@ -43,7 +43,7 @@ public class GlobalDataHolder {
         sp = context.getSharedPreferences("gpt_assistant", Context.MODE_PRIVATE);
         loadTabDataList();
         if(tabDataList.size() == 0) {
-            tabDataList.add(new PromptTabData("问答", "请回答这个问题："));
+            tabDataList.add(new PromptTabData(context.getString(R.string.text_default_tab_title), context.getString(R.string.text_default_tab_content)));
             saveTabDataList();
         }
         loadAsrInfo();

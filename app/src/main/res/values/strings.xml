@@ -2,13 +2,13 @@
     <string name="app_name">GPTAssistant</string>
     <string name="accessibility_service_label">GPTAssistant</string>
     <string name="help_msg">
-        以下为本软件的简要操作说明，详细说明可以在项目主页中查看。\n\n
-        本软件为基于ChatGPT的助理软件，用户可以预设多个问题模板，然后使用桌面图标或通知栏快捷按钮调出提问界面。\n\n
-        用户需要在设置中填写OpenAI API的服务地址和自己的API_Key，可以填入官方服务参数，也可以去GitHub的GPT_API_free项目中申请转发Key。\n\n
-        若需要使用语音助手功能，需要开启无障碍服务，并允许程序后台运行。此后在任何界面长按音量下键可唤出应用，保持按下并对麦克风说话，松开时就会自动录入识别出的文字。在松开后的3秒内再次短按音量下键，即可直接发送问题到服务器。\n\n
-        软件默认使用内置的华为HMS语音识别接口，用户也可改为使用百度语音接口，需要在百度AI开放平台注册账号并创建应用，然后在本应用中填入AppID、APIKey和SecretKey。\n\n
-        联网功能开启后软件会将GPT所要求的网页内容返回给GPT，以提高回答准确性。访问网络会极大增加Token消耗，GPT4模型请慎用。\n\n
-        注意：若长按音量键后手机震动但不弹出界面，请手动在设置中允许后台弹出界面权限。
+        Brief instructions below, see project homepage for more.\n\n
+        GPTAssistant, based on ChatGPT, lets you set question templates for quick querying via desktop icon or notification bar.\n\n
+        Fill in the OpenAI API host and API_Key in settings. Use official parameters or apply for a relay Key at GPT_API_free on GitHub.\n\n
+        For voice assistant, enable accessibility service and allow background running. Long-press volume down to wake the app, and speak to the mic while holding. After release, press again within 3 seconds to send the query.\n\n
+        The default HMS voice service can be switched to Baidu by registering at Baidu AI and entering AppID, ApiKey, and SecretKey in the app.\n\n
+        Enabling networking allows fetching web content for GPT to enhance answer accuracy. Note: This can increase token usage significantly—use GPT-4 sparingly.\n\n
+        Note: If there\'s vibration without pop-up after long-pressing volume, please permit background pop-ups in settings.
     </string>
     <string-array name="models">
         <item>gpt-3.5-turbo</item>
@@ -16,5 +16,94 @@
         <item>gpt-4</item>
         <item>gpt-4-32k</item>
     </string-array>
-    <string name="hms_api_key">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string> <!-- API已限制包名和签名 -->
+    <!-- HMS语音识别API_KEY 已限制包名和签名 -->
+    <string name="hms_api_key">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string>
+    <!--  软件界面字符串  -->
+    <string name="conf_tab_list_title">Template Settings</string>
+    <string name="conf_tab_list_subtitle">| Drag to sort, swipe left to delete</string>
+    <string name="conf_openai_title">OpenAI Settings</string>
+    <string name="conf_opanai_key_item">Key</string>
+    <string name="conf_openai_host_item">URL</string>
+    <string name="conf_model_select_item">Choose Model</string>
+    <string name="conf_custom_model_item">Custom Models</string>
+    <string name="conf_custom_model_tip">Separate models with \';\'</string>
+    <string name="conf_baidu_asr_title">Baidu Voice Settings</string>
+    <string name="conf_baidu_asr_subtitle">| Disabling uses built-in HMS service</string>
+    <string name="conf_use_baidu_asr_item">Use Baidu Service</string>
+    <string name="conf_baidu_appid_item">AppID</string>
+    <string name="conf_baidu_apikey_item">ApiKey</string>
+    <string name="conf_baidu_secret_item">SecretKey</string>
+    <string name="conf_baidu_realtime_item">Enable Long Speech</string>
+    <string name="conf_network_title">Networking Settings</string>
+    <string name="conf_enable_network_item">Enable Web Access</string>
+    <string name="conf_enable_network_tip">Significantly increases token usage</string>
+    <string name="conf_web_max_char_item">Max Webpage Length</string>
+    <string name="conf_web_max_char_tip">Discard excess to reduce tokens</string>
+    <string name="conf_only_latest_web_item">Send Latest Data Only</string>
+    <string name="conf_only_latest_web_tip">Discard old web data to save tokens</string>
+    <string name="conf_others_title">Other Options</string>
+    <string name="conf_set_access_item">Set Accessibility Mode</string>
+    <string name="conf_startup_check_access_item">Check Accessibility on Startup</string>
+    <string name="conf_set_tts_item">Open TTS Settings</string>
+    <string name="conf_tts_enable_item">Enable TTS by Default</string>
+    <string name="conf_tts_enable_tip">Set voice feedback on app start</string>
+    <string name="conf_def_enable_chat_item">Enable Chat by Default</string>
+    <string name="conf_def_enable_chat_tip">Set ongoing chat on app start</string>
+    <string name="conf_remember_tab_item">Remember Selected Tab</string>
+    <string name="conf_remember_tab_tip">Auto-select last used template</string>
+    <string name="conf_auto_save_history_item">Auto-Save Conversations</string>
+    <string name="conf_auto_save_history_tip">Save current discussion on new chat</string>
+    <string name="conf_limit_vision_size_item">Image Size Limit</string>
+    <string name="conf_limit_vision_size_tip">On:2048x512 Off:2048x2048</string>
+    <string name="conf_help_item">Help</string>
+    <string name="conf_check_update_item">Check for Updates</string>
+    <string name="conf_check_update_tip_empty">Current version: 0.0.0</string>
+    <string name="conf_homepage_item">Project Homepage</string>
+    <string name="conf_homepage_tip">2023 @skythinker - Stars welcomed~</string>
+    <string name="default_greeting">Hello! What can I assist you with?</string>
+    <string name="conf_activity_title">Settings</string>
+    <string name="history_activity_title">History Records</string>
+    <string name="history_search_hint">Search Conversation Titles</string>
+    <string name="dialog_clear_history">Confirm clear all history?\n(Swipe left to delete individual)</string>
+    <string name="tab_detail_activity_title">Edit Template</string>
+    <string name="tab_detail_cancel_text">Cancel</string>
+    <string name="tab_detail_confirm_text">Confirm</string>
+    <string name="tab_detail_title_hint">Enter title here</string>
+    <string name="tab_detail_content_hint">Enter template content here</string>
+    <string name="confirm_dialog_default_title">Notice</string>
+    <string name="confirm_dialog_default_cancel_text">Cancel</string>
+    <string name="confirm_dialog_default_ok_text">OK</string>
+    <string name="img_dialog_form_camera">Take Photo</string>
+    <string name="img_dialog_from_album">Pick from Gallery</string>
+    <string name="img_dialog_cancel">Cancel</string>
+    <string name="img_preview_title">Image Preview</string>
+    <string name="img_preview_cancel">Back</string>
+    <string name="img_preview_delete">Remove</string>
+    <string name="img_preview_reselect">Reselect</string>
+    <string name="toast_use_vision_model">Choose a vision model to send images</string>
+    <string name="text_ref_web_prefix">"Ref web: "</string>
+    <string name="text_gpt_error_prefix">"Failed to get: "</string>
+    <string name="text_visiting_web_prefix">"Visiting: "</string>
+    <string name="text_cancel_web">Webpage visit canceled.</string>
+    <string name="text_asr_error_prefix">"Voice recognition error: "</string>
+    <string name="text_input_hint">Enter query here, long-press to clear</string>
+    <string name="text_listening_hint">Listening...</string>
+    <string name="text_access_notice">Please enable Accessibility Services</string>
+    <string name="toast_access_error">Accessibility not enabled, volume key control unavailable</string>
+    <string name="toast_clipboard">Copied to clipboard</string>
+    <string name="text_waiting_reply">Waiting for reply...</string>
+    <string name="toast_enable_network">Reminder: Web access will increase token usage, use GPT-4 wisely!</string>
+    <string name="dialog_help_title">Help</string>
+    <string name="dialog_help_cancel">Back</string>
+    <string name="format_version_latest">Current version: %s · Up-to-date</string>
+    <string name="format_version_available">Update available: %s -> %s</string>
+    <string name="format_version_normal">Current version: %s</string>
+    <string name="homepage_url">https://github.com/Skythinker616/gpt-assistant-android</string>
+    <string name="release_url">https://github.com/Skythinker616/gpt-assistant-android/releases</string>
+    <string name="check_update_url">https://api.github.com/repos/Skythinker616/gpt-assistant-android/releases/latest</string>
+    <string name="text_default_tab_title">Q&amp;A</string>
+    <string name="text_default_tab_content">"Please answer: "</string>
+    <string name="text_gpt_cancel">Request canceled</string>
+    <string name="text_gpt_timeout">Request timeout</string>
+    <string name="text_gpt_unknown_error">Unknown error occurred</string>
 </resources>

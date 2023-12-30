@@ -254,7 +254,7 @@ public class TabConfActivity extends Activity {
         setInternetItemHidden(!GlobalDataHolder.getEnableInternetAccess());
         ((Switch) findViewById(R.id.sw_enable_internet_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
             if(checked)
-                Toast.makeText(this, "提醒：访问网络时会大幅增加token用量，GPT4请谨慎使用！", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.toast_enable_network, Toast.LENGTH_LONG).show();
             GlobalDataHolder.saveFunctionSetting(checked, GlobalDataHolder.getWebMaxCharCount(), GlobalDataHolder.getOnlyLatestWebResult());
             setInternetItemHidden(!checked);
         });
@@ -286,18 +286,18 @@ public class TabConfActivity extends Activity {
 
         (findViewById(R.id.tv_help_conf)).setOnClickListener(view -> { // 弹出帮助对话框
             new ConfirmDialog(this)
-                    .setTitle("帮助")
-                    .setContent(getResources().getString(R.string.help_msg))
+                    .setTitle(getString(R.string.dialog_help_title))
+                    .setContent(getString(R.string.help_msg))
                     .setContentAlignment(TextView.TEXT_ALIGNMENT_TEXT_START)
                     .setOkButtonVisibility(View.GONE)
-                    .setCancelText("返回")
+                    .setCancelText(getString(R.string.dialog_help_cancel))
                     .show();
         });
 
-        new Thread(() -> { // 通过Gitee检查更新
+        new Thread(() -> { // 通过Gitee/GitHub检查更新
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
-                    .url("https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest")
+                    .url(getString(R.string.check_update_url))
                     .build();
             try {
                 Response response = client.newCall(request).execute();
@@ -306,11 +306,11 @@ public class TabConfActivity extends Activity {
                 String version = jsonObject.getString("tag_name").replace("v", "");
                 if(version.equals(BuildConfig.VERSION_NAME)){
                     handler.post(() -> {
-                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format("当前版本：%s · 已是最新版本", version));
+                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_latest), version));
                     });
                 } else {
                     handler.post(() -> {
-                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format("有可用更新：%s -> %s", BuildConfig.VERSION_NAME, version));
+                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_available), BuildConfig.VERSION_NAME, version));
                     });
                 }
             } catch (JSONException | IOException e) {
@@ -321,19 +321,19 @@ public class TabConfActivity extends Activity {
         ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> {
             Intent intent = new Intent();
             intent.setAction("android.intent.action.VIEW");
-            Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android/releases");
+            Uri content_url = Uri.parse(getString(R.string.release_url));
             intent.setData(content_url);
             startActivity(intent); // 用默认浏览器打开Releases页面
         });
 
-        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format("当前版本：%s", BuildConfig.VERSION_NAME));
+        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_normal), BuildConfig.VERSION_NAME));
 
         ((LinearLayout) findViewById(R.id.tv_homepage_conf).getParent()).setOnClickListener(view -> {
             Intent intent = new Intent();
             intent.setAction("android.intent.action.VIEW");
-            Uri content_url = Uri.parse("https://gitee.com/skythinker/gpt-assistant-android");
+            Uri content_url = Uri.parse(getString(R.string.homepage_url));
             intent.setData(content_url);
-            startActivity(intent); // 用默认浏览器打开Gitee主页
+            startActivity(intent); // 用默认浏览器打开主页
         });
 
         (findViewById(R.id.bt_back_conf)).setOnClickListener(view -> {

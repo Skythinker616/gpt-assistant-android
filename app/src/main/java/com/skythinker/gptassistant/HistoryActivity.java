@@ -141,7 +141,7 @@ public class HistoryActivity extends Activity {
 
         (findViewById(R.id.bt_history_clear_all)).setOnClickListener((view) -> {
             new ConfirmDialog(this)
-                    .setContent("确定要清空所有历史记录吗？\n（左滑可删除单条记录）")
+                    .setContent(getString(R.string.dialog_clear_history))
                     .setOnConfirmListener(() -> {
                         chatManager.removeAllConversations();
                         historyListAdapter.notifyDataSetChanged();

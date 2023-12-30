@@ -26,7 +26,7 @@
                 android:background="#00FFFFFF"
                 android:paddingHorizontal="40dp"
                 android:paddingVertical="15dp"
-                android:text="使用相机拍照"
+                android:text="@string/img_dialog_form_camera"
                 android:textSize="18sp" />
 
             <Button
@@ -36,7 +36,7 @@
                 android:background="#00FFFFFF"
                 android:paddingHorizontal="40dp"
                 android:paddingVertical="15dp"
-                android:text="从相册选择"
+                android:text="@string/img_dialog_from_album"
                 android:textSize="18sp" />
 
             <Button
@@ -46,7 +46,7 @@
                 android:background="#00FFFFFF"
                 android:paddingHorizontal="40dp"
                 android:paddingVertical="15dp"
-                android:text="取消"
+                android:text="@string/img_dialog_cancel"
                 android:textSize="18sp" />
 
         </LinearLayout>

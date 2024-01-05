@@ -20,8 +20,8 @@
 			<img src="https://gitee.com/skythinker/gpt-assistant-android/badge/fork.svg"/>
 		</a>
 		<a href="https://github.com/Skythinker616/gpt-assistant-android">
-			<img src="https://img.shields.io/github/stars/skythinker616/gpt-assistant-android?logo=github"/>
-			<img src="https://img.shields.io/github/forks/skythinker616/gpt-assistant-android?logo=github"/>
+			<img src="https://img.shields.io/github/stars/skythinker616/gpt-assistant-android?logo=github&style=flat"/>
+			<img src="https://img.shields.io/github/forks/skythinker616/gpt-assistant-android?logo=github&style=flat"/>
 		</a>
 		<img src="https://img.shields.io/badge/License-GPL3.0-red"/>
 	</p>

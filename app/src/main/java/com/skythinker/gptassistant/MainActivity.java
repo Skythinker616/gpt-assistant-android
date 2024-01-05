@@ -248,6 +248,11 @@ public class MainActivity extends Activity {
                             e.printStackTrace();
                         }
                     }
+                } else if(type != null && type.equals("text/plain")) { // 分享文本
+                    String text = activityIntent.getStringExtra(Intent.EXTRA_TEXT);
+                    if(text != null){
+                        etUserInput.setText(text);
+                    }
                 }
             }
         }

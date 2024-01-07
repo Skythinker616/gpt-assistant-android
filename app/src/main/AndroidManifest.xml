@@ -65,6 +65,9 @@
             android:name=".HistoryActivity"
             android:exported="false" />
         <activity
+            android:name=".OnlineTemplatesActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="stateVisible|adjustResize"

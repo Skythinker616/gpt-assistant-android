@@ -12,6 +12,7 @@ import android.widget.EditText;
 public class TabDetailConfActivity extends Activity {
 
     private EditText etTitle, etPrompt;
+    private boolean isFromOnlineTemplates = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +54,7 @@ public class TabDetailConfActivity extends Activity {
             intent.putExtra("ok", true);
             intent.putExtra("title", etTitle.getText().toString());
             intent.putExtra("prompt", etPrompt.getText().toString().replaceAll("\\r", ""));
+            intent.putExtra("fromOnline", isFromOnlineTemplates);
             setResult(RESULT_OK, intent);
             finish();
         });
@@ -65,9 +67,23 @@ public class TabDetailConfActivity extends Activity {
             startActivity(intent);
         });
 
+        (findViewById(R.id.bt_online_templates)).setOnClickListener(view -> {
+            startActivityForResult(new Intent(TabDetailConfActivity.this, OnlineTemplatesActivity.class), 0);
+        });
+
         (findViewById(R.id.bt_tab_detail_back)).setOnClickListener(view -> {
             finish();
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 0 && resultCode==RESULT_OK) {
+            etTitle.setText(data.getStringExtra("tag"));
+            etPrompt.setText(data.getStringExtra("content"));
+            isFromOnlineTemplates = true;
+        }
     }
 
     @Override

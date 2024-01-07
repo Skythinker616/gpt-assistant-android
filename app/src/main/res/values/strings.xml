@@ -27,13 +27,14 @@
     <string name="conf_model_select_item">Choose Model</string>
     <string name="conf_custom_model_item">Custom Models</string>
     <string name="conf_custom_model_tip">Separate models with \';\'</string>
-    <string name="conf_baidu_asr_title">Baidu Voice Settings</string>
-    <string name="conf_baidu_asr_subtitle">| Disabling uses built-in HMS service</string>
+    <string name="conf_asr_title">Speech Recognition Settings</string>
+    <string name="conf_asr_subtitle">| Disabling both will use built-in HMS service</string>
     <string name="conf_use_baidu_asr_item">Use Baidu Service</string>
     <string name="conf_baidu_appid_item">AppID</string>
     <string name="conf_baidu_apikey_item">ApiKey</string>
     <string name="conf_baidu_secret_item">SecretKey</string>
     <string name="conf_baidu_realtime_item">Enable Long Speech</string>
+    <string name="conf_use_whisper_asr_item">Use Whisper Service</string>
     <string name="conf_network_title">Networking Settings</string>
     <string name="conf_enable_network_item">Enable Web Access</string>
     <string name="conf_enable_network_tip">Significantly increases token usage</string>
@@ -101,9 +102,16 @@
     <string name="homepage_url">https://github.com/Skythinker616/gpt-assistant-android</string>
     <string name="release_url">https://github.com/Skythinker616/gpt-assistant-android/releases</string>
     <string name="check_update_url">https://api.github.com/repos/Skythinker616/gpt-assistant-android/releases/latest</string>
+    <string name="new_discussion_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates</string>
+    <string name="discussions_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates</string>
+    <string name="shared_templates_url">https://raw.githubusercontent.com/Skythinker616/gpt-assistant-android/master/static_res/shared_templates.json</string>
     <string name="text_default_tab_title">Q&amp;A</string>
     <string name="text_default_tab_content">"Please answer: "</string>
     <string name="text_gpt_cancel">Request canceled</string>
     <string name="text_gpt_timeout">Request timeout</string>
     <string name="text_gpt_unknown_error">Unknown error occurred</string>
+    <string name="online_temp_activity_title">Online Templates</string>
+    <string name="text_online_temp_notice">| Touch for details, swipe right to download</string>
+    <string name="text_online_temp_loading">Loading...</string>
+    <string name="text_online_temp_error">Network error.</string>
 </resources>

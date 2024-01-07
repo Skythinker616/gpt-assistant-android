@@ -559,7 +559,7 @@ public class MainActivity extends Activity {
             @Override
             public void onError(String msg) {
                 if(tvGptReply != null) {
-                    tvGptReply.setText(getString(R.string.text_asr_error_prefix) + msg);
+                    runOnUiThread(() -> tvGptReply.setText(getString(R.string.text_asr_error_prefix) + msg));
                 }else{
                     Toast.makeText(MainActivity.this, getString(R.string.text_asr_error_prefix) + msg, Toast.LENGTH_LONG).show();
                 }
@@ -567,10 +567,17 @@ public class MainActivity extends Activity {
 
             @Override
             public void onResult(String result) {
-                etUserInput.setText(result);
+                runOnUiThread(() -> etUserInput.setText(result));
             }
         };
-        setAsrClient(GlobalDataHolder.getAsrUseBaidu() ? "baidu" : "hms"); // 设置使用百度/华为语音识别
+        // 设置使用百度/Whisper/华为语音识别
+        if(GlobalDataHolder.getAsrUseBaidu()) {
+            setAsrClient("baidu");
+        } else if(GlobalDataHolder.getAsrUseWhisper()) {
+            setAsrClient("whisper");
+        } else {
+            setAsrClient("hms");
+        }
 
         // 设置本地广播接收器
         localReceiver = new BroadcastReceiver() {
@@ -635,6 +642,9 @@ public class MainActivity extends Activity {
         } else if (type.equals("hms")) {
             asrClient = new HmsAsrClient(this);
             asrClient.setCallback(asrCallback);
+        } else if (type.equals("whisper")) {
+            asrClient = new WhisperAsrClient(this, GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
+            asrClient.setCallback(asrCallback);
         }
     }
 
@@ -664,10 +674,17 @@ public class MainActivity extends Activity {
             chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
 
             // 更新所使用的语音识别接口
-            if(GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof HmsAsrClient) {
+            if(GlobalDataHolder.getAsrUseBaidu() && !(asrClient instanceof BaiduAsrClient)) {
                 setAsrClient("baidu");
-            } else if(!GlobalDataHolder.getAsrUseBaidu() && asrClient instanceof BaiduAsrClient) {
+            } else if(GlobalDataHolder.getAsrUseWhisper() && !(asrClient instanceof WhisperAsrClient)) {
+                setAsrClient("whisper");
+            } else if(!GlobalDataHolder.getAsrUseBaidu() && !GlobalDataHolder.getAsrUseWhisper() && !(asrClient instanceof HmsAsrClient)) {
                 setAsrClient("hms");
+            }
+
+            // 更新Whisper接口的API信息
+            if(asrClient instanceof WhisperAsrClient) {
+                ((WhisperAsrClient) asrClient).setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             }
 
             setNetworkEnabled(currentTemplateParams.getBool("network", GlobalDataHolder.getEnableInternetAccess())); // 更新GPT联网设置

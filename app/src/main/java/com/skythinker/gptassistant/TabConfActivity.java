@@ -19,7 +19,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -180,34 +179,43 @@ public class TabConfActivity extends Activity {
         ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setChecked(GlobalDataHolder.getAsrUseBaidu());
         setBaiduAsrItemHidden(!GlobalDataHolder.getAsrUseBaidu());
         ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            GlobalDataHolder.saveAsrInfo(checked, GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
+            if(checked)
+                ((Switch) findViewById(R.id.sw_asr_use_whisper_conf)).setChecked(false);
+            GlobalDataHolder.saveAsrSelection(GlobalDataHolder.getAsrUseWhisper(), checked);
             setBaiduAsrItemHidden(!checked);
         });
 
         ((EditText) findViewById(R.id.et_asr_app_id_conf)).setText(GlobalDataHolder.getAsrAppId());
         ((EditText) findViewById(R.id.et_asr_app_id_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrUseBaidu(), editable.toString().trim(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
+                GlobalDataHolder.saveBaiduAsrInfo(editable.toString().trim(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
             }
         });
 
         ((EditText) findViewById(R.id.et_asr_api_key_conf)).setText(GlobalDataHolder.getAsrApiKey());
         ((EditText) findViewById(R.id.et_asr_api_key_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrUseBaidu(), GlobalDataHolder.getAsrAppId(), editable.toString().trim(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
+                GlobalDataHolder.saveBaiduAsrInfo(GlobalDataHolder.getAsrAppId(), editable.toString().trim(), GlobalDataHolder.getAsrSecretKey(), GlobalDataHolder.getAsrUseRealTime());
             }
         });
 
         ((EditText) findViewById(R.id.et_asr_secret_conf)).setText(GlobalDataHolder.getAsrSecretKey());
         ((EditText) findViewById(R.id.et_asr_secret_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrUseBaidu(), GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), editable.toString().trim(), GlobalDataHolder.getAsrUseRealTime());
+                GlobalDataHolder.saveBaiduAsrInfo(GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), editable.toString().trim(), GlobalDataHolder.getAsrUseRealTime());
             }
         });
 
         ((Switch) findViewById(R.id.sw_asr_real_time_conf)).setChecked(GlobalDataHolder.getAsrUseRealTime());
         ((Switch) findViewById(R.id.sw_asr_real_time_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            GlobalDataHolder.saveAsrInfo(GlobalDataHolder.getAsrUseBaidu(), GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), checked);
+            GlobalDataHolder.saveBaiduAsrInfo(GlobalDataHolder.getAsrAppId(), GlobalDataHolder.getAsrApiKey(), GlobalDataHolder.getAsrSecretKey(), checked);
+        });
+
+        ((Switch) findViewById(R.id.sw_asr_use_whisper_conf)).setChecked(GlobalDataHolder.getAsrUseWhisper());
+        ((Switch) findViewById(R.id.sw_asr_use_whisper_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            if(checked)
+                ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setChecked(false);
+            GlobalDataHolder.saveAsrSelection(checked, GlobalDataHolder.getAsrUseBaidu());
         });
 
         ((Switch) findViewById(R.id.sw_check_access_conf)).setChecked(GlobalDataHolder.getCheckAccessOnStart());
@@ -370,16 +378,16 @@ public class TabConfActivity extends Activity {
             if(data.getBooleanExtra("ok", false)) {
                 String title = data.getStringExtra("title");
                 String prompt = data.getStringExtra("prompt");
-                if(requestCode == GlobalDataHolder.getTabDataList().size()) {
+                boolean fromOnline = data.getBooleanExtra("fromOnline", false);
+                if(requestCode == GlobalDataHolder.getTabDataList().size() || fromOnline) {
                     GlobalDataHolder.getTabDataList().add(new PromptTabData(title, prompt));
                     adapter.notifyItemInserted(GlobalDataHolder.getTabDataList().size() - 1);
-                    GlobalDataHolder.saveTabDataList();
                 } else {
                     GlobalDataHolder.getTabDataList().get(requestCode).setTitle(title);
                     GlobalDataHolder.getTabDataList().get(requestCode).setPrompt(prompt);
                     adapter.notifyItemChanged(requestCode);
-                    GlobalDataHolder.saveTabDataList();
                 }
+                GlobalDataHolder.saveTabDataList();
             }
         }
     }

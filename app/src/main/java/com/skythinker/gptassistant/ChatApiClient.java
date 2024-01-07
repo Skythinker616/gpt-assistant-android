@@ -18,6 +18,7 @@ import com.unfbx.chatgpt.entity.chat.ChatCompletion;
 import com.unfbx.chatgpt.entity.chat.MessagePicture;
 import com.unfbx.chatgpt.entity.chat.Parameters;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import okhttp3.sse.EventSourceListener;
 
 import com.skythinker.gptassistant.ChatManager.ChatMessage.ChatRole;
 import com.skythinker.gptassistant.ChatManager.ChatMessage;
+import com.unfbx.chatgpt.entity.whisper.WhisperResponse;
 
 public class ChatApiClient {
     // 消息回调接口

@@ -27,13 +27,14 @@
     <string name="conf_model_select_item">选用模型</string>
     <string name="conf_custom_model_item">自定义模型</string>
     <string name="conf_custom_model_tip">用分号隔开多个模型</string>
-    <string name="conf_baidu_asr_title">百度语音设置</string>
-    <string name="conf_baidu_asr_subtitle">| 关闭百度接口则使用内置华为接口</string>
+    <string name="conf_asr_title">语音识别设置</string>
+    <string name="conf_asr_subtitle">| 关闭下述接口则使用内置华为接口</string>
     <string name="conf_use_baidu_asr_item">使用百度接口</string>
     <string name="conf_baidu_appid_item">AppID</string>
     <string name="conf_baidu_apikey_item">ApiKey</string>
     <string name="conf_baidu_secret_item">Secret</string>
     <string name="conf_baidu_realtime_item">启用长语音</string>
+    <string name="conf_use_whisper_asr_item">使用Whisper接口</string>
     <string name="conf_network_title">联网设置</string>
     <string name="conf_enable_network_item">启用网络访问</string>
     <string name="conf_enable_network_tip">开启会大幅增加Token用量</string>
@@ -101,9 +102,16 @@
     <string name="homepage_url">https://gitee.com/skythinker/gpt-assistant-android</string>
     <string name="release_url">https://gitee.com/skythinker/gpt-assistant-android/releases</string>
     <string name="check_update_url">https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest</string>
+    <string name="new_discussion_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates</string>
+    <string name="discussions_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates</string>
+    <string name="shared_templates_url">https://gitee.com/skythinker/gpt-assistant-android/raw/master/static_res/shared_templates.json</string>
     <string name="text_default_tab_title">问答</string>
     <string name="text_default_tab_content">请回答这个问题：</string>
     <string name="text_gpt_cancel">请求已取消</string>
     <string name="text_gpt_timeout">请求超时</string>
     <string name="text_gpt_unknown_error">未知错误</string>
+    <string name="online_temp_activity_title">在线模板</string>
+    <string name="text_online_temp_notice">| 触摸查看详情，右滑获取到本地</string>
+    <string name="text_online_temp_loading">正在加载...</string>
+    <string name="text_online_temp_error">网络错误</string>
 </resources>

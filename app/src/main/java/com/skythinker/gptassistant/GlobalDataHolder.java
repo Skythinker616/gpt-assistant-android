@@ -14,11 +14,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
-
 public class GlobalDataHolder {
     private static List<PromptTabData> tabDataList = null;
+    private static boolean asrUseWhisper;
     private static boolean asrUseBaidu;
     private static String asrAppId;
     private static String asrApiKey;
@@ -46,7 +44,8 @@ public class GlobalDataHolder {
             tabDataList.add(new PromptTabData(context.getString(R.string.text_default_tab_title), context.getString(R.string.text_default_tab_content)));
             saveTabDataList();
         }
-        loadAsrInfo();
+        loadAsrSelection();
+        loadBaiduAsrInfo();
         loadGptApiInfo();
         loadStartUpSetting();
         loadTtsSetting();
@@ -91,22 +90,33 @@ public class GlobalDataHolder {
         }
     }
 
-    public static void loadAsrInfo() {
+    public static void loadAsrSelection() {
+        asrUseWhisper = sp.getBoolean("asr_use_whisper", false);
         asrUseBaidu = sp.getBoolean("asr_use_baidu", false);
+    }
+
+    public static void saveAsrSelection(boolean useWhisper, boolean useBaidu) {
+        asrUseWhisper = useWhisper;
+        asrUseBaidu = useBaidu;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("asr_use_whisper", asrUseWhisper);
+        editor.putBoolean("asr_use_baidu", asrUseBaidu);
+        editor.apply();
+    }
+
+    public static void loadBaiduAsrInfo() {
         asrAppId = sp.getString("asr_app_id", "");
         asrApiKey = sp.getString("asr_api_key", "");
         asrSecretKey = sp.getString("asr_secret_key", "");
         asrUseRealTime = sp.getBoolean("asr_use_real_time", false);
     }
 
-    public static void saveAsrInfo(boolean useBaidu, String appId, String apiKey, String secretKey, boolean useRealTime) {
-        asrUseBaidu = useBaidu;
+    public static void saveBaiduAsrInfo(String appId, String apiKey, String secretKey, boolean useRealTime) {
         asrApiKey = apiKey;
         asrAppId = appId;
         asrSecretKey = secretKey;
         asrUseRealTime = useRealTime;
         SharedPreferences.Editor editor = sp.edit();
-        editor.putBoolean("asr_use_baidu", asrUseBaidu);
         editor.putString("asr_app_id", asrAppId);
         editor.putString("asr_api_key", asrApiKey);
         editor.putString("asr_secret_key", asrSecretKey);
@@ -217,6 +227,8 @@ public class GlobalDataHolder {
         editor.putBoolean("auto_save_history", autoSaveHistory);
         editor.apply();
     }
+
+    public static boolean getAsrUseWhisper() { return asrUseWhisper; }
 
     public static boolean getAsrUseBaidu() { return asrUseBaidu; }
 

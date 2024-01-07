@@ -15,6 +15,7 @@
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable/tag_background.xml" value="0.189" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_history.xml" value="0.30416666666666664" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_main.xml" value="0.3333333333333333" />
+        <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_online_templates.xml" value="0.22" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_tab_conf.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_tab_detail_conf.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/ask_accessibility_dialog.xml" value="0.4466666666666667" />
@@ -27,6 +28,7 @@
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/main_model_spinner_item.xml" value="0.1921875" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/model_spinner_dropdown_item.xml" value="0.1921875" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/model_spinner_item.xml" value="0.1375" />
+        <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/oline_temp_list_item.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/param_item_input.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/param_spinner_dropdown_item.xml" value="0.1921875" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/param_spinner_item.xml" value="0.1921875" />

@@ -40,6 +40,17 @@
                 android:textSize="22sp" />
 
             <ImageButton
+                android:id="@+id/bt_online_templates"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginRight="10dp"
+                android:layout_weight="0"
+                android:background="#00000000"
+                android:padding="5dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/online_btn" />
+
+            <ImageButton
                 android:id="@+id/bt_tab_detail_help"
                 android:layout_width="30dp"
                 android:layout_height="30dp"

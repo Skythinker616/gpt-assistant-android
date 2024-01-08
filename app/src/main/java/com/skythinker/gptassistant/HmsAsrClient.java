@@ -36,7 +36,7 @@ public class HmsAsrClient extends AsrClientBase{
                 msg = "code=" + code + "  " + msg ;
                 Log.d("hwAsr", "onError: " +  msg);
                 if(code == 11203 || code == 11219)
-                    msg += "\n可能由于作者关闭了免费HMS语音服务，或在新版本中更新了参数，若该错误持续发生，请尝试更新版本或改为使用百度语音接口";
+                    msg += context.getString(R.string.text_hms_asr_failed_error);
                 callback.onError(msg);
             }
 
@@ -55,7 +55,7 @@ public class HmsAsrClient extends AsrClientBase{
     }
 
     @Override
-    public void startRecongnize() {
+    public void startRecognize() {
         Intent hwAsrIntent = new Intent(MLAsrConstants.ACTION_HMS_ASR_SPEECH);
         hwAsrIntent.putExtra(MLAsrConstants.LANGUAGE, "zh-CN");
         hwAsrIntent.putExtra(MLAsrConstants.FEATURE, MLAsrConstants.FEATURE_WORDFLUX);
@@ -66,12 +66,12 @@ public class HmsAsrClient extends AsrClientBase{
     }
 
     @Override
-    public void stopRecongnize() {
+    public void stopRecognize() {
         hwAsrRecognizer.destroy();
     }
 
     @Override
-    public void cancelRecongnize() {
+    public void cancelRecognize() {
         hwAsrRecognizer.destroy();
     }
 

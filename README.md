@@ -1,6 +1,11 @@
+<p>
+	<b>简体中文 | <a href="README_en.md">English</a></b>
+</p>
+
 <div align=center>
 	<img src="readme_img/icon.jpg" height="100px"/>
 	<h1>GPT Assistant</h1>
+
 </div>
 
 这是一个基于ChatGPT的安卓端语音助手，允许用户通过手机音量键从任意界面唤起并直接进行语音交流，用最快捷的方式询问并获取回复
@@ -40,7 +45,7 @@
 - 支持从**全局上下文菜单**（选中文本后弹出的系统菜单）中直接唤起
 - 支持通过状态栏**快捷按钮**唤起
 - 支持对**Markdown**进行渲染
-- 使用华为或百度语音API进行**语音输入**
+- 使用华为/百度/Whisper/Google接口实现**语音输入**
 - 调用系统TTS引擎**输出语音**
 
 ### 国内使用说明
@@ -57,11 +62,17 @@
 
 	- 以Chatanywhere为例，目前其**免费服务**限制对`gpt-3.5-turbo`模型的调用频率不超过**60请求/小时/IP&Key**，足够个人使用，若需要更高的调用频率或`gpt-4`模型，可以选择付费服务
 
-2. 百度语音识别接口费用
+2. 语音识别接口费用
 
-	- 目前华为HMS提供免费的语音识别接口，因此程序内置了作者的API Key以供直接使用，如无特殊情况该API将在华为免费期间一直可用
+	本软件目前支持华为、Google、百度、Whisper四种语音识别接口：
 
-	- 程序也提供了对百度接口的调用以供有需要的情况下使用，目前百度短语音识别为新用户提供**15万次 & 180天免费额度**，额度外收取￥0.0034/次的调用费用
+	- （默认接口）**华为HMS**提供免费的语音识别接口，因此程序内置了作者的API Key以供直接使用，如无特殊情况该接口将在华为免费期间一直可用
+
+	- **Google**也是免费接口，但在国内可能无法访问，仅推荐海外用户使用
+
+	- **百度**短语音识别为新用户提供15万次 & 180天免费额度，额度外收取￥0.0034/次的调用费用
+
+	- **Whisper**接口由OpenAI提供，与GPT聊天使用相同接口参数，调用费用可以参考[官方说明](https://openai.com/pricing)
 
 ---
 
@@ -107,12 +118,14 @@
 
 **五、支持高级模板语法**
 
-高级模板语法通过在模板开头添加参数，可以实现向界面添加下拉选框等操作，具体说明可以在[模板编写说明](template_help.md)中查看，也可以在[讨论社区](https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates)中获取或分享模板
+高级模板语法通过在模板开头添加参数，可以实现向界面添加下拉选框等操作，具体说明可以在[模板编写说明](template_help.md)中查看
 
 <div align="center">
 	<img src="readme_img/template_code.png" height="140px">
 	<img src="readme_img/template_ui.png" height="140px">
 </div>
+
+点击模板编辑页面右上角的按钮，可以加载在线模板列表，在[讨论社区](https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates)中可以获取更多模板或分享自己的模板，分享的模板可能会被动态更新到在线模板列表中哦~
 
 **六、支持上传图片到Vision**
 
@@ -171,9 +184,11 @@
 
 	在OpenAI官网注册账号并获取API_KEY，在设置中填写网址`https://api.openai.com/`和API_KEY
 
-### 3. 配置百度语音识别 (可选)
+### 3. 配置语音识别 (可选)
 
 > 注：程序默认使用的是华为语音识别接口，如无特殊情况，不需要进行此步骤
+
+**百度语音识别接口**
 
 用户可以参照[百度语音识别官方文档](https://cloud.baidu.com/doc/SPEECH/s/qknh9i8ed)注册并创建应用，然后获取AppID、API Key和Secret Key填入设置中
 
@@ -182,6 +197,14 @@
 此外，在创建应用时，需要将“语音包名”设置为“Android”，并填入本软件包名`com.skythinker.gptassistant`
 
 ![设置语音包名](readme_img/asr_set_package.jpg)
+
+**Google语音识别接口**
+
+用户需要确保系统中已安装[Google](https://play.google.com/store/apps/details?id=com.google.android.googlequicksearchbox)软件，然后跟随软件指引设定Google为系统语音识别引擎，且允许其使用麦克风权限，然后在软件设置中选择Google语音识别接口即可
+
+**Whisper语音识别接口**
+
+如果用户所使用的OpenAI接口支持Whisper模型，在软件设置中选择Whisper语音识别接口即可使用
 
 ### 4. 开始使用
 
@@ -217,9 +240,16 @@ A: 请在设置中允许程序在后台运行
 
 A: 软件调用的是系统自带TTS(Text To Speech)服务，可以通过软件设置项“打开系统语音设置”进入系统设置界面，选择合适的语音引擎；若对系统自带引擎不满意也可以自行安装讯飞等第三方TTS引擎
 
-**Q: 华为和百度语音识别效果有什么差别？**
+**Q: 不同接口的语音识别效果有什么差别？**
 
-A: 经测试，所使用的华为接口（实时语音识别）识别准确度较高，尤其是在中英混说的场景下，但其断句能力则不如百度，仅适合单句识别
+A: 在中文和中英混说的场景下测试：
+
+- 华为接口（实时语音识别）识别准确度很高，单句识别表现最好
+- 百度则在长句识别时表现很好，断句较为合理，但难以做到中英混合识别（选用的是中文普通话模型）
+- Google支持的语言种类很多，中文识别效果一般，且不会加标点
+- Whisper支持的语言也很多，中文识别效果还可以，但有时出现简繁体不受控的情况，且不支持边说话边输出
+
+在纯英文场景下，华为、Google和Whisper的效果都不错
 
 ### 联网相关
 
@@ -267,6 +297,7 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 - **2023.11.06** 添加联网功能
 - **2023.12.04** 添加Vision识图功能
 - **2023.12.21** 支持高级模板语法
+- **2024.01.08** 支持Google和Whisper语音识别、在线模板列表
 
 ---
 
@@ -285,11 +316,13 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 | :--: | :-----: | :----------: | :-------: |
 | 荣耀 7C | EMUI 8.0.0 | Android 8 | 1.9.1 |
 | 荣耀 20 | HarmonyOS 3.0.0 | Android 10 | 1.9.1 |
+| 荣耀 20 | HarmonyOS 4.0 | Android 10 | 1.10.0 |
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.9.1 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.5.0 |
 | 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.7.0 |
+| 小米 13 | MIUI 14.0.5 | Android 14 | 1.10.0 |
 | Pixel 2 (模拟器) | Android 12 | Android 12 | 1.7.0 |
 
 ---

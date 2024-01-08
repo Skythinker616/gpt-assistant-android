@@ -288,16 +288,33 @@
 
                     </androidx.cardview.widget.CardView>
 
-                    <TextView
-                        android:id="@+id/textView12"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:paddingHorizontal="10dp"
-                        android:paddingVertical="2dp"
-                        android:text="@string/conf_asr_title"
-                        android:textColor="#3C3C3C"
-                        android:textSize="14sp" />
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/textView12"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="2dp"
+                            android:text="@string/conf_asr_title"
+                            android:textColor="#3C3C3C"
+                            android:textSize="14sp" />
+
+                        <ImageButton
+                            android:id="@+id/bt_asr_help"
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:layout_gravity="center_vertical"
+                            android:layout_weight="1"
+                            android:background="@color/transparent"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/help_btn" />
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/textView5"
@@ -506,6 +523,37 @@
 
                                 <Switch
                                     android:id="@+id/sw_asr_use_whisper_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0"
+                                    android:checked="false"
+                                    android:showText="false"
+                                    android:thumb="@drawable/switch_thumb"
+                                    android:track="@drawable/switch_track"
+                                    tools:checked="true"
+                                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="15dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tv_asr_use_google_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/conf_use_google_asr_item"
+                                    android:textColor="#000000"
+                                    android:textSize="18sp" />
+
+                                <Switch
+                                    android:id="@+id/sw_asr_use_google_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="0"

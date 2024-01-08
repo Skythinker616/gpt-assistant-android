@@ -2,7 +2,6 @@ package com.skythinker.gptassistant;
 
 import android.content.Context;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.baidu.speech.EventListener;
 import com.baidu.speech.EventManager;
@@ -61,7 +60,7 @@ public class BaiduAsrClient extends AsrClientBase{
     }
 
     @Override
-    public void startRecongnize() {
+    public void startRecognize() {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put(SpeechConstant.APP_ID, GlobalDataHolder.getAsrAppId());
         params.put(SpeechConstant.APP_KEY, GlobalDataHolder.getAsrApiKey());
@@ -80,12 +79,12 @@ public class BaiduAsrClient extends AsrClientBase{
     }
 
     @Override
-    public void stopRecongnize() {
+    public void stopRecognize() {
         asr.send(SpeechConstant.ASR_STOP, "{}", null, 0, 0);
     }
 
     @Override
-    public void cancelRecongnize() {
+    public void cancelRecognize() {
         asr.send(SpeechConstant.ASR_CANCEL, null, null, 0, 0);
     }
 
@@ -101,7 +100,7 @@ public class BaiduAsrClient extends AsrClientBase{
 
     @Override
     public void destroy() {
-        cancelRecongnize();
+        cancelRecognize();
         asr.unregisterListener(listener);
     }
 }

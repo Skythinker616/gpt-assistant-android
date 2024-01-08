@@ -32,6 +32,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -73,11 +74,14 @@ import io.noties.markwon.AbstractMarkwonPlugin;
 import io.noties.markwon.Markwon;
 import io.noties.markwon.MarkwonConfiguration;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
+import io.noties.markwon.ext.tables.TableAwareMovementMethod;
+import io.noties.markwon.ext.tables.TablePlugin;
 import io.noties.markwon.image.ImageSize;
 import io.noties.markwon.image.ImageSizeResolverDef;
 import io.noties.markwon.image.ImagesPlugin;
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin;
 import io.noties.markwon.linkify.LinkifyPlugin;
+import io.noties.markwon.movement.MovementMethodPlugin;
 import io.noties.markwon.syntax.Prism4jThemeDefault;
 import io.noties.markwon.syntax.SyntaxHighlightPlugin;
 import io.noties.prism4j.Prism4j;
@@ -129,6 +133,7 @@ public class MainActivity extends Activity {
     Bitmap selectedImageBitmap = null;
     Uri photoUri = null;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -466,10 +471,27 @@ public class MainActivity extends Activity {
             }
         });
 
-        // 长按输入框清空内容
+        // 长按输入框开始录音或清空内容
         etUserInput.setOnLongClickListener(view -> {
-            etUserInput.setText("");
+            if(etUserInput.getText().toString().equals("")) {
+                Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
+                LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+                view.setTag("recording");
+            } else {
+                etUserInput.setText("");
+            }
             return true;
+        });
+
+        etUserInput.setOnTouchListener((view, motionEvent) -> {
+            if(motionEvent.getAction() == MotionEvent.ACTION_UP){
+                if("recording".equals(view.getTag())){
+                    Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_STOP");
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+                    view.setTag(null);
+                }
+            }
+            return false;
         });
 
         // 连续对话按钮点击事件（切换连续对话开关状态）
@@ -575,6 +597,8 @@ public class MainActivity extends Activity {
             setAsrClient("baidu");
         } else if(GlobalDataHolder.getAsrUseWhisper()) {
             setAsrClient("whisper");
+        } else if(GlobalDataHolder.getAsrUseGoogle()) {
+            setAsrClient("google");
         } else {
             setAsrClient("hms");
         }
@@ -586,16 +610,16 @@ public class MainActivity extends Activity {
                 String action = intent.getAction();
                 if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_START")) { // 开始语音识别
                     tts.stop();
-                    asrClient.startRecongnize();
+                    asrClient.startRecognize();
                     asrStartTime = System.currentTimeMillis();
                     etUserInput.setText("");
                     etUserInput.setHint(R.string.text_listening_hint);
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SPEECH_STOP")) { // 停止语音识别
                     etUserInput.setHint(R.string.text_input_hint);
                     if(System.currentTimeMillis() - asrStartTime < 1000) {
-                        asrClient.cancelRecongnize();
+                        asrClient.cancelRecognize();
                     } else {
-                        asrClient.stopRecongnize();
+                        asrClient.stopRecognize();
                     }
                 } else if(action.equals("com.skythinker.gptassistant.KEY_SEND")) { // 发送问题
                     if(!chatApiClient.isStreaming())
@@ -645,6 +669,9 @@ public class MainActivity extends Activity {
         } else if (type.equals("whisper")) {
             asrClient = new WhisperAsrClient(this, GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             asrClient.setCallback(asrCallback);
+        } else if (type.equals("google")) {
+            asrClient = new GoogleAsrClient(this);
+            asrClient.setCallback(asrCallback);
         }
     }
 
@@ -678,7 +705,9 @@ public class MainActivity extends Activity {
                 setAsrClient("baidu");
             } else if(GlobalDataHolder.getAsrUseWhisper() && !(asrClient instanceof WhisperAsrClient)) {
                 setAsrClient("whisper");
-            } else if(!GlobalDataHolder.getAsrUseBaidu() && !GlobalDataHolder.getAsrUseWhisper() && !(asrClient instanceof HmsAsrClient)) {
+            } else if(GlobalDataHolder.getAsrUseGoogle() && !(asrClient instanceof GoogleAsrClient)) {
+                setAsrClient("google");
+            } else if(!GlobalDataHolder.getAsrUseBaidu() && !GlobalDataHolder.getAsrUseWhisper() && !GlobalDataHolder.getAsrUseGoogle() && !(asrClient instanceof HmsAsrClient)) {
                 setAsrClient("hms");
             }
 

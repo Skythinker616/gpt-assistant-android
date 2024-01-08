@@ -21,7 +21,7 @@ public class WhisperAsrClient extends AsrClientBase{
     }
 
     @Override
-    public void startRecongnize() {
+    public void startRecognize() {
         try {
             recorder = new MediaRecorder();
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -37,7 +37,7 @@ public class WhisperAsrClient extends AsrClientBase{
     }
 
     @Override
-    public void stopRecongnize() {
+    public void stopRecognize() {
         try {
             if(recorder != null) {
                 recorder.stop();
@@ -59,7 +59,7 @@ public class WhisperAsrClient extends AsrClientBase{
     }
 
     @Override
-    public void cancelRecongnize() {
+    public void cancelRecognize() {
         try {
             if(recorder != null) {
                 recorder.stop();
@@ -81,6 +81,6 @@ public class WhisperAsrClient extends AsrClientBase{
 
     @Override
     public void destroy() {
-        cancelRecongnize();
+        cancelRecognize();
     }
 }

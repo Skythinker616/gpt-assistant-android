@@ -17,6 +17,7 @@ import java.util.List;
 public class GlobalDataHolder {
     private static List<PromptTabData> tabDataList = null;
     private static boolean asrUseWhisper;
+    private static boolean asrUseGoogle;
     private static boolean asrUseBaidu;
     private static String asrAppId;
     private static String asrApiKey;
@@ -93,14 +94,17 @@ public class GlobalDataHolder {
     public static void loadAsrSelection() {
         asrUseWhisper = sp.getBoolean("asr_use_whisper", false);
         asrUseBaidu = sp.getBoolean("asr_use_baidu", false);
+        asrUseGoogle = sp.getBoolean("asr_use_google", false);
     }
 
-    public static void saveAsrSelection(boolean useWhisper, boolean useBaidu) {
+    public static void saveAsrSelection(boolean useWhisper, boolean useBaidu, boolean useGoogle) {
         asrUseWhisper = useWhisper;
         asrUseBaidu = useBaidu;
+        asrUseGoogle = useGoogle;
         SharedPreferences.Editor editor = sp.edit();
         editor.putBoolean("asr_use_whisper", asrUseWhisper);
         editor.putBoolean("asr_use_baidu", asrUseBaidu);
+        editor.putBoolean("asr_use_google", asrUseGoogle);
         editor.apply();
     }
 
@@ -229,6 +233,8 @@ public class GlobalDataHolder {
     }
 
     public static boolean getAsrUseWhisper() { return asrUseWhisper; }
+
+    public static boolean getAsrUseGoogle() { return asrUseGoogle; }
 
     public static boolean getAsrUseBaidu() { return asrUseBaidu; }
 

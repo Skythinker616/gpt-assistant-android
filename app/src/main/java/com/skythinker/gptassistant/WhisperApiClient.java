@@ -44,6 +44,9 @@ public class WhisperApiClient {
     }
 
     public String getWhisperResult(File file) throws Exception{
+        if(chatGPT == null) {
+            throw new Exception(context.getString(R.string.text_whisper_param_error));
+        }
         WhisperResponse whisperResponse = chatGPT.speechToTextTranscriptions(file);
         return whisperResponse.getText();
     }

@@ -12,6 +12,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -176,12 +177,23 @@ public class TabConfActivity extends Activity {
             }
         });
 
+        ((LinearLayout) findViewById(R.id.bt_asr_help).getParent()).setOnClickListener(view -> {
+            new ConfirmDialog(this)
+                    .setTitle(getString(R.string.dialog_asr_select_help_title))
+                    .setContent(getString(R.string.dialog_asr_select_help))
+                    .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                    .setOkButtonVisibility(View.GONE)
+                    .show();
+        });
+
         ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setChecked(GlobalDataHolder.getAsrUseBaidu());
         setBaiduAsrItemHidden(!GlobalDataHolder.getAsrUseBaidu());
         ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            if(checked)
+            if(checked) {
+                ((Switch) findViewById(R.id.sw_asr_use_google_conf)).setChecked(false);
                 ((Switch) findViewById(R.id.sw_asr_use_whisper_conf)).setChecked(false);
-            GlobalDataHolder.saveAsrSelection(GlobalDataHolder.getAsrUseWhisper(), checked);
+            }
+            GlobalDataHolder.saveAsrSelection(GlobalDataHolder.getAsrUseWhisper(), checked, GlobalDataHolder.getAsrUseGoogle());
             setBaiduAsrItemHidden(!checked);
         });
 
@@ -213,9 +225,35 @@ public class TabConfActivity extends Activity {
 
         ((Switch) findViewById(R.id.sw_asr_use_whisper_conf)).setChecked(GlobalDataHolder.getAsrUseWhisper());
         ((Switch) findViewById(R.id.sw_asr_use_whisper_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            if(checked)
+            if(checked) {
+                ((Switch) findViewById(R.id.sw_asr_use_google_conf)).setChecked(false);
                 ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setChecked(false);
-            GlobalDataHolder.saveAsrSelection(checked, GlobalDataHolder.getAsrUseBaidu());
+            }
+            GlobalDataHolder.saveAsrSelection(checked, GlobalDataHolder.getAsrUseBaidu(), GlobalDataHolder.getAsrUseGoogle());
+        });
+
+        ((Switch) findViewById(R.id.sw_asr_use_google_conf)).setChecked(GlobalDataHolder.getAsrUseGoogle());
+        ((Switch) findViewById(R.id.sw_asr_use_google_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            if(checked) {
+                try { // 检查是否安装了 Google 搜索
+                    getPackageManager().getPackageInfo("com.google.android.googlequicksearchbox", PackageManager.GET_META_DATA);
+                    ((Switch) findViewById(R.id.sw_asr_use_whisper_conf)).setChecked(false);
+                    ((Switch) findViewById(R.id.sw_asr_use_baidu_conf)).setChecked(false);
+                } catch (PackageManager.NameNotFoundException e) { // 未安装 Google 搜索，提示用户安装
+                    new ConfirmDialog(this)
+                            .setContent(getString(R.string.dialog_download_google))
+                            .setOnConfirmListener(() -> {
+                                try{
+                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.googlequicksearchbox")));
+                                } catch (Exception e1) {
+                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.googlequicksearchbox")));
+                                }
+                            }).show();
+                    ((Switch) findViewById(R.id.sw_asr_use_google_conf)).setChecked(false);
+                    return;
+                }
+            }
+            GlobalDataHolder.saveAsrSelection(GlobalDataHolder.getAsrUseWhisper(), GlobalDataHolder.getAsrUseBaidu(), checked);
         });
 
         ((Switch) findViewById(R.id.sw_check_access_conf)).setChecked(GlobalDataHolder.getCheckAccessOnStart());

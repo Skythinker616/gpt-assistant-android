@@ -1,6 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">GPTAssistant</string>
-    <string name="accessibility_service_label">GPTAssistant</string>
+    <!--  帮助说明  -->
     <string name="help_msg">
         以下为本软件的简要操作说明，详细说明可以在项目主页中查看。\n\n
         本软件为基于ChatGPT的助理软件，用户可以预设多个问题模板，然后使用桌面图标或通知栏快捷按钮调出提问界面。\n\n
@@ -10,14 +9,6 @@
         联网功能开启后软件会将GPT所要求的网页内容返回给GPT，以提高回答准确性。访问网络会极大增加Token消耗，GPT4模型请慎用。\n\n
         注意：若长按音量键后手机震动但不弹出界面，请手动在设置中允许后台弹出界面权限。
     </string>
-    <string-array name="models">
-        <item>gpt-3.5-turbo</item>
-        <item>gpt-3.5-turbo-16k</item>
-        <item>gpt-4</item>
-        <item>gpt-4-32k</item>
-    </string-array>
-    <!-- HMS语音识别API_KEY 已限制包名和签名 -->
-    <string name="hms_api_key">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string>
     <!--  软件界面字符串  -->
     <string name="conf_tab_list_title">模板设置</string>
     <string name="conf_tab_list_subtitle">| 长按拖动排序，左滑删除</string>
@@ -35,6 +26,7 @@
     <string name="conf_baidu_secret_item">Secret</string>
     <string name="conf_baidu_realtime_item">启用长语音</string>
     <string name="conf_use_whisper_asr_item">使用Whisper接口</string>
+    <string name="conf_use_google_asr_item">使用谷歌接口</string>
     <string name="conf_network_title">联网设置</string>
     <string name="conf_enable_network_item">启用网络访问</string>
     <string name="conf_enable_network_tip">开启会大幅增加Token用量</string>
@@ -87,7 +79,7 @@
     <string name="text_visiting_web_prefix">"正在访问: "</string>
     <string name="text_cancel_web">已取消访问网页。</string>
     <string name="text_asr_error_prefix">"语音识别出错: "</string>
-    <string name="text_input_hint">在此输入问题，长按可清除</string>
+    <string name="text_input_hint">长按输入语音或清除文本</string>
     <string name="text_listening_hint">正在聆听...</string>
     <string name="text_access_notice">请前往开启无障碍服务</string>
     <string name="toast_access_error">无障碍服务未开启，无法使用音量键控制</string>
@@ -114,4 +106,12 @@
     <string name="text_online_temp_notice">| 触摸查看详情，右滑获取到本地</string>
     <string name="text_online_temp_loading">正在加载...</string>
     <string name="text_online_temp_error">网络错误</string>
+    <string name="dialog_download_google">未安装Google搜索，是否前往下载？（请确保允许其录音权限）</string>
+    <string name="text_google_asr_unavailable">Google 语音识别服务不可用</string>
+    <string name="dialog_asr_select_help">中国大陆：推荐使用华为（免费）或百度（付费）接口\n\n海外使用：可以使用谷歌（免费）或Whisper（付费）接口</string>
+    <string name="dialog_asr_select_help_title">语音识别选用说明</string>
+    <string name="text_whisper_param_error">请先配置OpenAI接口参数</string>
+    <string name="text_google_asr_typing_error">请设置Google为语音输入引擎</string>
+    <string name="text_google_asr_permission_error">请在系统设置中允许Google的录音权限</string>
+    <string name="text_hms_asr_failed_error">\n可能由于作者关闭了免费HMS语音服务，或在新版本中更新了参数，若该错误持续发生，请尝试更新版本或使用其他语音识别接口</string>
 </resources>

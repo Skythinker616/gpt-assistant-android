@@ -1,32 +1,35 @@
-title: "[模板] 在这里填写分享标题"
+title: "[模板] 在这里填写分享标题 | Write your sharing title here"
 body:
   - type: input
     attributes:
-      label: 模板标题
-      placeholder: 在这里填写模板标题
+      label: "模板标题 | Template title"
+      placeholder: "在这里填写模板标题\nWrite your template title here"
     validations:
       required: true
   - type: textarea
     attributes:
-      label: 模板内容
-      placeholder: 在这里填写模板内容
+      label: "模板内容 | Template content"
+      placeholder: "在这里填写模板内容\nWrite your template content here"
       render: plain text
     validations:
       required: true
   - type: textarea
     attributes:
-      label: 模板描述
-      placeholder: 在这里填写模板描述，包括模板的使用场景、使用方法等
+      label: "模板描述 | Template description"
+      placeholder: "在这里填写模板描述，包括模板的使用场景、使用方法等\nWrite your template description here"
     validations:
       required: true
   - type: textarea
     attributes:
-      label: 使用效果
-      placeholder: （可选）描述模板的使用效果，可以在这里上传截图
+      label: "使用效果 | Showcase"
+      placeholder: "（可选）描述模板的使用效果，可以在这里上传截图\n(Optional) You can upload example screenshots here"
   - type: textarea
     attributes:
-      label: 其他说明
-      placeholder: （可选）分点列写其他说明，例如：建议使用的模型、编写提问的注意事项等
+      label: "其他说明 | Other information"
+      placeholder: "（可选）分点列写其他说明，例如：建议使用的模型、编写提问的注意事项等\n(Optional) You can write other information here, such as: recommended models, notes for writing questions, etc."
   - type: markdown
     attributes:
-      value: "**非常感谢你为社区做出的贡献！**"
+      value: "**非常感谢你为社区做出的贡献！\n你的分享可能会收入软件在线模板列表中，所有用户都可以一键添加哦~**"
+  - type: markdown
+    attributes:
+      value: "**Thank you very much for your contribution to the community!\nYour sharing may be included in the online template list, and all users can use it with one click~**"

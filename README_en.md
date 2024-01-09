@@ -107,6 +107,8 @@ In the system menu that appears after selecting text, click on the "GPTAssistant
 	<img src="readme_img/context_menu.gif" height="400px">
 </div>
 
+> Note: Context menu is disabled in some apps. In this case, you can share the selected text to GPTAssistant, and the effect is the same as above.
+
 **IV. Supports continuous conversation**
 
 Activate the conversation icon above to keep the current session and engage in continuous conversation (click the avatar icon on the left to perform actions such as deleting, retrying, etc., for individual messages).
@@ -233,11 +235,11 @@ A: Please allow the program the "pop-up interface in the background" permission 
 
 A: Please allow the program to run in the background in the settings.
 
-### Voice Broadcast
+### Speaking
 
-**Q: No sound in voice broadcast / not pleasant to listen to?**
+**Q: No sound when speaking / not pleasant to listen to?**
 
-A: The software calls the system's built-in TTS (Text To Speech) service. You can enter the system settings through the software setting "Open system speech settings" and choose a suitable speech engine. If you are not satisfied with the system's built-in engine, you can also install third-party TTS engines like Xunfei.
+A: The software calls the system's built-in TTS (Text To Speech) service. You can enter the system settings through the software setting "Open system speech settings" and choose a suitable speech engine. If you are not satisfied with the system's built-in engine, you can also install third-party TTS engines like Xunfei and [TTS Server](https://github.com/jing332/tts-server-android).
 
 **Q: What is the difference in the recognition effect of different interfaces?**
 
@@ -334,7 +336,7 @@ If you have improvement suggestions or want to contribute, feel free to submit a
 
 ## Privacy Statement
 
-This program will not collect any personal information from users in any way. Voice input will be sent directly to Huawei or Baidu API, and questions will be sent directly to the OpenAI API without passing through other intermediate servers.
+This program will not collect any personal information from users in any way. Voice input will be sent directly to those voice APIs, and questions will be sent directly to the OpenAI API without passing through other intermediate servers.
 
 ---
 

@@ -18,6 +18,7 @@ public class GoogleAsrClient extends AsrClientBase {
     SpeechRecognizer speechRecognizer = null;
     IAsrCallback callback = null;
     Context context = null;
+    boolean autoStop = false;
 
     public GoogleAsrClient(Context context) {
         this.context = context;
@@ -54,15 +55,21 @@ public class GoogleAsrClient extends AsrClientBase {
             @Override
             public void onResults(Bundle results) {
                 ArrayList<String> data = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                if(data != null && !data.isEmpty())
+                if(data != null && !data.isEmpty()) {
+                    Log.d("GoogleAsr", "onResults: " + data.get(0));
                     callback.onResult(data.get(0));
+                    if(autoStop)
+                        callback.onAutoStop();
+                }
             }
 
             @Override
             public void onPartialResults(Bundle partialResults) {
                 ArrayList<String> data = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                if(data != null && !data.isEmpty())
+                if(data != null && !data.isEmpty()) {
+                    Log.d("GoogleAsr", "onPartialResults: " + data.get(0));
                     callback.onResult(data.get(0));
+                }
             }
 
             @Override
@@ -118,6 +125,11 @@ public class GoogleAsrClient extends AsrClientBase {
     @Override
     public void setParam(String key, Object value) {
 
+    }
+
+    @Override
+    public void setEnableAutoStop(boolean enable) {
+        autoStop = enable;
     }
 
     @Override

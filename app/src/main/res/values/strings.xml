@@ -3,9 +3,9 @@
     <string name="accessibility_service_label" translatable="false">GPTAssistant</string>
     <string-array name="models">
         <item>gpt-3.5-turbo</item>
-        <item>gpt-3.5-turbo-16k</item>
         <item>gpt-4</item>
-        <item>gpt-4-32k</item>
+        <item>gpt-4-turbo</item>
+        <item>gpt-4o</item>
     </string-array>
     <!-- HMS语音识别API_KEY 已限制包名和签名 -->
     <string name="hms_api_key" translatable="false">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string>
@@ -13,11 +13,11 @@
     <string name="help_msg">
         Brief instructions below, see project homepage for more.\n\n
         GPTAssistant, based on ChatGPT, lets you set question templates for quick querying via desktop icon or notification bar.\n\n
-        Fill in the OpenAI API host and API_Key in settings. Use official parameters or apply for a relay Key at GPT_API_free on GitHub.\n\n
+        Fill in the OpenAI API host and API_Key in settings. Use official parameters or a relay key.\n\n
         For voice assistant, enable accessibility service and allow background running. Long-press volume down to wake the app, and speak to the mic while holding. After release, press again within 3 seconds to send the query.\n\n
-        The default HMS voice service can be switched to Baidu by registering at Baidu AI and entering AppID, ApiKey, and SecretKey in the app.\n\n
-        Enabling networking allows fetching web content for GPT to enhance answer accuracy. Note: This can increase token usage significantly—use GPT-4 sparingly.\n\n
-        Note: If there\'s vibration without pop-up after long-pressing volume, please permit background pop-ups in settings.
+        The default HMS voice service can be switched to Baidu / Google / Whisper service, see project homepage for instruction.\n\n
+        Enabling networking allows fetching web content for GPT to enhance answer accuracy. Note: This can increase token usage significantly, use GPT-4 sparingly.\n\n
+        Note: If there\'s vibration without pop-up after long-pressing volume, please permit background pop-ups in system settings.
     </string>
     <!--  软件界面字符串  -->
     <string name="conf_tab_list_title">Template Settings</string>
@@ -94,6 +94,7 @@
     <string name="text_access_notice">Please enable Accessibility Services</string>
     <string name="toast_access_error">Accessibility not enabled, volume key control unavailable</string>
     <string name="toast_clipboard">Copied to clipboard</string>
+    <string name="toast_code_clipboard">Code block copied to clipboard</string>
     <string name="text_waiting_reply">Waiting for reply...</string>
     <string name="toast_enable_network">Reminder: Web access will increase token usage, use GPT-4 wisely!</string>
     <string name="dialog_help_title">Help</string>
@@ -124,4 +125,14 @@
     <string name="text_google_asr_typing_error">Please enable Google Voice Input</string>
     <string name="text_google_asr_permission_error">Please grant audio recording permission to Google</string>
     <string name="text_hms_asr_failed_error">\nPossibly due to the author turning off the free HMS speech service or updating the parameters in a new version, if this error continues to occur, please try to update the version or use other voice interfaces</string>
+    <string name="text_copy_code_notice">Click to copy</string>
+    <string name="text_hms_asr_unsupported">x86 is not supported by HMS, please use other speech recognition interface</string>
+    <string name="toast_multi_chat_on">Multi-chat Mode</string>
+    <string name="toast_multi_chat_off">Single-chat Mode</string>
+    <string name="toast_tts_on">Voice Output On</string>
+    <string name="toast_tts_off">Voice Output Off</string>
+    <string name="toast_multi_voice_on">Continuous Voice Input On</string>
+    <string name="toast_multi_voice_off">Continuous Voice Input Off</string>
+    <string name="dialog_custom_model_help_title">Custom Model Help</string>
+    <string name="dialog_custom_model_help">Custom model names entered here will be appended to drop-down list. Use \';\' to separate different models and use \'*\' to indicate a vision model. \n\nExample: gpt-4o*;gpt-4-0613</string>
 </resources>

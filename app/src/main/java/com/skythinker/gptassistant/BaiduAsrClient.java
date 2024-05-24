@@ -19,6 +19,7 @@ public class BaiduAsrClient extends AsrClientBase{
     String asrBuffer = "";
     IAsrCallback callback = null;
     EventListener listener = null;
+    boolean autoStop = false;
 
     public BaiduAsrClient(Context context) {
         asr = EventManagerFactory.create(context, "asr");
@@ -42,12 +43,19 @@ public class BaiduAsrClient extends AsrClientBase{
                         e.printStackTrace();
                     }
                 } else if(name.equals(SpeechConstant.CALLBACK_EVENT_ASR_FINISH)) { // 识别结束（用于错误处理）
+                    Log.d("bd asr finish", params);
                     try {
                         JSONObject json = new JSONObject(params);
                         int errorCode = json.getInt("error");
-                        if(errorCode != 0) {
+                        if(errorCode == 0 && autoStop) {
+                            Log.d("asr auto stop", "auto stop");
+                            callback.onAutoStop();
+                        } else if(errorCode == 7) {
+                            Log.d("bd asr error", "no speech detected");
+                            startRecognize();
+                        } else if(errorCode != 0) {
                             String errorMessage = json.getString("desc");
-                            Log.d("asr error", "error code: " + errorCode + ", error message: " + errorMessage);
+                            Log.d("bd asr error", "error code: " + errorCode + ", error message: " + errorMessage);
                             callback.onError(errorMessage);
                         }
                     } catch (JSONException e) {
@@ -65,13 +73,18 @@ public class BaiduAsrClient extends AsrClientBase{
         params.put(SpeechConstant.APP_ID, GlobalDataHolder.getAsrAppId());
         params.put(SpeechConstant.APP_KEY, GlobalDataHolder.getAsrApiKey());
         params.put(SpeechConstant.SECRET, GlobalDataHolder.getAsrSecretKey());
-        if(GlobalDataHolder.getAsrUseRealTime()){ // 是否使用实时识别（长语音识别）
-            params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, true);
-            params.put(SpeechConstant.VAD, SpeechConstant.VAD_DNN);
-        }
-        else{
+        if(autoStop) {
             params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, false);
-            params.put(SpeechConstant.VAD, SpeechConstant.VAD_TOUCH);
+            params.put(SpeechConstant.VAD, SpeechConstant.VAD_DNN);
+            params.put(SpeechConstant.VAD_ENDPOINT_TIMEOUT, 3000);
+        } else {
+            if (GlobalDataHolder.getAsrUseRealTime()) { // 是否使用实时识别（长语音识别）
+                params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, true);
+                params.put(SpeechConstant.VAD, SpeechConstant.VAD_DNN);
+            } else {
+                params.put(SpeechConstant.BDS_ASR_ENABLE_LONG_SPEECH, false);
+                params.put(SpeechConstant.VAD, SpeechConstant.VAD_TOUCH);
+            }
         }
         params.put(SpeechConstant.PID, 15374); // 选用的模型编号（15374:普通话输入法模型）
         asr.send(SpeechConstant.ASR_START, (new JSONObject(params)).toString(), null, 0, 0);
@@ -96,6 +109,11 @@ public class BaiduAsrClient extends AsrClientBase{
     @Override
     public void setParam(String key, Object value) {
 
+    }
+
+    @Override
+    public void setEnableAutoStop(boolean enable) {
+        autoStop = enable;
     }
 
     @Override

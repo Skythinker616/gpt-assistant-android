@@ -88,7 +88,7 @@ public class ChatApiClient {
 
         BaseChatCompletion chatCompletion = null;
 
-        if(!model.contains("vision")) { // 使用非Vision模型
+        if(!GlobalUtils.checkVisionSupport(model)) { // 使用非Vision模型
             ArrayList<Message> messageList = new ArrayList<>(); // 将消息数据转换为ChatGPT需要的格式
             for (ChatMessage message : promptList) {
                 if (message.role == ChatRole.SYSTEM) {
@@ -155,7 +155,7 @@ public class ChatApiClient {
 
             chatCompletion = ChatCompletionWithPicture.builder()
                     .messages(messageList)
-                    .model(model)
+                    .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
                     .build();
         }
 
@@ -177,18 +177,23 @@ public class ChatApiClient {
                         listener.onFunctionCall(callingFuncName, callingFuncArg);
                     }
                 } else { // 正在回复
-                    JSONObject delta = ((JSONObject) (new JSONObject(data)).getJSONArray("choices").get(0)).getJSONObject("delta");
-                    if (delta.containsKey("function_call")) { // GPT请求函数调用
-                        JSONObject functionCall = delta.getJSONObject("function_call");
-                        if(functionCall.containsKey("name"))
-                            callingFuncName = functionCall.getStr("name");
-                        callingFuncArg += functionCall.getStr("arguments");
-                    } else if(delta.containsKey("content")) { // GPT返回普通消息
-                        String msg = delta.getStr("content");
-                        if(msg != null)
-                            listener.onMsgReceive(msg);
-                    }
 //                    Log.d("ChatApiClient", "onEvent: " + data);
+                    JSONObject json = new JSONObject(data);
+                    if(json.containsKey("choices") && json.getJSONArray("choices").size() > 0) {
+                        JSONObject delta = ((JSONObject) json.getJSONArray("choices").get(0)).getJSONObject("delta");
+                        if (delta != null) {
+                            if (delta.containsKey("function_call")) { // GPT请求函数调用
+                                JSONObject functionCall = delta.getJSONObject("function_call");
+                                if (functionCall.containsKey("name"))
+                                    callingFuncName = functionCall.getStr("name");
+                                callingFuncArg += functionCall.getStr("arguments");
+                            } else if (delta.containsKey("content")) { // GPT返回普通消息
+                                String msg = delta.getStr("content");
+                                if (msg != null)
+                                    listener.onMsgReceive(msg);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -205,7 +210,7 @@ public class ChatApiClient {
                         listener.onFinished(false);
                     } else {
                         String err = throwable.toString();
-                        Log.d("ChatApiClient", "onFailure: " + err);
+                        Log.d("ChatApiClient", "onFailure: " + err + "\n" + Log.getStackTraceString(throwable));
                         if(err.equals("java.io.IOException: Canceled")) { // 解释常见的错误
                             err = context.getString(R.string.text_gpt_cancel);
                         } else if(err.equals("java.net.SocketTimeoutException: timeout")) {

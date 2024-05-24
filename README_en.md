@@ -59,7 +59,7 @@ This software does not incur any charges; users can use all features for free. H
 
 1. ChatGPT API usage fees
 
-   - For example, with Chatanywhere, the **free service** limits the call frequency to `gpt-3.5-turbo` model to no more than **60 requests/hour/IP & Key**. This is sufficient for personal use. If a higher call frequency or the `gpt-4` model is required, you can choose the paid service.
+   - For example, with Chatanywhere, the **free service** limits the call frequency to `gpt-3.5-turbo` model to no more than **100 requests/day/IP & Key**. This is sufficient for personal use. If a higher call frequency or the `gpt-4` model is required, you can choose the paid service.
 
 2. Speech recognition API fees
 
@@ -130,7 +130,7 @@ Click the button in the upper right corner of the template editing page to load 
 
 **VI. Supports uploading images to Vision**
 
-When the selected model includes `vision` (such as `gpt-4-vision-preview`), a camera icon will appear on the left side of the input box. Clicking it allows you to take photos or choose images from the gallery.
+When a model with vision capability is selected, a camera icon will appear on the left side of the input box. Clicking it allows you to take photos or choose images from the gallery.
 
 When sharing images from other applications, you can also choose this program to add images to the input box.
 
@@ -163,7 +163,7 @@ This program implements OpenAI's Function interface, allowing GPT to make intern
 > 
 > Note 3: Due to the need to send web content to GPT, internet usage will consume a large number of tokens. Please use the `gpt-4` model cautiously.
 >
-> Note 4: The `gpt-4-vision-preview` model does not currently support internet access.
+> Note 4: Models without function call support (e.g. `gpt-4-vision-preview`) does not support internet access.
 
 ---
 
@@ -179,7 +179,7 @@ The program uses the OpenAI API and requires users to enter their own API_KEY in
 
 - **Using the Chatanywhere forwarding service** (recommended for use in China)
 
-   Chatanywhere provides free and paid OpenAI API forwarding services. The free service currently limits the call frequency to `gpt-3.5-turbo` model to no more than **60 requests/hour/IP & Key**. The paid service has no limitations. Users can refer to their [project homepage](https://github.com/chatanywhere/GPT_API_free) to obtain the address and key and fill in the settings.
+   Chatanywhere provides free and paid OpenAI API forwarding services. The free service currently limits the call frequency to `gpt-3.5-turbo` model to no more than **100 requests/day/IP&Key**. The paid service has no limitations. Users can refer to their [project homepage](https://github.com/chatanywhere/GPT_API_free) to obtain the address and key and fill in the settings.
 
 - **Using the official service**
 
@@ -299,13 +299,6 @@ A: To prevent abuse, the keys in the repository have package name and signature 
 - **2023.12.04** Added Vision image recognition functionality.
 - **2023.12.21** Added support for advanced template syntax.
 - **2024.01.08** Added support for Google and Whisper speech recognition, online template list.
-
----
-
-## TODO
-
-- Support rendering Markdown tables.
-- Continuous voice communication.
 
 ---
 

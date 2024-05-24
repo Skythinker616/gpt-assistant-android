@@ -254,19 +254,39 @@
                                     android:layout_marginRight="20dp"
                                     android:orientation="vertical">
 
-                                    <TextView
+                                    <LinearLayout
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="@string/conf_custom_model_item"
-                                        android:textColor="#000000"
-                                        android:textSize="18sp" />
+                                        android:layout_marginTop="10dp"
+                                        android:orientation="horizontal">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:paddingRight="5dp"
+                                            android:text="@string/conf_custom_model_item"
+                                            android:textColor="#000000"
+                                            android:textSize="18sp" />
+
+                                        <ImageButton
+                                            android:id="@+id/bt_custom_model_help"
+                                            android:layout_width="15dp"
+                                            android:layout_height="15dp"
+                                            android:layout_gravity="center_vertical"
+                                            android:layout_weight="1"
+                                            android:background="@color/transparent"
+                                            android:scaleType="centerInside"
+                                            android:src="@drawable/help_btn" />
+
+                                    </LinearLayout>
 
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:text="@string/conf_custom_model_tip"
                                         android:textColor="#6A6A6A"
-                                        android:textSize="12sp" />
+                                        android:textSize="12sp"
+                                        android:visibility="gone" />
                                 </LinearLayout>
 
                                 <EditText

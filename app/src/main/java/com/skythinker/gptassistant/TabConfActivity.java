@@ -177,6 +177,15 @@ public class TabConfActivity extends Activity {
             }
         });
 
+        ((LinearLayout) findViewById(R.id.bt_custom_model_help).getParent()).setOnClickListener(view -> {
+            new ConfirmDialog(this)
+                    .setTitle(getString(R.string.dialog_custom_model_help_title))
+                    .setContent(getString(R.string.dialog_custom_model_help))
+                    .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                    .setOkButtonVisibility(View.GONE)
+                    .show();
+        });
+
         ((LinearLayout) findViewById(R.id.bt_asr_help).getParent()).setOnClickListener(view -> {
             new ConfirmDialog(this)
                     .setTitle(getString(R.string.dialog_asr_select_help_title))

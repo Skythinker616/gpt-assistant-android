@@ -20,9 +20,11 @@ import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
@@ -66,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONException;
@@ -102,8 +105,9 @@ public class MainActivity extends Activity {
     private ImageButton btSend, btImage;
     private ScrollView svChatArea;
     private LinearLayout llChatList;
-    private Handler handler = new Handler();
-    private Markwon markwon;
+    private PopupWindow pwMenu;
+    private Handler handler;
+    private MarkdownRenderer markdownRenderer;
     private long asrStartTime = 0;
     BroadcastReceiver localReceiver = null;
 
@@ -117,11 +121,14 @@ public class MainActivity extends Activity {
     private boolean ttsEnabled = true;
     final private List<String> ttsSentenceSeparator = Arrays.asList("。", ".", "？", "?", "！", "!", "……", "\n"); // 用于为TTS断句
     private int ttsSentenceEndIndex = 0;
+    private String ttsLastId = "";
 
     private boolean multiChat = false;
     ChatManager chatManager = null;
     private Conversation currentConversation = null; // 当前会话信息
     private MessageList multiChatList = null; // 指向currentConversation.messages
+
+    private boolean multiVoice = false;
 
     private JSONObject currentTemplateParams = null; // 当前模板参数
 
@@ -138,58 +145,21 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() { // 全局异常捕获
+            @Override
+            public void uncaughtException(@NonNull Thread thread, @NonNull Throwable throwable) {
+                Log.e("UncaughtException", thread.getClass().getName() + " " + throwable.getMessage());
+                throwable.printStackTrace();
+                System.exit(-1);
+            }
+        });
+
+        handler = new Handler(); // 初始化Handler
+
         GlobalDataHolder.init(this); // 初始化全局共享数据
 
         // 初始化Markdown渲染器
-        markwon = Markwon.builder(this)
-                .usePlugin(SyntaxHighlightPlugin.create(new Prism4j(new GrammarLocatorDef()), Prism4jThemeDefault.create(0)))
-                .usePlugin(JLatexMathPlugin.create(40, builder -> builder.inlinesEnabled(true)))
-//                .usePlugin(TablePlugin.create(this)) // unstable
-//                .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
-                .usePlugin(ImagesPlugin.create())
-                .usePlugin(MarkwonInlineParserPlugin.create())
-                .usePlugin(LinkifyPlugin.create())
-                .usePlugin(new AbstractMarkwonPlugin() {
-                    @NonNull
-                    @Override
-                    public String processMarkdown(@NonNull String markdown) {
-                        List<String> sepList = new ArrayList<>(Arrays.asList(markdown.split("```", -1)));
-                        for (int i = 0; i < sepList.size(); i += 2) { // 跳过代码块不处理
-                            // 解决仅能渲染“$$...$$”公式的问题
-                            String regexDollar = "(?<!\\$)\\$(?!\\$)([^\\n]*?)(?<!\\$)\\$(?!\\$)"; // 匹配单行内的“$...$”
-                            String regexBrackets = "(?s)\\\\\\[(.*?)\\\\\\]"; // 跨行匹配“\[...\]”
-                            String regexParentheses = "\\\\\\(([^\\n]*?)\\\\\\)"; // 匹配单行内的“\(...\)”
-                            String latexReplacement = "\\$\\$$1\\$\\$"; // 替换为“$$...$$”
-                            // 为图片添加指向同一URL的链接
-                            String regexImage = "!\\[(.*?)\\]\\((.*?)\\)"; // 匹配“![...](...)”
-                            String imageReplacement = "[$0]($2)"; // 替换为“[![...](...)](...)”
-                            // 进行替换
-                            sepList.set(i, sepList.get(i).replaceAll(regexDollar, latexReplacement)
-                                    .replaceAll(regexBrackets, latexReplacement)
-                                    .replaceAll(regexParentheses, latexReplacement)
-                                    .replaceAll(regexImage, imageReplacement));
-                        }
-                        return String.join("```", sepList);
-                    }
-                })
-                .usePlugin(new AbstractMarkwonPlugin() {
-                    @Override
-                    public void configureConfiguration(@NonNull MarkwonConfiguration.Builder builder) {
-                        builder.imageSizeResolver(new ImageSizeResolverDef(){
-                            @NonNull @Override
-                            protected Rect resolveImageSize(@Nullable ImageSize imageSize, @NonNull Rect imageBounds, int canvasWidth, float textSize) {
-                                int maxSize = dpToPx(120);
-                                if(imageBounds.width() > maxSize || imageBounds.height() > maxSize) {
-                                    float ratio = Math.min((float)maxSize / imageBounds.width(), (float)maxSize / imageBounds.height());
-                                    imageBounds.right = imageBounds.left + (int)(imageBounds.width() * ratio);
-                                    imageBounds.bottom = imageBounds.top + (int)(imageBounds.height() * ratio);
-                                }
-                                return imageBounds;
-                            }
-                        });
-                    }
-                })
-                .build();
+        markdownRenderer = new MarkdownRenderer(this);
 
         // 初始化TTS
         tts = new TextToSpeech(this, status -> {
@@ -198,6 +168,29 @@ public class MainActivity extends Activity {
                 if(res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
                     Log.e("TTS", "不支持当前语言");
                 }else{
+                    tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                        @Override
+                        public void onStart(String utteranceId) {
+//                            Log.d("TTS", "onStart: " + utteranceId);
+                        }
+
+                        @Override
+                        public void onDone(String utteranceId) {
+//                            Log.d("TTS", "onDone: " + utteranceId);
+                            if(ttsLastId.equals(utteranceId) && !chatApiClient.isStreaming()) {
+                                Log.d("TTS", "Queue finished");
+                                if(multiVoice) {
+                                    Intent intent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
+                                    LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(intent);
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onError(String utteranceId) {
+                            Log.e("TTS", "onError: " + utteranceId);
+                        }
+                    });
                     Log.d("TTS", "初始化成功");
                 }
             }else{
@@ -247,7 +240,7 @@ public class MainActivity extends Activity {
                                 selectedImageBitmap = resizeBitmap(bitmap, 2048, 2048);
                             }
                             btImage.setImageResource(R.drawable.image_enabled);
-                            if(!GlobalDataHolder.getGptModel().contains("vision"))
+                            if(!GlobalUtils.checkVisionSupport(GlobalDataHolder.getGptModel()))
                                 Toast.makeText(this, R.string.toast_use_vision_model, Toast.LENGTH_LONG).show();
                         } catch (FileNotFoundException e) {
                             e.printStackTrace();
@@ -288,11 +281,9 @@ public class MainActivity extends Activity {
                             if(System.currentTimeMillis() - lastRenderTime > 100) { // 限制最高渲染频率10Hz
                                 boolean isBottom = svChatArea.getChildAt(0).getBottom()
                                         <= svChatArea.getHeight() + svChatArea.getScrollY(); // 判断消息布局是否在底部
-                                try {
-                                    markwon.setMarkdown(tvGptReply, chatApiBuffer); // 渲染Markdown
-                                } catch (Exception e){
-                                    e.printStackTrace();
-                                }
+
+                                markdownRenderer.render(tvGptReply, chatApiBuffer); // 渲染Markdown
+
                                 if(isBottom){
                                     scrollChatAreaToBottom(); // 渲染前在底部则渲染后滚动到底部
                                 }
@@ -314,7 +305,9 @@ public class MainActivity extends Activity {
                                     if(found) { // 找到断句分隔符则添加到朗读队列
                                         String sentence = wholeText.substring(ttsSentenceEndIndex, nextSentenceEndIndex);
                                         ttsSentenceEndIndex = nextSentenceEndIndex;
-                                        tts.speak(sentence, TextToSpeech.QUEUE_ADD, null);
+                                        String id = UUID.randomUUID().toString();
+                                        tts.speak(sentence, TextToSpeech.QUEUE_ADD, null, id);
+                                        ttsLastId = id;
                                     }
                                 }
                             }
@@ -345,16 +338,18 @@ public class MainActivity extends Activity {
                                 }
                             }
                             try {
-                                markwon.setMarkdown(tvGptReply, chatApiBuffer); // 渲染Markdown
+                                markdownRenderer.render(tvGptReply, chatApiBuffer); // 渲染Markdown
                                 String ttsText = tvGptReply.getText().toString();
                                 if(currentTemplateParams.getBool("speak", ttsEnabled) && ttsText.length() > ttsSentenceEndIndex) { // 如果TTS开启则朗读剩余文本
-                                    tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null);
+                                    String id = UUID.randomUUID().toString();
+                                    tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null, id);
+                                    ttsLastId = id;
                                 }
                                 if(referenceCount > 0)
                                     chatApiBuffer += referenceStr; // 添加参考网页
                                 multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer)); // 保存回复内容到聊天数据列表
                                 ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1)); // 绑定该聊天数据到布局
-                                markwon.setMarkdown(tvGptReply, chatApiBuffer); // 再次渲染Markdown添加参考网页
+                                markdownRenderer.render(tvGptReply, chatApiBuffer); // 再次渲染Markdown添加参考网页
                                 btSend.setImageResource(R.drawable.send_btn);
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -384,7 +379,7 @@ public class MainActivity extends Activity {
                                 JSONObject argJson = new JSONObject(arg);
                                 String url = argJson.getStr("url"); // 获取URL
                                 runOnUiThread(() -> {
-                                    markwon.setMarkdown(tvGptReply, String.format(getString(R.string.text_visiting_web_prefix) + "[%s](%s)", URLDecoder.decode(url), url));
+                                    markdownRenderer.render(tvGptReply, String.format(getString(R.string.text_visiting_web_prefix) + "[%s](%s)", URLDecoder.decode(url), url));
                                     webScraper.load(url, new WebScraper.Callback() { // 抓取网页内容
                                         @Override
                                         public void onLoadResult(String result) {
@@ -403,6 +398,9 @@ public class MainActivity extends Activity {
                                 e.printStackTrace();
                                 postSendFunctionReply(name, "Error when getting response.");
                             }
+                        } else if(name.equals("exit_voice_chat")){
+                            if(multiVoice)
+                                runOnUiThread(() -> findViewById(R.id.cv_voice_chat).performClick());
                         } else {
                             postSendFunctionReply(name, "Function not found.");
                             Log.d("FunctionCall", String.format("Function not found: %s", name));
@@ -422,6 +420,7 @@ public class MainActivity extends Activity {
             }else{
                 tts.stop();
                 sendQuestion(null);
+                etUserInput.setText("");
             }
         });
 
@@ -499,8 +498,10 @@ public class MainActivity extends Activity {
             multiChat = !multiChat;
             if(multiChat){
                 ((CardView) findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn_enabled));
+                GlobalUtils.showToast(this, R.string.toast_multi_chat_on, false);
             }else{
                 ((CardView) findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn));
+                GlobalUtils.showToast(this, R.string.toast_multi_chat_off, false);
             }
         });
 
@@ -517,6 +518,10 @@ public class MainActivity extends Activity {
             multiChatList = currentConversation.messages;
         });
 
+        View menuView = LayoutInflater.from(this).inflate(R.layout.main_popup_menu, null);
+        pwMenu = new PopupWindow(menuView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        pwMenu.setOutsideTouchable(true);
+
         (findViewById(R.id.cv_new_chat)).performClick(); // 初始化对话列表
 
         // TTS开关按钮点击事件（切换TTS开关状态）
@@ -524,25 +529,55 @@ public class MainActivity extends Activity {
             ttsEnabled = !ttsEnabled;
             if(ttsEnabled) {
                 ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off));
+                GlobalUtils.showToast(this, R.string.toast_tts_on, false);
             }else{
                 ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
+                GlobalUtils.showToast(this, R.string.toast_tts_off, false);
                 tts.stop();
             }
         });
 
-        (findViewById(R.id.cv_history)).setOnClickListener(view -> {
+        // 连续语音对话按钮点击事件（切换连续语音对话开关状态）
+        (findViewById(R.id.cv_voice_chat)).setOnClickListener(view -> {
+            multiVoice = !multiVoice;
+            if(multiVoice){
+                ((CardView) findViewById(R.id.cv_voice_chat)).setForeground(getDrawable(R.drawable.voice_chat_btn_enabled));
+                asrClient.setEnableAutoStop(true);
+//                chatApiClient.addFunction("exit_voice_chat", "this should be called when a conversation ends", "{}", new String[]{});
+                Intent intent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
+                LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+                GlobalUtils.showToast(this, R.string.toast_multi_voice_on, false);
+            } else {
+                ((CardView) findViewById(R.id.cv_voice_chat)).setForeground(getDrawable(R.drawable.voice_chat_btn));
+                asrClient.setEnableAutoStop(false);
+//                chatApiClient.removeFunction("exit_voice_chat");
+                Intent intent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_STOP");
+                LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+                GlobalUtils.showToast(this, R.string.toast_multi_voice_off, false);
+            }
+        });
+
+        // 历史按钮点击事件，跳转到历史记录页面
+        (menuView.findViewById(R.id.cv_history)).setOnClickListener(view -> {
+            pwMenu.dismiss();
             Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
             startActivityForResult(intent, 3);
         });
 
         // 设置按钮点击事件，跳转到设置页面
-        (findViewById(R.id.cv_settings)).setOnClickListener(view -> {
+        (menuView.findViewById(R.id.cv_settings)).setOnClickListener(view -> {
+            pwMenu.dismiss();
             startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
         });
 
         // 关闭按钮点击事件，退出程序
-        (findViewById(R.id.cv_close)).setOnClickListener(view -> {
+        (menuView.findViewById(R.id.cv_close)).setOnClickListener(view -> {
             finish();
+        });
+
+        // 更多按钮点击事件，显示更多菜单
+        (findViewById(R.id.cv_more)).setOnClickListener(view -> {
+            pwMenu.showAsDropDown(view, 0, 0);
         });
 
         // 上方空白区域点击事件，退出程序
@@ -585,11 +620,26 @@ public class MainActivity extends Activity {
                 }else{
                     Toast.makeText(MainActivity.this, getString(R.string.text_asr_error_prefix) + msg, Toast.LENGTH_LONG).show();
                 }
+                if(multiVoice) {
+                    (findViewById(R.id.cv_voice_chat)).performClick();
+                }
             }
 
             @Override
             public void onResult(String result) {
-                runOnUiThread(() -> etUserInput.setText(result));
+                if(result != null) {
+                    runOnUiThread(() -> etUserInput.setText(result));
+                }
+            }
+
+            @Override
+            public void onAutoStop() {
+                if(multiVoice) {
+                    Intent broadcastIntent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_STOP");
+                    LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(broadcastIntent);
+                    Intent broadcastIntent2 = new Intent("com.skythinker.gptassistant.KEY_SEND");
+                    LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(broadcastIntent2);
+                }
             }
         };
         // 设置使用百度/Whisper/华为语音识别
@@ -759,7 +809,7 @@ public class MainActivity extends Activity {
 
     // 设置图片选择按钮可见性
     private void updateImageButtonVisible() {
-        if(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()).contains("vision"))
+        if(GlobalUtils.checkVisionSupport(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel())))
             btImage.setVisibility(View.VISIBLE);
         else
             btImage.setVisibility(View.GONE);
@@ -976,7 +1026,7 @@ public class MainActivity extends Activity {
             }
             tvContent.setText(spannableString);
         } else if(role == ChatRole.ASSISTANT) {
-            markwon.setMarkdown(tvContent, content);
+            markdownRenderer.render(tvContent, content);
         }
         tvContent.setTextSize(16);
         tvContent.setTextColor(Color.BLACK);
@@ -1185,6 +1235,7 @@ public class MainActivity extends Activity {
         chatApiBuffer = "";
         ttsSentenceEndIndex = 0;
         chatApiClient.sendPromptList(multiChatList);
+//        markdownRenderer.render(tvGptReply, etUserInput.getText().toString());
         btImage.setImageResource(R.drawable.image);
         selectedImageBitmap = null;
         btSend.setImageResource(R.drawable.cancel_btn);

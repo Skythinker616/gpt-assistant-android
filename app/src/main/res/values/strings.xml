@@ -62,7 +62,7 @@
     <string name="conf_check_update_item">Check for Updates</string>
     <string name="conf_check_update_tip_empty">Current version: 0.0.0</string>
     <string name="conf_homepage_item">Project Homepage</string>
-    <string name="conf_homepage_tip">2023 @skythinker - Stars welcomed~</string>
+    <string name="conf_homepage_tip">2024 @skythinker - Stars welcomed~</string>
     <string name="default_greeting">Hello! What can I assist you with?</string>
     <string name="conf_activity_title">Settings</string>
     <string name="history_activity_title">History Records</string>
@@ -72,7 +72,7 @@
     <string name="tab_detail_cancel_text">Cancel</string>
     <string name="tab_detail_confirm_text">Confirm</string>
     <string name="tab_detail_title_hint">Enter title here</string>
-    <string name="tab_detail_content_hint">Enter template content here</string>
+    <string name="tab_detail_content_hint">Enter template content here (you can get examples and help using upper right corner button)</string>
     <string name="confirm_dialog_default_title">Notice</string>
     <string name="confirm_dialog_default_cancel_text">Cancel</string>
     <string name="confirm_dialog_default_ok_text">Confirm</string>
@@ -108,6 +108,7 @@
     <string name="new_discussion_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates</string>
     <string name="discussions_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates</string>
     <string name="shared_templates_url">https://raw.githubusercontent.com/Skythinker616/gpt-assistant-android/master/static_res/shared_templates.json</string>
+    <string name="template_help_url">https://github.com/Skythinker616/gpt-assistant-android/blob/master/template_help_en.md</string>
     <string name="text_default_tab_title">Q&amp;A</string>
     <string name="text_default_tab_content">"Please answer: "</string>
     <string name="text_gpt_cancel">Request canceled</string>
@@ -133,6 +134,7 @@
     <string name="toast_tts_off">Voice Output Off</string>
     <string name="toast_multi_voice_on">Continuous Voice Input On</string>
     <string name="toast_multi_voice_off">Continuous Voice Input Off</string>
+    <string name="toast_voice_chat_tts_off">Please turn on voice output first</string>
     <string name="dialog_custom_model_help_title">Custom Model Help</string>
     <string name="dialog_custom_model_help">Custom model names entered here will be appended to drop-down list. Use \';\' to separate different models and use \'*\' to indicate a vision model. \n\nExample: gpt-4o*;gpt-4-0613</string>
 </resources>

@@ -51,7 +51,7 @@ public class WhisperAsrClient extends AsrClientBase{
                                 if(ratio < 1) ratio = 1;
                                 double db = 20 * Math.log10(ratio);
                                 amplitude = (1 - lpfRatio) * amplitude + lpfRatio * db;
-                                Log.d("whisper amp", String.valueOf(amplitude));
+//                                Log.d("whisper amp", String.valueOf(amplitude));
                                 if(amplitude > SILENCE_THRESHOLD) {
                                     speechDetected = true;
                                     lastSpeechTime = System.currentTimeMillis();

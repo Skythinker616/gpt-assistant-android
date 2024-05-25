@@ -539,6 +539,10 @@ public class MainActivity extends Activity {
 
         // 连续语音对话按钮点击事件（切换连续语音对话开关状态）
         (findViewById(R.id.cv_voice_chat)).setOnClickListener(view -> {
+            if(!multiVoice && !ttsEnabled) { // 未开启TTS时不允许开启连续语音对话
+                GlobalUtils.showToast(this, R.string.toast_voice_chat_tts_off, false);
+                return;
+            }
             multiVoice = !multiVoice;
             if(multiVoice){
                 ((CardView) findViewById(R.id.cv_voice_chat)).setForeground(getDrawable(R.drawable.voice_chat_btn_enabled));

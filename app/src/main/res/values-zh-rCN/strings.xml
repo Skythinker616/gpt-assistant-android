@@ -52,7 +52,7 @@
     <string name="conf_check_update_item">查看更新</string>
     <string name="conf_check_update_tip_empty">当前版本：0.0.0</string>
     <string name="conf_homepage_item">项目主页</string>
-    <string name="conf_homepage_tip">2023 @skythinker - 欢迎点个Star哦~</string>
+    <string name="conf_homepage_tip">2024 @skythinker - 欢迎点个Star哦~</string>
     <string name="default_greeting">您好！请问我能为您提供什么帮助？</string>
     <string name="conf_activity_title">设置</string>
     <string name="history_activity_title">历史记录</string>
@@ -61,8 +61,8 @@
     <string name="tab_detail_activity_title">模板设置</string>
     <string name="tab_detail_cancel_text">取消</string>
     <string name="tab_detail_confirm_text">确定</string>
-    <string name="tab_detail_title_hint">在这里输入标题</string>
-    <string name="tab_detail_content_hint">在这里输入模板内容</string>
+    <string name="tab_detail_title_hint">在这里输入模板标题</string>
+    <string name="tab_detail_content_hint">在这里输入模板内容（右上角可以获取在线模板和编写说明哦）</string>
     <string name="confirm_dialog_default_title">提示</string>
     <string name="confirm_dialog_default_cancel_text">取消</string>
     <string name="confirm_dialog_default_ok_text">确定</string>
@@ -98,6 +98,7 @@
     <string name="new_discussion_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates</string>
     <string name="discussions_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates</string>
     <string name="shared_templates_url">https://gitee.com/skythinker/gpt-assistant-android/raw/master/static_res/shared_templates.json</string>
+    <string name="template_help_url">https://gitee.com/skythinker/gpt-assistant-android/blob/master/template_help.md</string>
     <string name="text_default_tab_title">问答</string>
     <string name="text_default_tab_content">请回答这个问题：</string>
     <string name="text_gpt_cancel">请求已取消</string>
@@ -123,6 +124,7 @@
     <string name="toast_tts_off">语音播报已关闭</string>
     <string name="toast_multi_voice_on">进入连续语音对话</string>
     <string name="toast_multi_voice_off">连续语音对话已退出</string>
+    <string name="toast_voice_chat_tts_off">请先打开语音播报开关</string>
     <string name="dialog_custom_model_help_title">自定义模型说明</string>
-    <string name="dialog_custom_model_help">可输入多个自定义模型名称，自定义模型也会显示在下拉列表中\n\n多个模型通过英文分号分隔，可在模型结尾添加星号表示支持识图功能\n\n示例：\ngpt-4o*;gpt-4-0613</string>
+    <string name="dialog_custom_model_help">可输入多个自定义模型名称，自定义模型也会显示在下拉列表中\n\n多个模型通过英文分号分隔，可在模型结尾添加星号表示支持识图功能\n\n示例：gpt-4o*;gpt-4-0613</string>
 </resources>

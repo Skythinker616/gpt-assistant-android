@@ -59,7 +59,7 @@ This software does not incur any charges; users can use all features for free. H
 
 1. ChatGPT API usage fees
 
-   - For example, with Chatanywhere, the **free service** limits the call frequency to `gpt-3.5-turbo` model to no more than **100 requests/day/IP & Key**. This is sufficient for personal use. If a higher call frequency or the `gpt-4` model is required, you can choose the paid service.
+   - For example, with Chatanywhere, the **free service** limits the call frequency to `gpt-3.5-turbo` model to no more than **200 requests/day/IP & Key**. This is sufficient for personal use. If a higher call frequency or the `gpt-4` model is required, you can choose the paid service.
 
 2. Speech recognition API fees
 
@@ -179,7 +179,7 @@ The program uses the OpenAI API and requires users to enter their own API_KEY in
 
 - **Using the Chatanywhere forwarding service** (recommended for use in China)
 
-   Chatanywhere provides free and paid OpenAI API forwarding services. The free service currently limits the call frequency to `gpt-3.5-turbo` model to no more than **100 requests/day/IP&Key**. The paid service has no limitations. Users can refer to their [project homepage](https://github.com/chatanywhere/GPT_API_free) to obtain the address and key and fill in the settings.
+   Chatanywhere provides free and paid OpenAI API forwarding services. The free service currently limits the call frequency to `gpt-3.5-turbo` model to no more than **200 requests/day/IP&Key**. The paid service has no limitations. Users can refer to their [project homepage](https://github.com/chatanywhere/GPT_API_free) to obtain the address and key and fill in the settings.
 
 - **Using the official service**
 
@@ -302,6 +302,14 @@ A: To prevent abuse, the keys in the repository have package name and signature 
 
 ---
 
+## TODO
+
+- Support adjusting api parameters such as temperature
+- Support question and reply length restrictions
+- Support message compression
+
+---
+
 ## Test Environment
 
 Tested models:
@@ -310,10 +318,11 @@ Tested models:
 | :-------------: | :-------------: | :-------------: | :-------------: |
 | Honor 7C        | EMUI 8.0.0       | Android 8        | 1.9.1           |
 | Honor 20        | HarmonyOS 3.0.0  | Android 10       | 1.9.1           |
-| Honor 20        | HarmonyOS 4.0    | Android 10       | 1.10.0          |
+| Honor 20        | HarmonyOS 4.0    | Android 10       | 1.11.0          |
 | Huawei Mate 30  | HarmonyOS 3.0.0  | Android 12       | 1.6.0           |
 | Huawei Mate 30  | HarmonyOS 4.0    | Android 12       | 1.8.0           |
 | Honor Magic 4   | MagicOS 7.0      | Android 13       | 1.9.1           |
+| Honor Magic 6   | MagicOS 8.0      | Android 14       | 1.11.1           |
 | Redmi K20 Pro   | MIUI 12.5.6      | Android 11       | 1.5.0           |
 | Redmi K60 Pro   | MIUI 14.0.23     | Android 13       | 1.7.0           |
 | Xiaomi 13       | MIUI 14.0.5      | Android 14       | 1.10.0          |

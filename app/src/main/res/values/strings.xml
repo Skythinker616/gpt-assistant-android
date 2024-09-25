@@ -6,6 +6,7 @@
         <item>gpt-4</item>
         <item>gpt-4-turbo</item>
         <item>gpt-4o</item>
+        <item>gpt-4o-mini</item>
     </string-array>
     <!-- HMS语音识别API_KEY 已限制包名和签名 -->
     <string name="hms_api_key" translatable="false">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string>
@@ -122,7 +123,7 @@
     <string name="text_google_asr_unavailable">Google voice service unavailable</string>
     <string name="dialog_asr_select_help">Mainland China: HMS or Baidu service is better\n\nOther Area: Google or Whisper service may be better</string>
     <string name="dialog_asr_select_help_title">Select Help</string>
-    <string name="text_whisper_param_error">Please set openai host and key first</string>
+    <string name="text_whisper_param_error">Please set valid openai host and key first</string>
     <string name="text_google_asr_typing_error">Please enable Google Voice Input</string>
     <string name="text_google_asr_permission_error">Please grant audio recording permission to Google</string>
     <string name="text_hms_asr_failed_error">\nPossibly due to the author turning off the free HMS speech service or updating the parameters in a new version, if this error continues to occur, please try to update the version or use other voice interfaces</string>
@@ -137,4 +138,5 @@
     <string name="toast_voice_chat_tts_off">Please turn on voice output first</string>
     <string name="dialog_custom_model_help_title">Custom Model Help</string>
     <string name="dialog_custom_model_help">Custom model names entered here will be appended to drop-down list. Use \';\' to separate different models and use \'*\' to indicate a vision model. \n\nExample: gpt-4o*;gpt-4-0613</string>
+    <string name="text_gpt_conf_error">Please check GPT api configuration</string>
 </resources>

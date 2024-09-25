@@ -8,11 +8,11 @@
 
 </div>
 
-这是一个基于ChatGPT的安卓端语音助手，允许用户通过手机音量键从任意界面唤起并直接进行语音交流，用最快捷的方式询问并获取回复
+这是一个基于 ChatGPT API 的安卓端语音助手，允许用户通过手机音量键从任意界面唤起并直接进行语音交流，用最快捷的方式询问并获取回复
 
 <div align=center>
 	<font size=3>
-		<b>免费聊天 · 语音交互 · 支持联网 · 支持识图</b>
+		<b>快捷唤起 · 语音交互 · 支持联网 · 支持识图</b>
 	</font>
 </div>
 
@@ -52,7 +52,7 @@
 
 本软件通过OpenAI API获取回复，在国内使用时可以用第三方转发服务，如[Chatanywhere](https://github.com/chatanywhere/GPT_API_free)，其目前提供免费和付费服务，具体使用方法见[下述说明](#使用方法)
 
-> 注：Chatanywhere注册需要GitHub账号，因此注册时需要能够登录GitHub的网络环境
+> 注：注册Chatanywhere免费服务需要GitHub账号，因此注册时需要能够登录GitHub的网络环境
 
 ### 费用说明
 
@@ -60,7 +60,7 @@
 
 1. ChatGPT调用费用
 
-	- 以Chatanywhere为例，目前其**免费服务**限制对`gpt-3.5-turbo`模型的调用频率不超过**100请求/天/IP&Key**，若需要更高的调用频率或`gpt-4`模型，需要选择付费服务
+	- 以Chatanywhere为例，目前其**免费服务**限制对`gpt-3.5-turbo`、`gpt-4o-mini`等模型的调用频率不超过**200请求/天/IP&Key**，若需要更高的调用频率或更好的模型，需要选择付费服务
 
 2. 语音识别接口费用
 
@@ -178,9 +178,9 @@
 
 程序使用的是OpenAI API，需要用户在设置中填入自己的API_KEY，可以选择使用官方服务或第三方转发服务
 
-- **使用Chatanywhere转发服务**（国内推荐）
+- **使用Chatanywhere转发服务**（国内可用）
 
-	Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服务限制100请求/天/IP&Key调用频率，付费服务则无限制，可以在国内直接访问，用户可以参照其[项目主页](https://github.com/chatanywhere/GPT_API_free)获取地址和KEY填入设置中
+	Chatanywhere提供了免费和付费的OpenAI API转发服务，目前免费服务限制200请求/天/IP&Key调用频率，付费服务则无限制，可以在国内直接访问，用户可以参照其[项目主页](https://github.com/chatanywhere/GPT_API_free)获取地址和KEY填入设置中
 
 - **使用官方服务**
 
@@ -304,6 +304,14 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 
 ---
 
+## TODO
+
+- 支持调整随机性（Temperature）等参数
+- 支持提问、回复长度限制
+- 支持消息压缩
+
+---
+
 ## 测试环境
 
 已测试的机型：
@@ -316,6 +324,7 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 | 华为 Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.9.1 |
+| 荣耀 Magic 6 | MagicOS 8.0 | Android 14 | 1.11.1 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.5.0 |
 | 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.7.0 |
 | 小米 13 | MIUI 14.0.5 | Android 14 | 1.10.0 |

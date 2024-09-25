@@ -73,21 +73,6 @@ import java.util.UUID;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONException;
 import cn.hutool.json.JSONObject;
-import io.noties.markwon.AbstractMarkwonPlugin;
-import io.noties.markwon.Markwon;
-import io.noties.markwon.MarkwonConfiguration;
-import io.noties.markwon.ext.latex.JLatexMathPlugin;
-import io.noties.markwon.ext.tables.TableAwareMovementMethod;
-import io.noties.markwon.ext.tables.TablePlugin;
-import io.noties.markwon.image.ImageSize;
-import io.noties.markwon.image.ImageSizeResolverDef;
-import io.noties.markwon.image.ImagesPlugin;
-import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin;
-import io.noties.markwon.linkify.LinkifyPlugin;
-import io.noties.markwon.movement.MovementMethodPlugin;
-import io.noties.markwon.syntax.Prism4jThemeDefault;
-import io.noties.markwon.syntax.SyntaxHighlightPlugin;
-import io.noties.prism4j.Prism4j;
 import io.noties.prism4j.annotations.PrismBundle;
 
 import com.skythinker.gptassistant.ChatManager.ChatMessage.ChatRole;
@@ -213,47 +198,7 @@ public class MainActivity extends Activity {
         svChatArea = findViewById(R.id.sv_chat_list);
         llChatList = findViewById(R.id.ll_chat_list);
 
-        // 处理启动Intent
-        Intent activityIntent = getIntent();
-        if(activityIntent != null){
-            String action = activityIntent.getAction();
-            if(Intent.ACTION_PROCESS_TEXT.equals(action)) { // 全局上下文菜单
-                String text = activityIntent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
-                if(text != null){
-                    etUserInput.setText(text);
-                }
-            } else if(Intent.ACTION_SEND.equals(action)) { // 分享图片
-                String type = activityIntent.getType();
-                if(type != null && type.startsWith("image/")) {
-                    Uri imageUri = activityIntent.getParcelableExtra(Intent.EXTRA_STREAM); // 获取图片Uri
-                    if(imageUri != null) {
-                        try {
-                            // 获取图片Bitmap并缩放
-                            Bitmap bitmap = (Bitmap) BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
-                            selectedImageBitmap = bitmap;
-                            if(GlobalDataHolder.getLimitVisionSize()) {
-                                if (bitmap.getWidth() < bitmap.getHeight())
-                                    selectedImageBitmap = resizeBitmap(bitmap, 512, 2048);
-                                else
-                                    selectedImageBitmap = resizeBitmap(bitmap, 2048, 512);
-                            } else {
-                                selectedImageBitmap = resizeBitmap(bitmap, 2048, 2048);
-                            }
-                            btImage.setImageResource(R.drawable.image_enabled);
-                            if(!GlobalUtils.checkVisionSupport(GlobalDataHolder.getGptModel()))
-                                Toast.makeText(this, R.string.toast_use_vision_model, Toast.LENGTH_LONG).show();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } else if(type != null && type.equals("text/plain")) { // 分享文本
-                    String text = activityIntent.getStringExtra(Intent.EXTRA_TEXT);
-                    if(text != null){
-                        etUserInput.setText(text);
-                    }
-                }
-            }
-        }
+        handleShareIntent(getIntent()); // 处理分享的文本/图片
 
         chatManager = new ChatManager(this); // 初始化聊天记录管理器
         ChatMessage.setContext(this); // 设置聊天消息的上下文（用于读写文件）
@@ -1288,6 +1233,49 @@ public class MainActivity extends Activity {
         llChatList.addView(tv);
     }
 
+    // 处理启动Intent
+    private void handleShareIntent(Intent intent) {
+        if(intent != null){
+            String action = intent.getAction();
+            if(Intent.ACTION_PROCESS_TEXT.equals(action)) { // 全局上下文菜单
+                String text = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
+                if(text != null){
+                    etUserInput.setText(text);
+                }
+            } else if(Intent.ACTION_SEND.equals(action)) { // 分享图片
+                String type = intent.getType();
+                if(type != null && type.startsWith("image/")) {
+                    Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM); // 获取图片Uri
+                    if(imageUri != null) {
+                        try {
+                            // 获取图片Bitmap并缩放
+                            Bitmap bitmap = (Bitmap) BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
+                            selectedImageBitmap = bitmap;
+                            if(GlobalDataHolder.getLimitVisionSize()) {
+                                if (bitmap.getWidth() < bitmap.getHeight())
+                                    selectedImageBitmap = resizeBitmap(bitmap, 512, 2048);
+                                else
+                                    selectedImageBitmap = resizeBitmap(bitmap, 2048, 512);
+                            } else {
+                                selectedImageBitmap = resizeBitmap(bitmap, 2048, 2048);
+                            }
+                            btImage.setImageResource(R.drawable.image_enabled);
+                            if(!GlobalUtils.checkVisionSupport(GlobalDataHolder.getGptModel()))
+                                Toast.makeText(this, R.string.toast_use_vision_model, Toast.LENGTH_LONG).show();
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if(type != null && type.equals("text/plain")) { // 分享文本
+                    String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+                    if(text != null){
+                        etUserInput.setText(text);
+                    }
+                }
+            }
+        }
+    }
+
     // 转换dp为px
     private int dpToPx(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics());
@@ -1339,6 +1327,12 @@ public class MainActivity extends Activity {
         if (!toApplyList.isEmpty()) {
             requestPermissions(toApplyList.toArray(tmpList), 123);
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleShareIntent(intent);
     }
 
     @Override

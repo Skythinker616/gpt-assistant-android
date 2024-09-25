@@ -36,11 +36,13 @@ public class WhisperApiClient {
         }
         this.url = url;
         this.apiKey = apiKey;
-        chatGPT = new OpenAiClient.Builder()
-                .apiKey(Arrays.asList(apiKey))
-                .apiHost(url)
-                .okHttpClient(httpClient)
-                .build();
+        try {
+            chatGPT = new OpenAiClient.Builder()
+                    .apiKey(Arrays.asList(apiKey))
+                    .apiHost(url)
+                    .okHttpClient(httpClient)
+                    .build();
+        } catch (Exception ignored) { }
     }
 
     public String getWhisperResult(File file) throws Exception{

@@ -75,14 +75,8 @@ public class ChatApiClient {
 
     // 向GPT发送消息列表
     public void sendPromptList(List<ChatMessage> promptList) {
-        if(url.isEmpty()) {
-            listener.onError("请在设置中填写服务器地址");
-            return;
-        } else if(apiKey.isEmpty()) {
-            listener.onError("请在设置中填写ApiKey");
-            return;
-        } else if(chatGPT == null) {
-            listener.onError("ChatGPT初始化失败");
+        if(url.isEmpty() || apiKey.isEmpty() || chatGPT == null) {
+            listener.onError(context.getString(R.string.text_gpt_conf_error));
             return;
         }
 
@@ -153,10 +147,19 @@ public class ChatApiClient {
                 }
             }
 
-            chatCompletion = ChatCompletionWithPicture.builder()
-                    .messages(messageList)
-                    .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
-                    .build();
+            if (!functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
+                chatCompletion = ChatCompletionWithPicture.builder()
+                        .messages(messageList)
+                        .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
+                        .functions(functions)
+                        .functionCall("auto")
+                        .build();
+            } else {
+                chatCompletion = ChatCompletionWithPicture.builder()
+                        .messages(messageList)
+                        .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
+                        .build();
+            }
         }
 
         callingFuncName = callingFuncArg = "";
@@ -243,11 +246,19 @@ public class ChatApiClient {
         }
         this.url = url;
         this.apiKey = apiKey;
-        chatGPT = new OpenAiStreamClient.Builder()
-            .apiKey(Arrays.asList(apiKey))
-            .apiHost(url)
-            .okHttpClient(httpClient)
-            .build();
+        try {
+            chatGPT = new OpenAiStreamClient.Builder()
+                    .apiKey(Arrays.asList(apiKey))
+                    .apiHost(url)
+                    .okHttpClient(httpClient)
+                    .build();
+        } catch (Exception e) {
+            String err = context.getString(R.string.text_gpt_conf_error);
+            if(e.getMessage() != null) {
+                err += ": " + e.getMessage();
+            }
+            listener.onError(err);
+        }
     }
 
     // 获取当前是否正在请求GPT

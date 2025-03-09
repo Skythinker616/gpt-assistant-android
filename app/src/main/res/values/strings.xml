@@ -29,6 +29,7 @@
     <string name="conf_model_select_item">Choose Model</string>
     <string name="conf_custom_model_item">Custom Models</string>
     <string name="conf_custom_model_tip">Separate models with \';\'</string>
+    <string name="conf_model_temperature">Temperature</string>
     <string name="conf_asr_title">Speech Recognition Settings</string>
     <string name="conf_asr_subtitle">| Disabling all will use built-in HMS service</string>
     <string name="conf_use_baidu_asr_item">Use Baidu Service</string>
@@ -63,7 +64,7 @@
     <string name="conf_check_update_item">Check for Updates</string>
     <string name="conf_check_update_tip_empty">Current version: 0.0.0</string>
     <string name="conf_homepage_item">Project Homepage</string>
-    <string name="conf_homepage_tip">2024 @skythinker - Stars welcomed~</string>
+    <string name="conf_homepage_tip">2025 @skythinker - Stars welcomed~</string>
     <string name="default_greeting">Hello! What can I assist you with?</string>
     <string name="conf_activity_title">Settings</string>
     <string name="history_activity_title">History Records</string>
@@ -97,6 +98,8 @@
     <string name="toast_clipboard">Copied to clipboard</string>
     <string name="toast_code_clipboard">Code block copied to clipboard</string>
     <string name="text_waiting_reply">Waiting for reply...</string>
+    <string name="text_think_header">Thinking process:</string>
+    <string name="text_thinking_header">Thinking...</string>
     <string name="toast_enable_network">Reminder: Web access will increase token usage, use GPT-4 wisely!</string>
     <string name="dialog_help_title">Help</string>
     <string name="dialog_help_cancel">Back</string>

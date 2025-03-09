@@ -306,7 +306,6 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 
 ## TODO
 
-- 支持调整随机性（Temperature）等参数
 - 支持提问、回复长度限制
 - 支持消息压缩
 
@@ -325,6 +324,7 @@ A: 为防止滥用，仓库中的Key开启了包名和签名验证，因此如�
 | 华为 Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
 | 荣耀 Magic 4 | MagicOS 7.0 | Android 13 | 1.9.1 |
 | 荣耀 Magic 6 | MagicOS 8.0 | Android 14 | 1.11.1 |
+| 荣耀 Magic 6 | MagicOS 9.0 | Android 15 | 1.11.2 |
 | 红米 K20 Pro | MIUI 12.5.6 | Android 11 | 1.5.0 |
 | 红米 K60 Pro | MIUI 14.0.23 | Android 13 | 1.7.0 |
 | 小米 13 | MIUI 14.0.5 | Android 14 | 1.10.0 |

@@ -18,6 +18,7 @@
     <string name="conf_model_select_item">选用模型</string>
     <string name="conf_custom_model_item">自定义模型</string>
     <string name="conf_custom_model_tip">用分号隔开多个模型</string>
+    <string name="conf_model_temperature">模型随机性</string>
     <string name="conf_asr_title">语音识别设置</string>
     <string name="conf_asr_subtitle">| 关闭下述接口则使用内置华为接口</string>
     <string name="conf_use_baidu_asr_item">使用百度接口</string>
@@ -52,7 +53,7 @@
     <string name="conf_check_update_item">查看更新</string>
     <string name="conf_check_update_tip_empty">当前版本：0.0.0</string>
     <string name="conf_homepage_item">项目主页</string>
-    <string name="conf_homepage_tip">2024 @skythinker - 欢迎点个Star哦~</string>
+    <string name="conf_homepage_tip">2025 @skythinker - 欢迎点个Star哦~</string>
     <string name="default_greeting">您好！请问我能为您提供什么帮助？</string>
     <string name="conf_activity_title">设置</string>
     <string name="history_activity_title">历史记录</string>
@@ -86,6 +87,8 @@
     <string name="toast_clipboard">已复制到剪贴板</string>
     <string name="toast_code_clipboard">代码块已复制到剪贴板</string>
     <string name="text_waiting_reply">正在等待回复...</string>
+    <string name="text_think_header">思考内容：</string>
+    <string name="text_thinking_header">思考中...</string>
     <string name="toast_enable_network">提醒：访问网络时会大幅增加token用量，GPT4请谨慎使用！</string>
     <string name="dialog_help_title">帮助</string>
     <string name="dialog_help_cancel">返回</string>

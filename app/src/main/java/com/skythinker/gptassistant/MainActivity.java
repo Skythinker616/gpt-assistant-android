@@ -222,41 +222,46 @@ public class MainActivity extends Activity {
                     @Override
                     public void onMsgReceive(String message) { // 收到GPT回复（增量）
                         chatApiBuffer += message;
-                        handler.post(() -> {
-                            if(System.currentTimeMillis() - lastRenderTime > 100) { // 限制最高渲染频率10Hz
+                        if(System.currentTimeMillis() - lastRenderTime > 100) { // 限制最高渲染频率10Hz
+                            handler.post(() -> {
                                 boolean isBottom = svChatArea.getChildAt(0).getBottom()
                                         <= svChatArea.getHeight() + svChatArea.getScrollY(); // 判断消息布局是否在底部
 
                                 markdownRenderer.render(tvGptReply, chatApiBuffer); // 渲染Markdown
 
-                                if(isBottom){
+                                if (isBottom) {
                                     scrollChatAreaToBottom(); // 渲染前在底部则渲染后滚动到底部
                                 }
-                                lastRenderTime = System.currentTimeMillis();
-                            }
 
-                            if(currentTemplateParams.getBool("speak", ttsEnabled)) { // 处理TTS
-                                String wholeText = tvGptReply.getText().toString(); // 获取可朗读的文本
-                                if(ttsSentenceEndIndex < wholeText.length()) {
-                                    int nextSentenceEndIndex = wholeText.length();
-                                    boolean found = false;
-                                    for(String separator : ttsSentenceSeparator) { // 查找最后一个断句分隔符
-                                        int index = wholeText.indexOf(separator, ttsSentenceEndIndex);
-                                        if(index != -1 && index < nextSentenceEndIndex) {
-                                            nextSentenceEndIndex = index + separator.length();
-                                            found = true;
+                                if (currentTemplateParams.getBool("speak", ttsEnabled)) { // 处理TTS
+                                    if (chatApiBuffer.startsWith("<think>\n") && !chatApiBuffer.contains("\n</think>\n")) { // 不朗读思维链部分
+                                        ttsSentenceEndIndex = tvGptReply.getText().toString().length(); // 正在思考则设置tts起点在末尾
+                                    } else {
+                                        String wholeText = tvGptReply.getText().toString(); // 获取可朗读的文本
+                                        if (ttsSentenceEndIndex < wholeText.length()) {
+                                            int nextSentenceEndIndex = wholeText.length();
+                                            boolean found = false;
+                                            for (String separator : ttsSentenceSeparator) { // 查找最后一个断句分隔符
+                                                int index = wholeText.indexOf(separator, ttsSentenceEndIndex);
+                                                if (index != -1 && index < nextSentenceEndIndex) {
+                                                    nextSentenceEndIndex = index + separator.length();
+                                                    found = true;
+                                                }
+                                            }
+                                            if (found) { // 找到断句分隔符则添加到朗读队列
+                                                String sentence = wholeText.substring(ttsSentenceEndIndex, nextSentenceEndIndex);
+                                                ttsSentenceEndIndex = nextSentenceEndIndex;
+                                                String id = UUID.randomUUID().toString();
+                                                tts.speak(sentence, TextToSpeech.QUEUE_ADD, null, id);
+                                                ttsLastId = id;
+                                            }
                                         }
                                     }
-                                    if(found) { // 找到断句分隔符则添加到朗读队列
-                                        String sentence = wholeText.substring(ttsSentenceEndIndex, nextSentenceEndIndex);
-                                        ttsSentenceEndIndex = nextSentenceEndIndex;
-                                        String id = UUID.randomUUID().toString();
-                                        tts.speak(sentence, TextToSpeech.QUEUE_ADD, null, id);
-                                        ttsLastId = id;
-                                    }
                                 }
-                            }
-                        });
+                            });
+
+                            lastRenderTime = System.currentTimeMillis();
+                        }
                     }
 
                     @Override
@@ -352,6 +357,8 @@ public class MainActivity extends Activity {
                         }
                     }
                 });
+
+        chatApiClient.setTemperature(GlobalDataHolder.getGptTemperature());
 
         // 发送按钮点击事件
         btSend.setOnClickListener(view -> {
@@ -698,6 +705,7 @@ public class MainActivity extends Activity {
             // 更新GPT客户端相关设置
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
+            chatApiClient.setTemperature(GlobalDataHolder.getGptTemperature());
 
             // 更新所使用的语音识别接口
             if(GlobalDataHolder.getAsrUseBaidu() && !(asrClient instanceof BaiduAsrClient)) {

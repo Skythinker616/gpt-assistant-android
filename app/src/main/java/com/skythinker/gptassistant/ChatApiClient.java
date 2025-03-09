@@ -48,6 +48,7 @@ public class ChatApiClient {
     String url = "";
     String apiKey = "";
     String model = "";
+    float temperature = 0.5f;
     OnReceiveListener listener = null;
 
     OkHttpClient httpClient = null;
@@ -57,6 +58,8 @@ public class ChatApiClient {
 
     String callingFuncName = "";
     String callingFuncArg = "";
+
+    boolean isReasoning = false;
 
     Context context = null;
 
@@ -97,7 +100,8 @@ public class ChatApiClient {
                                 .build();
                         messageList.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
                     } else {
-                        messageList.add(Message.builder().role(Message.Role.ASSISTANT).content(message.contentText).build());
+                        messageList.add(Message.builder().role(Message.Role.ASSISTANT)
+                                .content(message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", "")).build()); // 去除思维链内容
                     }
                 } else if (message.role == ChatRole.FUNCTION) {
                     messageList.add(Message.builder().role(Message.Role.FUNCTION).name(message.functionName).content(message.contentText).build());
@@ -110,11 +114,13 @@ public class ChatApiClient {
                         .model(model)
                         .functions(functions)
                         .functionCall("auto")
+                        .temperature(temperature)
                         .build();
             } else {
                 chatCompletion = ChatCompletion.builder()
                         .messages(messageList)
                         .model(model)
+                        .temperature(temperature)
                         .build();
             }
         } else { // 使用的是Vision模型
@@ -122,7 +128,9 @@ public class ChatApiClient {
             for (ChatMessage message : promptList) {
                 List<Content> contentList = new ArrayList<>();
                 if (message.contentText != null) {
-                    contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(message.contentText).build());
+                    String contentText = message.role != ChatRole.ASSISTANT ? message.contentText :
+                            message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", ""); // 去除思维链内容
+                    contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(contentText).build());
                 }
                 if(message.contentImageBase64 != null) {
                     ImageUrl imageUrl = ImageUrl.builder().url("data:image/jpeg;base64," + message.contentImageBase64).build();
@@ -153,11 +161,13 @@ public class ChatApiClient {
                         .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
                         .functions(functions)
                         .functionCall("auto")
+                        .temperature(temperature)
                         .build();
             } else {
                 chatCompletion = ChatCompletionWithPicture.builder()
                         .messages(messageList)
                         .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
+                        .temperature(temperature)
                         .build();
             }
         }
@@ -190,10 +200,18 @@ public class ChatApiClient {
                                 if (functionCall.containsKey("name"))
                                     callingFuncName = functionCall.getStr("name");
                                 callingFuncArg += functionCall.getStr("arguments");
-                            } else if (delta.containsKey("content")) { // GPT返回普通消息
-                                String msg = delta.getStr("content");
-                                if (msg != null)
-                                    listener.onMsgReceive(msg);
+                            } else if (delta.containsKey("content") && delta.getStr("content") != null) { // GPT返回普通消息
+                                if (isReasoning) {
+                                    isReasoning = false;
+                                    listener.onMsgReceive("\n</think>\n");
+                                }
+                                listener.onMsgReceive(delta.getStr("content"));
+                            } else if (delta.containsKey("reasoning_content") && delta.getStr("reasoning_content") != null) { // GPT返回思维链消息
+                                if (!isReasoning) {
+                                    isReasoning = true;
+                                    listener.onMsgReceive("<think>\n");
+                                }
+                                listener.onMsgReceive(delta.getStr("reasoning_content"));
                             }
                         }
                     }
@@ -275,6 +293,9 @@ public class ChatApiClient {
     public void setModel(String model) {
         this.model = model;
     }
+
+    // 设置温度
+    public void setTemperature(float temperature) { this.temperature = temperature; }
 
     // 添加一个函数，有同名函数则覆盖
     public void addFunction(String name, String desc, String params, String[] required) {

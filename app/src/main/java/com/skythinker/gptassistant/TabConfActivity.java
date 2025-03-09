@@ -186,6 +186,21 @@ public class TabConfActivity extends Activity {
                     .show();
         });
 
+        ((EditText) findViewById(R.id.et_temperature_conf)).setText(String.valueOf(GlobalDataHolder.getGptTemperature()));
+        ((EditText) findViewById(R.id.et_temperature_conf)).addTextChangedListener(new CustomTextWatcher() {
+            public void afterTextChanged(Editable editable) {
+                try {
+                    if (!editable.toString().isEmpty()) {
+                        float temperature = Float.parseFloat(editable.toString().trim());
+                        if (temperature >= 0 && temperature <= 2)
+                            GlobalDataHolder.saveModelParams(temperature);
+                    }
+                } catch (NumberFormatException e) {
+                    ((EditText) findViewById(R.id.et_temperature_conf)).setText(String.valueOf(GlobalDataHolder.getGptTemperature()));
+                }
+            }
+        });
+
         ((LinearLayout) findViewById(R.id.bt_asr_help).getParent()).setOnClickListener(view -> {
             new ConfirmDialog(this)
                     .setTitle(getString(R.string.dialog_asr_select_help_title))

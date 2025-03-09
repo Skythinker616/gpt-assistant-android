@@ -304,7 +304,6 @@ A: To prevent abuse, the keys in the repository have package name and signature 
 
 ## TODO
 
-- Support adjusting api parameters such as temperature
 - Support question and reply length restrictions
 - Support message compression
 
@@ -323,6 +322,7 @@ Tested models:
 | Huawei Mate 30  | HarmonyOS 4.0    | Android 12       | 1.8.0           |
 | Honor Magic 4   | MagicOS 7.0      | Android 13       | 1.9.1           |
 | Honor Magic 6   | MagicOS 8.0      | Android 14       | 1.11.1           |
+| Honor Magic 6   | MagicOS 9.0      | Android 15       | 1.11.2           |
 | Redmi K20 Pro   | MIUI 12.5.6      | Android 11       | 1.5.0           |
 | Redmi K60 Pro   | MIUI 14.0.23     | Android 13       | 1.7.0           |
 | Xiaomi 13       | MIUI 14.0.5      | Android 14       | 1.10.0          |

@@ -26,6 +26,7 @@ public class GlobalDataHolder {
     private static String gptApiHost;
     private static String gptApiKey;
     private static String gptModel;
+    private static float gptTemperature;
     private static List<String> customModels = null;
     private static boolean checkAccessOnStart;
     private static boolean defaultEnableTts;
@@ -48,6 +49,7 @@ public class GlobalDataHolder {
         loadAsrSelection();
         loadBaiduAsrInfo();
         loadGptApiInfo();
+        loadModelParams();
         loadStartUpSetting();
         loadTtsSetting();
         loadMultiChatSetting();
@@ -146,6 +148,17 @@ public class GlobalDataHolder {
         editor.putString("gpt_api_key", gptApiKey);
         editor.putString("gpt_model", gptModel);
         editor.putString("custom_models", String.join(";", customModels));
+        editor.apply();
+    }
+
+    public static void loadModelParams() {
+        gptTemperature = sp.getFloat("model_temperature", 0.5f);
+    }
+
+    public static void saveModelParams(float temperature) {
+        gptTemperature = temperature;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putFloat("model_temperature", gptTemperature);
         editor.apply();
     }
 
@@ -253,6 +266,8 @@ public class GlobalDataHolder {
     public static String getGptModel() { return gptModel; }
 
     public static List<String> getCustomModels() { return customModels; }
+
+    public static float getGptTemperature() {return gptTemperature; }
 
     public static boolean getCheckAccessOnStart() { return checkAccessOnStart; }
 

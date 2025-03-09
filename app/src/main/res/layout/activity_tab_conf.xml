@@ -250,14 +250,14 @@
                                 <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="0"
                                     android:layout_marginRight="20dp"
+                                    android:layout_weight="0"
                                     android:orientation="vertical">
 
                                     <LinearLayout
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="10dp"
+                                        android:gravity="fill_vertical"
                                         android:orientation="horizontal">
 
                                         <TextView
@@ -293,11 +293,46 @@
                                     android:id="@+id/et_custom_model_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginTop="5dp"
+                                    android:layout_marginBottom="5dp"
                                     android:layout_weight="1"
                                     android:background="#00FFFFFF"
                                     android:ems="10"
                                     android:hint="model1;model2"
                                     android:inputType="text"
+                                    android:textAlignment="textEnd"
+                                    android:textColor="#5A5A5A"
+                                    android:textSize="16sp" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="15dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/textView21"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginRight="20dp"
+                                    android:layout_weight="0"
+                                    android:text="@string/conf_model_temperature"
+                                    android:textColor="#000000"
+                                    android:textSize="18sp" />
+
+                                <EditText
+                                    android:id="@+id/et_temperature_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:background="#00FFFFFF"
+                                    android:ems="10"
+                                    android:hint='0.5'
+                                    android:inputType="numberDecimal"
                                     android:textAlignment="textEnd"
                                     android:textColor="#5A5A5A"
                                     android:textSize="16sp" />

@@ -50,6 +50,10 @@ public class ConfirmDialog{
         ((TextView) dialogView.findViewById(R.id.tv_dialog_content)).setTextAlignment(alignment);
         return this;
     }
+    public ConfirmDialog setMarkdownContent(String markdown) {
+        new MarkdownRenderer(this.dialog.getContext()).render(((TextView) dialogView.findViewById(R.id.tv_dialog_content)), markdown);
+        return this;
+    }
     public ConfirmDialog setTitle(String title) {
         ((TextView) dialogView.findViewById(R.id.tv_dialog_title)).setText(title);
         return this;

@@ -17,18 +17,22 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.commonmark.node.FencedCodeBlock;
+import org.commonmark.node.Image;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import io.noties.markwon.AbstractMarkwonPlugin;
+import io.noties.markwon.LinkResolver;
 import io.noties.markwon.Markwon;
 import io.noties.markwon.MarkwonConfiguration;
 import io.noties.markwon.MarkwonSpansFactory;
+import io.noties.markwon.core.spans.LinkSpan;
 import io.noties.markwon.ext.latex.JLatexMathPlugin;
 import io.noties.markwon.ext.tables.TableAwareMovementMethod;
 import io.noties.markwon.ext.tables.TablePlugin;
+import io.noties.markwon.image.ImageProps;
 import io.noties.markwon.image.ImageSize;
 import io.noties.markwon.image.ImageSizeResolverDef;
 import io.noties.markwon.image.ImagesPlugin;
@@ -84,6 +88,20 @@ public class MarkdownRenderer {
             } finally {
                 canvas.restoreToCount(save);
             }
+        }
+    }
+
+    class ImageLinkResolver implements LinkResolver {
+        private LinkResolver original;
+
+        public ImageLinkResolver(LinkResolver original) {
+            this.original = original;
+        }
+
+        @Override
+        public void resolve(@NonNull View view, @NonNull String link) {
+            Log.d("markdown", "Image resolver link = " + link);
+            original.resolve(view, link);
         }
     }
 
@@ -149,8 +167,29 @@ public class MarkdownRenderer {
                         });
                     }
                 })
-//                .usePlugin(TablePlugin.create(context)) // unstable
-//                .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
+//                .usePlugin(new AbstractMarkwonPlugin() { // 捕获图片点击事件
+//                    @Override
+//                    public void configureSpansFactory(@NonNull MarkwonSpansFactory.Builder builder) {
+//                        builder.appendFactory(Image.class, (configuration, props) -> {
+//                            String url = ImageProps.DESTINATION.require(props);
+//                            return new LinkSpan(configuration.theme(), url, new ImageLinkResolver(configuration.linkResolver()));
+//                        });
+//                        super.configureSpansFactory(builder);
+//                    }
+//                })
+//                .usePlugin(new AbstractMarkwonPlugin() { // 捕获链接点击重定向到内置WebView
+//                    @Override
+//                    public void configureConfiguration(@NonNull MarkwonConfiguration.Builder builder) {
+//                        builder.linkResolver(new LinkResolver() {
+//                            @Override
+//                            public void resolve(@NonNull View view, @NonNull String link) {
+//                                WebViewActivity.openUrl(context, null, link);
+//                            }
+//                        });
+//                    }
+//                })
+                .usePlugin(TablePlugin.create(context))
+                .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
                 .build();
     }
 

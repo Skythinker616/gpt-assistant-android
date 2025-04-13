@@ -4,6 +4,7 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/AppsData/Android/SDK/platforms/android-32/data/res/layout/simple_spinner_dropdown_item.xml" value="0.16875" />
+        <entry key="..\:/AppsData/AndroidStudio/Gradle/caches/transforms-3/401c14b90b9a7744c302a0f7aba47d3d/transformed/appcompat-1.3.0/res/drawable/abc_spinner_textfield_background_material.xml" value="0.174" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.182" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable/hori_sep_line.xml" value="0.1865" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable/main_card_background.xml" value="0.195" />
@@ -15,9 +16,11 @@
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/drawable/tag_background.xml" value="0.189" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_history.xml" value="0.30416666666666664" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_main.xml" value="0.3333333333333333" />
+        <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_markdown_preview.xml" value="0.30416666666666664" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_online_templates.xml" value="0.22" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_tab_conf.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_tab_detail_conf.xml" value="0.3333333333333333" />
+        <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/activity_webview.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/ask_accessibility_dialog.xml" value="0.4466666666666667" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/common_dialog.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/confirm_dialog.xml" value="0.21145833333333333" />
@@ -26,7 +29,7 @@
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/image_method_dialog.xml" value="0.4466666666666667" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/image_preview_dialog.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/main_model_spinner_item.xml" value="0.1921875" />
-        <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/main_popup_menu.xml" value="0.6666666666666666" />
+        <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/main_popup_menu.xml" value="0.3333333333333333" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/model_spinner_dropdown_item.xml" value="0.1921875" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/model_spinner_item.xml" value="0.1375" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/oline_temp_list_item.xml" value="0.3333333333333333" />
@@ -34,6 +37,7 @@
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/param_spinner_dropdown_item.xml" value="0.1921875" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/param_spinner_item.xml" value="0.1921875" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/tab_conf_list_item.xml" value="0.3333333333333333" />
+        <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/layout/upload_popup_menu.xml" value="0.4466666666666667" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.182" />
         <entry key="..\:/Sketches/Android/GPTAssistant/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.182" />
       </map>

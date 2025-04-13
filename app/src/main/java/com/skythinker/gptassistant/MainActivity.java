@@ -5,8 +5,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -28,10 +26,12 @@ import android.speech.tts.UtteranceProgressListener;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.text.style.ImageSpan;
 import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -63,6 +63,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +75,9 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONException;
 import cn.hutool.json.JSONObject;
 import io.noties.prism4j.annotations.PrismBundle;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import com.skythinker.gptassistant.ChatManager.ChatMessage.ChatRole;
 import com.skythinker.gptassistant.ChatManager.ChatMessage;
@@ -387,38 +391,35 @@ public class MainActivity extends Activity {
                 dialog.getWindow().setContentView(dialogView);
                 ((ImageView) dialogView.findViewById(R.id.iv_image_preview)).setImageBitmap(selectedImageBitmap);
                 ((TextView) dialogView.findViewById(R.id.tv_image_preview_size)).setText(String.format("%s x %s", selectedImageBitmap.getWidth(), selectedImageBitmap.getHeight()));
-                dialogView.findViewById(R.id.bt_image_preview_cancel).setOnClickListener(view1 -> dialog.dismiss());
-                dialogView.findViewById(R.id.bt_image_preview_del).setOnClickListener(view1 -> { // 移除当前选择的图片
+                dialogView.findViewById(R.id.cv_image_preview_cancel).setOnClickListener(view1 -> dialog.dismiss());
+                dialogView.findViewById(R.id.cv_image_preview_del).setOnClickListener(view1 -> { // 移除当前选择的图片
                     dialog.dismiss();
                     selectedImageBitmap = null;
                     btImage.setImageResource(R.drawable.image);
                 });
-                dialogView.findViewById(R.id.bt_image_preview_reselect).setOnClickListener(view1 -> { // 重新选择图片
-                    dialogView.findViewById(R.id.bt_image_preview_del).performClick();
+                dialogView.findViewById(R.id.cv_image_preview_reselect).setOnClickListener(view1 -> { // 重新选择图片
+                    dialogView.findViewById(R.id.cv_image_preview_del).performClick();
                     btImage.performClick();
                 });
             } else { // 当前没有图片被选中，弹出选择窗口
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                LayoutInflater inflater = LayoutInflater.from(this);
-                View dialogView = inflater.inflate(R.layout.image_method_dialog, null);
-                AlertDialog dialog = builder.create();
-                dialog.show();
-                dialog.getWindow().setContentView(dialogView);
-                dialogView.findViewById(R.id.bt_take_photo).setOnClickListener(view1 -> { // 拍照
-                    dialog.dismiss();
+                View popupView = LayoutInflater.from(this).inflate(R.layout.upload_popup_menu, null);
+                PopupWindow popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+                popupWindow.setOutsideTouchable(true);
+                (popupView.findViewById(R.id.cv_camera)).setOnClickListener(view1 -> { // 拍照
+                    popupWindow.dismiss();
                     photoUri = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", new File(getCacheDir(), "photo.jpg"));
                     Intent intent=new Intent();
                     intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
                     startActivityForResult(intent, 1);
                 });
-                dialogView.findViewById(R.id.bt_select_from_album).setOnClickListener(view1 -> { // 从相册选择
-                    dialog.dismiss();
+                (popupView.findViewById(R.id.cv_files)).setOnClickListener(view1 -> { // 从相册选择
+                    popupWindow.dismiss();
                     Intent intent = new Intent(Intent.ACTION_PICK);
                     intent.setType("image/*");
                     startActivityForResult(intent, 2);
                 });
-                dialogView.findViewById(R.id.bt_image_cancel).setOnClickListener(view1 -> dialog.dismiss());
+                popupWindow.showAsDropDown(view, 0, -dpToPx(35 + 40));
             }
         });
 
@@ -658,6 +659,11 @@ public class MainActivity extends Activity {
                     })
                     .show();
             }
+        }
+
+        //检查更新
+        if(!BuildConfig.VERSION_NAME.equals(GlobalDataHolder.getLatestVersion())) {
+            GlobalUtils.showToast(this, getString(R.string.toast_update_available), false);
         }
     }
 
@@ -950,7 +956,7 @@ public class MainActivity extends Activity {
         ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30)); // 头像布局参数
         iconParams.setMargins(dpToPx(4), dpToPx(12), dpToPx(4), dpToPx(12));
 
-        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT); // 内容布局参数
+        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); // 内容布局参数
         contentParams.setMargins(dpToPx(4), dpToPx(15), dpToPx(4), dpToPx(15));
 
         LinearLayout.LayoutParams popupIconParams = new LinearLayout.LayoutParams(dpToPx(30), dpToPx(30)); // 弹出的操作按钮布局参数
@@ -978,6 +984,23 @@ public class MainActivity extends Activity {
                 bitmap = resizeBitmap(bitmap, maxSize, maxSize);
                 ImageSpan imageSpan = new ImageSpan(this, bitmap);
                 spannableString.setSpan(imageSpan, content.length() + 1, content.length() + 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                spannableString.setSpan(new ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View view) {
+                        Bitmap bitmap = base64ToBitmap(imageBase64);
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
+                        View dialogView = inflater.inflate(R.layout.image_preview_dialog, null);
+                        AlertDialog dialog = builder.create();
+                        dialog.show();
+                        dialog.getWindow().setContentView(dialogView);
+                        ((ImageView) dialogView.findViewById(R.id.iv_image_preview)).setImageBitmap(bitmap);
+                        ((TextView) dialogView.findViewById(R.id.tv_image_preview_size)).setText(String.format("%s x %s", bitmap.getWidth(), bitmap.getHeight()));
+                        dialogView.findViewById(R.id.cv_image_preview_cancel).setOnClickListener(view1 -> dialog.dismiss());
+                        dialogView.findViewById(R.id.cv_image_preview_del).setVisibility(View.GONE);
+                        dialogView.findViewById(R.id.cv_image_preview_reselect).setVisibility(View.GONE);
+                    }
+                }, content.length() + 1, content.length() + 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             } else {
                 spannableString = new SpannableString(content);
             }
@@ -1080,9 +1103,7 @@ public class MainActivity extends Activity {
         cvCopy.setForeground(getDrawable(R.drawable.copy_btn));
         cvCopy.setOnClickListener(view -> { // 复制文本内容到剪贴板
             popupWindow.dismiss();
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("chat", tvContent.getText().toString());
-            clipboard.setPrimaryClip(clip);
+            GlobalUtils.copyToClipboard(this, tvContent.getText().toString());
             Toast.makeText(this, R.string.toast_clipboard, Toast.LENGTH_SHORT).show();
         });
         llPopup.addView(cvCopy);
@@ -1191,11 +1212,14 @@ public class MainActivity extends Activity {
 
         chatApiBuffer = "";
         ttsSentenceEndIndex = 0;
-        chatApiClient.sendPromptList(multiChatList);
-//        markdownRenderer.render(tvGptReply, etUserInput.getText().toString());
-        btImage.setImageResource(R.drawable.image);
-        selectedImageBitmap = null;
-        btSend.setImageResource(R.drawable.cancel_btn);
+        if (BuildConfig.DEBUG && userInput.startsWith("#markdowndebug\n")) { // Markdown渲染测试
+            markdownRenderer.render(tvGptReply, userInput.replace("#markdowndebug\n", ""));
+        } else {
+            chatApiClient.sendPromptList(multiChatList);
+            btImage.setImageResource(R.drawable.image);
+            selectedImageBitmap = null;
+            btSend.setImageResource(R.drawable.cancel_btn);
+        }
     }
 
     // 向GPT返回Function结果

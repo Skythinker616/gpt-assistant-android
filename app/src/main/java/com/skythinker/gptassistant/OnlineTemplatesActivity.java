@@ -124,14 +124,6 @@ public class OnlineTemplatesActivity extends Activity {
             finish();
         });
 
-        (findViewById(R.id.bt_online_temp_share)).setOnClickListener((view) -> {
-            Intent intent = new Intent();
-            intent.setAction("android.intent.action.VIEW");
-            Uri content_url = Uri.parse(getString(R.string.new_discussion_url));
-            intent.setData(content_url);
-            startActivity(intent);
-        });
-
         (findViewById(R.id.bt_online_temp_github)).setOnClickListener((view) -> {
             Intent intent = new Intent();
             intent.setAction("android.intent.action.VIEW");
@@ -143,7 +135,7 @@ public class OnlineTemplatesActivity extends Activity {
         new Thread(() -> {
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
-                    .url(getString(R.string.shared_templates_url))
+                    .url(getString(GlobalDataHolder.getUseGitee() ? R.string.shared_templates_url_gitee : R.string.shared_templates_url_github))
                     .build();
             try {
                 Response response = client.newCall(request).execute();

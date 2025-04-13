@@ -12,8 +12,14 @@ import android.util.TypedValue;
 import android.widget.Toast;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 public class GlobalUtils {
+    // 检查当前语言是否是中文
+    public static boolean languageIsChinese() {
+        return Locale.getDefault().getLanguage().equals("zh");
+    }
+
     // dp转px
     public static int dpToPx(Context context, int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());

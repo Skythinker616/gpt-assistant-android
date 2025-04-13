@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class GlobalDataHolder {
     private static List<PromptTabData> tabDataList = null;
@@ -37,6 +38,8 @@ public class GlobalDataHolder {
     private static boolean onlyLatestWebResult;
     private static boolean limitVisionSize;
     private static boolean autoSaveHistory;
+    private static boolean useGitee;
+    private static String latestVersion;
     private static SharedPreferences sp = null;
 
     public static void init(Context context) {
@@ -57,6 +60,8 @@ public class GlobalDataHolder {
         loadFunctionSetting();
         loadVisionSetting();
         loadHistorySetting();
+        loadOnlineResourceSetting();
+        loadUpdateSetting();
     }
 
     public static List<PromptTabData> getTabDataList() {
@@ -245,6 +250,28 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    public static void loadOnlineResourceSetting() {
+        useGitee = sp.getBoolean("use_gitee", Locale.getDefault().getLanguage().equals("zh"));
+    }
+
+    public static void saveOnlineResourceSetting(boolean gitee) {
+        useGitee = gitee;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("use_gitee", useGitee);
+        editor.apply();
+    }
+
+    public static void loadUpdateSetting() {
+        latestVersion = sp.getString("latest_version", BuildConfig.VERSION_NAME);
+    }
+
+    public static void saveUpdateSetting(String latestVersionName) {
+        latestVersion = latestVersionName;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString("latest_version", latestVersion);
+        editor.apply();
+    }
+
     public static boolean getAsrUseWhisper() { return asrUseWhisper; }
 
     public static boolean getAsrUseGoogle() { return asrUseGoogle; }
@@ -286,4 +313,8 @@ public class GlobalDataHolder {
     public static boolean getLimitVisionSize() { return limitVisionSize; }
 
     public static boolean getAutoSaveHistory() { return autoSaveHistory; }
+
+    public static boolean getUseGitee() { return useGitee; }
+
+    public static String getLatestVersion() { return latestVersion; }
 }

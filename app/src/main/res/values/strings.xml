@@ -8,17 +8,44 @@
         <item>gpt-4o</item>
         <item>gpt-4o-mini</item>
     </string-array>
+    <!--  在线资源Url  -->
+    <string name="homepage_url_github" translatable="false">https://github.com/Skythinker616/gpt-assistant-android</string>
+    <string name="homepage_url_gitee" translatable="false">https://gitee.com/skythinker/gpt-assistant-android</string>
+
+    <string name="release_url_github" translatable="false">https://github.com/Skythinker616/gpt-assistant-android/releases</string>
+    <string name="release_url_gitee" translatable="false">https://gitee.com/skythinker/gpt-assistant-android/releases</string>
+
+    <string name="check_update_url_github" translatable="false">https://api.github.com/repos/Skythinker616/gpt-assistant-android/releases/latest</string>
+    <string name="check_update_url_gitee" translatable="false">https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest</string>
+    <string name="releases_raw_url_github" translatable="false">https://api.github.com/repos/Skythinker616/gpt-assistant-android/releases</string>
+    <string name="releases_raw_url_gitee" translatable="false">https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases?direction=desc</string>
+
+    <string name="new_discussion_url" translatable="false">https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates</string>
+    <string name="discussions_url" translatable="false">https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates</string>
+
+    <string name="shared_templates_url_github" translatable="false">https://raw.githubusercontent.com/Skythinker616/gpt-assistant-android/master/static_res/shared_templates.json</string>
+    <string name="shared_templates_url_gitee" translatable="false">https://gitee.com/skythinker/gpt-assistant-android/raw/master/static_res/shared_templates.json</string>
+
+    <string name="template_help_url_github_en" translatable="false">https://github.com/Skythinker616/gpt-assistant-android/blob/master/template_help_en.md</string>
+    <string name="template_help_url_github_zh" translatable="false">https://github.com/Skythinker616/gpt-assistant-android/blob/master/template_help.md</string>
+    <string name="template_help_url_gitee_en" translatable="false">https://gitee.com/skythinker/gpt-assistant-android/blob/master/template_help_en.md</string>
+    <string name="template_help_url_gitee_zh" translatable="false">https://gitee.com/skythinker/gpt-assistant-android/blob/master/template_help.md</string>
+
+    <string name="template_help_raw_url_github_en" translatable="false">https://raw.githubusercontent.com/Skythinker616/gpt-assistant-android/refs/heads/master/template_help_en.md</string>
+    <string name="template_help_raw_url_github_zh" translatable="false">https://raw.githubusercontent.com/Skythinker616/gpt-assistant-android/refs/heads/master/template_help.md</string>
+    <string name="template_help_raw_url_gitee_en" translatable="false">https://gitee.com/skythinker/gpt-assistant-android/raw/master/template_help_en.md</string>
+    <string name="template_help_raw_url_gitee_zh" translatable="false">https://gitee.com/skythinker/gpt-assistant-android/raw/master/template_help.md</string>
     <!-- HMS语音识别API_KEY 已限制包名和签名 -->
     <string name="hms_api_key" translatable="false">DAEDADuGjMLeSU+tLR7t9Z3XEtc5TH45ztgfk9MyzlFy5ogpHIYiX1wL0fWyL9tS/Y7MzU9QK4vtZUvoo97OT4YcpG9BmxtgtQpWpw==</string>
     <!--  帮助说明  -->
     <string name="help_msg">
         Brief instructions below, see project homepage for more.\n\n
-        GPTAssistant, based on ChatGPT, lets you set question templates for quick querying via desktop icon or notification bar.\n\n
-        Fill in the OpenAI API host and API_Key in settings. Use official parameters or a relay key.\n\n
-        For voice assistant, enable accessibility service and allow background running. Long-press volume down to wake the app, and speak to the mic while holding. After release, press again within 3 seconds to send the query.\n\n
-        The default HMS voice service can be switched to Baidu / Google / Whisper service, see project homepage for instruction.\n\n
-        Enabling networking allows fetching web content for GPT to enhance answer accuracy. Note: This can increase token usage significantly, use GPT-4 sparingly.\n\n
-        Note: If there\'s vibration without pop-up after long-pressing volume, please permit background pop-ups in system settings.
+        **Introduction:** GPTAssistant, based on ChatGPT, lets you set question templates for quick querying via desktop icon or notification bar.\n\n
+        **OpenAI settings:** Fill in the OpenAI API host and API_Key in settings. Both official or relay services are supported.\n\n
+        **Activate via volume key:** For voice assistant, enable accessibility service and allow background running. After that,\n\n1. Long-press volume down to wake the app,\n2. speak to the mic while holding,\n3. After release, press again within 3 seconds to send the query.\n\n
+        **Speech to text:** The default HMS voice service can be switched to Baidu / Google / Whisper service, see project homepage for instruction.\n\n
+        **Network access:** Enabling networking allows fetching web content for GPT to enhance answer accuracy. Note: This can increase token usage significantly.\n\n
+        **Note:** If there\'s vibration without pop-up after long-pressing volume, please permit background pop-ups in system settings.
     </string>
     <!--  软件界面字符串  -->
     <string name="conf_tab_list_title">Template Settings</string>
@@ -60,6 +87,8 @@
     <string name="conf_auto_save_history_tip">Save current discussion on new chat</string>
     <string name="conf_limit_vision_size_item">Image Size Limit</string>
     <string name="conf_limit_vision_size_tip">On:2048x512 Off:2048x2048</string>
+    <string name="conf_use_gitee_item">Use Gitee API</string>
+    <string name="conf_use_gitee_tip">Connect to Gitee instead of GitHub</string>
     <string name="conf_help_item">Help</string>
     <string name="conf_check_update_item">Check for Updates</string>
     <string name="conf_check_update_tip_empty">Current version: 0.0.0</string>
@@ -103,16 +132,10 @@
     <string name="toast_enable_network">Reminder: Web access will increase token usage, use GPT-4 wisely!</string>
     <string name="dialog_help_title">Help</string>
     <string name="dialog_help_cancel">Back</string>
+    <string name="dialog_help_homepage">Homepage</string>
     <string name="format_version_latest">Current version: %s · Up-to-date</string>
     <string name="format_version_available">Update available: %s -> %s</string>
     <string name="format_version_normal">Current version: %s</string>
-    <string name="homepage_url">https://github.com/Skythinker616/gpt-assistant-android</string>
-    <string name="release_url">https://github.com/Skythinker616/gpt-assistant-android/releases</string>
-    <string name="check_update_url">https://api.github.com/repos/Skythinker616/gpt-assistant-android/releases/latest</string>
-    <string name="new_discussion_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates</string>
-    <string name="discussions_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates</string>
-    <string name="shared_templates_url">https://raw.githubusercontent.com/Skythinker616/gpt-assistant-android/master/static_res/shared_templates.json</string>
-    <string name="template_help_url">https://github.com/Skythinker616/gpt-assistant-android/blob/master/template_help_en.md</string>
     <string name="text_default_tab_title">Q&amp;A</string>
     <string name="text_default_tab_content">"Please answer: "</string>
     <string name="text_gpt_cancel">Request canceled</string>
@@ -142,4 +165,13 @@
     <string name="dialog_custom_model_help_title">Custom Model Help</string>
     <string name="dialog_custom_model_help">Custom model names entered here will be appended to drop-down list. Use \';\' to separate different models and use \'*\' to indicate a vision model. \n\nExample: gpt-4o*;gpt-4-0613</string>
     <string name="text_gpt_conf_error">Please check GPT api configuration</string>
+    <string name="text_markdown_preview_loading">Loading...</string>
+    <string name="text_markdown_preview_loading_failed">Failed to obtain online resource.</string>
+    <string name="text_template_help_title">Template Guide</string>
+    <string name="toast_share_template">Template content is copied. You can share it on GitHub Discussion.</string>
+    <string name="text_homepage_title">Homepage</string>
+    <string name="text_download_latest">Update available. Download [here](%s).</string>
+    <string name="text_releases_title">Releases</string>
+    <string name="toast_update_available">Update available. Please check the settings page for detail.</string>
+    <string name="toast_get_releases_failed">Failed to download releases list. Please check project homepage for information.</string>
 </resources>

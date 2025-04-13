@@ -59,8 +59,23 @@ public class TabDetailConfActivity extends Activity {
             finish();
         });
 
-        (findViewById(R.id.bt_tab_detail_help)).setOnClickListener(view -> { // 用默认浏览器打开模板说明页面
-            GlobalUtils.browseURL(this, getString(R.string.template_help_url));
+        (findViewById(R.id.bt_tab_detail_help)).setOnClickListener(view -> { // 打开模板说明页面
+            Intent intent = new Intent(TabDetailConfActivity.this, MarkdownPreviewActivity.class);
+            intent.putExtra("title", getString(R.string.text_template_help_title));
+            if(GlobalUtils.languageIsChinese()) {
+                intent.putExtra("url", getString(GlobalDataHolder.getUseGitee() ? R.string.template_help_raw_url_gitee_zh : R.string.template_help_raw_url_github_zh));
+                intent.putExtra("browser_url", getString(GlobalDataHolder.getUseGitee() ? R.string.template_help_url_gitee_zh : R.string.template_help_url_github_zh));
+            } else {
+                intent.putExtra("url", getString(GlobalDataHolder.getUseGitee() ? R.string.template_help_raw_url_gitee_en : R.string.template_help_raw_url_github_en));
+                intent.putExtra("browser_url", getString(GlobalDataHolder.getUseGitee() ? R.string.template_help_url_gitee_en : R.string.template_help_url_github_en));
+            }
+            startActivity(intent);
+        });
+
+        (findViewById(R.id.bt_share_template)).setOnClickListener((view) -> {
+            GlobalUtils.copyToClipboard(this, etPrompt.getText().toString().replaceAll("\\r", ""));
+            GlobalUtils.browseURL(this, getString(R.string.new_discussion_url));
+            GlobalUtils.showToast(this, getString(R.string.toast_share_template), true);
         });
 
         (findViewById(R.id.bt_online_templates)).setOnClickListener(view -> {

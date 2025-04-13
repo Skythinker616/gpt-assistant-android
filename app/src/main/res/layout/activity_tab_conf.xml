@@ -1144,6 +1144,51 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:layout_marginVertical="15dp"
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="@string/conf_use_gitee_item"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="@string/conf_use_gitee_tip"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+
+                                <Switch
+                                    android:id="@+id/sw_use_gitee_conf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0"
+                                    android:checked="false"
+                                    android:showText="false"
+                                    android:thumb="@drawable/switch_thumb"
+                                    android:track="@drawable/switch_track"
+                                    tools:checked="true"
+                                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginVertical="15dp"
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 

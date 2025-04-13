@@ -1,13 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!--  帮助说明  -->
     <string name="help_msg">
-        以下为本软件的简要操作说明，详细说明可以在项目主页中查看。\n\n
-        本软件为基于ChatGPT的助理软件，用户可以预设问题模板，并通过桌面图标或通知栏快捷按钮进入提问界面。\n\n
-        用户需要在设置中填写OpenAI API的服务地址和自己的API_Key，可填入官方服务参数或各种国内中转服务商参数。\n\n
-        若需使用语音助手功能，须开启无障碍服务，并允许程序后台运行。此后在任何界面长按音量下键可唤出应用，保持按下并对麦克风说话，松开时就会自动录入识别出的文字。在松开后的3秒内再次短按音量下键，即可直接发送问题。\n\n
-        软件默认使用内置的华为HMS语音识别接口，用户也可更换为百度、谷歌、Whisper语音接口，具体说明请参考项目主页。\n\n
-        联网功能开启后软件会将GPT所要求的网页内容返回给GPT，以提高回答准确性。访问网络会极大增加Token消耗，GPT4模型请慎用。\n\n
-        注意：若长按音量键后手机震动但不弹出界面，请手动在设置中允许后台弹出界面权限。
+        以下为简要操作说明，详细说明可以在项目主页中查看。\n\n
+        **软件简介：** 本软件为基于ChatGPT的助理软件，用户可以预设问题模板，并通过桌面图标或通知栏快捷按钮进入提问界面。\n\n
+        **OpenAI设置：** 首先请在设置中填写OpenAI API的服务地址和自己的API_Key，可使用官方服务或中转服务。\n\n
+        **音量键唤起：** 若需使用语音助手功能，须开启无障碍服务，并允许程序后台运行。此后：\n\n1. 在任何界面长按音量下键可唤出应用\n2. 保持按下并对麦克风说话进行语音输入\n3. 在松开后的3秒内再次短按音量下键，可直接发送问题。\n\n
+        **语音识别接口：** 软件默认使用内置的华为HMS语音识别接口，用户也可更换为百度、谷歌、Whisper语音接口，具体说明请参考项目主页。\n\n
+        **联网功能：** 启用网络访问后软件会将GPT所要求的网页内容返回给GPT，以提供实时信息。注意访问网络会大幅增加Token消耗。\n\n
+        **注意：** 若长按音量键后手机震动但不弹出界面，请手动在设置中允许后台弹出界面权限。
     </string>
     <!--  软件界面字符串  -->
     <string name="conf_tab_list_title">模板设置</string>
@@ -49,6 +49,8 @@
     <string name="conf_auto_save_history_tip">新建对话时保存当前对话到历史记录</string>
     <string name="conf_limit_vision_size_item">发送图片大小限制</string>
     <string name="conf_limit_vision_size_tip">开:2048x512 关:2048x2048</string>
+    <string name="conf_use_gitee_item">使用Gitee接口</string>
+    <string name="conf_use_gitee_tip">若关闭则从GitHub获取在线资源</string>
     <string name="conf_help_item">查看帮助</string>
     <string name="conf_check_update_item">查看更新</string>
     <string name="conf_check_update_tip_empty">当前版本：0.0.0</string>
@@ -92,16 +94,10 @@
     <string name="toast_enable_network">提醒：访问网络时会大幅增加token用量，GPT4请谨慎使用！</string>
     <string name="dialog_help_title">帮助</string>
     <string name="dialog_help_cancel">返回</string>
+    <string name="dialog_help_homepage">主页</string>
     <string name="format_version_latest">当前版本：%s · 已是最新版本</string>
     <string name="format_version_available">有可用更新：%s -> %s</string>
     <string name="format_version_normal">当前版本：%s</string>
-    <string name="homepage_url">https://gitee.com/skythinker/gpt-assistant-android</string>
-    <string name="release_url">https://gitee.com/skythinker/gpt-assistant-android/releases</string>
-    <string name="check_update_url">https://gitee.com/api/v5/repos/skythinker/gpt-assistant-android/releases/latest</string>
-    <string name="new_discussion_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/new?category=templates</string>
-    <string name="discussions_url">https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates</string>
-    <string name="shared_templates_url">https://gitee.com/skythinker/gpt-assistant-android/raw/master/static_res/shared_templates.json</string>
-    <string name="template_help_url">https://gitee.com/skythinker/gpt-assistant-android/blob/master/template_help.md</string>
     <string name="text_default_tab_title">问答</string>
     <string name="text_default_tab_content">请回答这个问题：</string>
     <string name="text_gpt_cancel">请求已取消</string>
@@ -131,4 +127,13 @@
     <string name="dialog_custom_model_help_title">自定义模型说明</string>
     <string name="dialog_custom_model_help">可输入多个自定义模型名称，自定义模型也会显示在下拉列表中\n\n多个模型通过英文分号分隔，可在模型结尾添加星号表示支持识图功能\n\n示例：gpt-4o*;gpt-4-0613</string>
     <string name="text_gpt_conf_error">GPT客户端错误，请检查API配置</string>
+    <string name="text_markdown_preview_loading">正在加载...</string>
+    <string name="text_markdown_preview_loading_failed">在线内容获取失败。</string>
+    <string name="text_template_help_title">模板编写说明</string>
+    <string name="toast_share_template">模版内容已复制到剪贴板，您可以分享到GitHub讨论区</string>
+    <string name="text_homepage_title">项目主页</string>
+    <string name="text_download_latest">发现更新可用，前往下载[最新版本](%s)</string>
+    <string name="text_releases_title">更新日志</string>
+    <string name="toast_update_available">发现新版本，请前往设置页面查看</string>
+    <string name="toast_get_releases_failed">获取更新日志失败，请前往项目主页查看更新</string>
 </resources>

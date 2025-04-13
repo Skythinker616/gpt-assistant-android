@@ -18,6 +18,7 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -32,6 +33,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -314,6 +316,11 @@ public class TabConfActivity extends Activity {
             GlobalDataHolder.saveVisionSetting(checked);
         });
 
+        ((Switch) findViewById(R.id.sw_use_gitee_conf)).setChecked(GlobalDataHolder.getUseGitee());
+        ((Switch) findViewById(R.id.sw_use_gitee_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
+            GlobalDataHolder.saveOnlineResourceSetting(checked);
+        });
+
         (findViewById(R.id.tv_set_tts_conf)).setOnClickListener(view -> {
             Intent intent = new Intent("com.android.settings.TTS_SETTINGS");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -349,7 +356,7 @@ public class TabConfActivity extends Activity {
         });
 
         (findViewById(R.id.tv_set_access_conf)).setOnClickListener(view -> {
-            Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         });
@@ -357,17 +364,20 @@ public class TabConfActivity extends Activity {
         (findViewById(R.id.tv_help_conf)).setOnClickListener(view -> { // 弹出帮助对话框
             new ConfirmDialog(this)
                     .setTitle(getString(R.string.dialog_help_title))
-                    .setContent(getString(R.string.help_msg))
                     .setContentAlignment(TextView.TEXT_ALIGNMENT_TEXT_START)
-                    .setOkButtonVisibility(View.GONE)
+                    .setMarkdownContent(getString(R.string.help_msg))
                     .setCancelText(getString(R.string.dialog_help_cancel))
+                    .setOkText(getString(R.string.dialog_help_homepage))
+                    .setOnConfirmListener(() -> {
+                        WebViewActivity.openUrl(this, getString(R.string.text_homepage_title), getString(GlobalDataHolder.getUseGitee() ? R.string.homepage_url_gitee : R.string.homepage_url_github));
+                    })
                     .show();
         });
 
         new Thread(() -> { // 通过Gitee/GitHub检查更新
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
-                    .url(getString(R.string.check_update_url))
+                    .url(getString(GlobalDataHolder.getUseGitee() ? R.string.check_update_url_gitee : R.string.check_update_url_github))
                     .build();
             try {
                 Response response = client.newCall(request).execute();
@@ -382,6 +392,7 @@ public class TabConfActivity extends Activity {
                     handler.post(() -> {
                         ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_available), BuildConfig.VERSION_NAME, version));
                     });
+                    GlobalDataHolder.saveUpdateSetting(version);
                 }
             } catch (JSONException | IOException e) {
                 e.printStackTrace();
@@ -389,21 +400,43 @@ public class TabConfActivity extends Activity {
         }).start();
 
         ((LinearLayout) findViewById(R.id.tv_check_update_conf).getParent()).setOnClickListener(view -> {
-            Intent intent = new Intent();
-            intent.setAction("android.intent.action.VIEW");
-            Uri content_url = Uri.parse(getString(R.string.release_url));
-            intent.setData(content_url);
-            startActivity(intent); // 用默认浏览器打开Releases页面
+            new Thread(() -> { // 通过Gitee/GitHub检查更新
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder()
+                        .url(getString(GlobalDataHolder.getUseGitee() ? R.string.releases_raw_url_gitee : R.string.releases_raw_url_github))
+                        .build();
+                try {
+                    Response response = client.newCall(request).execute();
+                    String json = response.body().string();
+                    JSONArray jsonArray = new JSONArray(json);
+                    String releaseMarkdown = "";
+                    for(int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject object = jsonArray.getJSONObject(i);
+                        String tagName = object.getString("tag_name");
+                        String description = object.getString("body");
+                        String apkName = object.getJSONArray("assets").getJSONObject(0).getString("name");
+                        String downloadUrl = object.getJSONArray("assets").getJSONObject(0).getString("browser_download_url");
+                        if(i == 0 && !tagName.equals("v" + BuildConfig.VERSION_NAME)) { // update available
+                            releaseMarkdown += String.format(getString(R.string.text_download_latest), downloadUrl) + "\n\n---\n\n";
+                        }
+                        releaseMarkdown += "### " + tagName + "\n\n" + description + "\n\n[" + apkName + "](" + downloadUrl + ")\n\n---\n\n";
+                    }
+                    Intent intent = new Intent(TabConfActivity.this, MarkdownPreviewActivity.class);
+                    intent.putExtra("title", getString(R.string.text_releases_title));
+                    intent.putExtra("markdown", releaseMarkdown);
+                    intent.putExtra("browser_url", getString(GlobalDataHolder.getUseGitee() ? R.string.release_url_gitee : R.string.release_url_github));
+                    startActivity(intent);
+                } catch (JSONException | IOException e) {
+                    handler.post(() -> GlobalUtils.showToast(TabConfActivity.this, getString(R.string.toast_get_releases_failed), true));
+                    e.printStackTrace();
+                }
+            }).start();
         });
 
         ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_normal), BuildConfig.VERSION_NAME));
 
         ((LinearLayout) findViewById(R.id.tv_homepage_conf).getParent()).setOnClickListener(view -> {
-            Intent intent = new Intent();
-            intent.setAction("android.intent.action.VIEW");
-            Uri content_url = Uri.parse(getString(R.string.homepage_url));
-            intent.setData(content_url);
-            startActivity(intent); // 用默认浏览器打开主页
+            WebViewActivity.openUrl(this, getString(R.string.text_homepage_title), getString(GlobalDataHolder.getUseGitee() ? R.string.homepage_url_gitee : R.string.homepage_url_github));
         });
 
         (findViewById(R.id.bt_back_conf)).setOnClickListener(view -> {

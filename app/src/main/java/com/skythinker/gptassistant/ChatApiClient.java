@@ -85,7 +85,15 @@ public class ChatApiClient {
 
         BaseChatCompletion chatCompletion = null;
 
-        if(!GlobalUtils.checkVisionSupport(model)) { // 使用非Vision模型
+        boolean hasAnyAtttachment = false;
+        for(ChatMessage message : promptList) {
+            if(message.attachments.size() > 0) {
+                hasAnyAtttachment = true;
+                break;
+            }
+        }
+
+        if(!hasAnyAtttachment) { // 没有任何附件，使用普通content格式（兼容旧模型）
             ArrayList<Message> messageList = new ArrayList<>(); // 将消息数据转换为ChatGPT需要的格式
             for (ChatMessage message : promptList) {
                 if (message.role == ChatRole.SYSTEM) {
@@ -98,7 +106,7 @@ public class ChatApiClient {
                                 .name(message.functionName)
                                 .arguments(message.contentText)
                                 .build();
-                        messageList.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
+                        messageList.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).content("").build());
                     } else {
                         messageList.add(Message.builder().role(Message.Role.ASSISTANT)
                                 .content(message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", "")).build()); // 去除思维链内容
@@ -123,7 +131,7 @@ public class ChatApiClient {
                         .temperature(temperature)
                         .build();
             }
-        } else { // 使用的是Vision模型
+        } else { // 含有附件，使用contentList格式
             ArrayList<MessagePicture> messageList = new ArrayList<>(); // 将消息数据转换为ChatGPT需要的格式
             for (ChatMessage message : promptList) {
                 List<Content> contentList = new ArrayList<>();
@@ -132,9 +140,13 @@ public class ChatApiClient {
                             message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", ""); // 去除思维链内容
                     contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(contentText).build());
                 }
-                if(message.contentImageBase64 != null) {
-                    ImageUrl imageUrl = ImageUrl.builder().url("data:image/jpeg;base64," + message.contentImageBase64).build();
-                    contentList.add(Content.builder().type(Content.Type.IMAGE_URL.getName()).imageUrl(imageUrl).build());
+                for(ChatMessage.Attachment attachment : message.attachments) {
+                    if(attachment.type == ChatMessage.Attachment.Type.IMAGE && GlobalUtils.checkVisionSupport(model)) {
+                        ImageUrl imageUrl = ImageUrl.builder().url("data:image/jpeg;base64," + attachment.content).build();
+                        contentList.add(Content.builder().type(Content.Type.IMAGE_URL.getName()).imageUrl(imageUrl).build());
+                    } else if(attachment.type == ChatMessage.Attachment.Type.TEXT) {
+                        contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(attachment.content).build());
+                    }
                 }
                 if (message.role == ChatRole.SYSTEM) {
                     messageList.add(MessagePicture.builder().role(Message.Role.SYSTEM).content(contentList).build());

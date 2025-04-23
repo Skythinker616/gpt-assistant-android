@@ -10,8 +10,8 @@ android {
         applicationId "com.skythinker.gptassistant"
         minSdk 26
         targetSdk 32
-        versionCode 1
-        versionName "1.11.3"
+        versionCode 21
+        versionName "2.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -60,4 +60,8 @@ dependencies {
     annotationProcessor 'io.noties:prism4j-bundler:2.0.0'
     implementation group: 'com.unfbx', name: 'chatgpt-java', version: '1.1.5'
     implementation 'com.huawei.hms:ml-computer-voice-asr:3.12.0.301'
+
+    // iText PDF for PDF documents
+    implementation 'com.itextpdf:itextpdf:5.5.13.3'
+    implementation 'com.itextpdf:itext7-core:7.2.5'
 }

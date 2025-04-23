@@ -49,13 +49,127 @@ public class ChatManager{
             }
         }
 
+        public static class Attachment {
+            public String uuid;
+            public enum Type {
+                IMAGE,
+                TEXT,
+            }
+            public Type type;
+            public String name;
+            public String content;
+
+            public static Attachment createNew(Type type, String name, String content, boolean saveFile) { // 创建一个新的附件
+                Attachment attachment = new Attachment();
+                attachment.uuid = UUID.randomUUID().toString();
+                attachment.type = type;
+                attachment.name = name;
+                attachment.content = content;
+                if(saveFile) {
+                    attachment.saveFile();
+                }
+                return attachment;
+            }
+
+            public static Attachment loadExist(String uuid, String name, Type type, boolean loadFile) { // 加载已有附件
+                Attachment attachment = new Attachment();
+                attachment.uuid = uuid;
+                attachment.name = name;
+                attachment.type = type;
+                if(loadFile) {
+                    attachment.loadFile();
+                }
+                return attachment;
+            }
+
+            public static String getDirPath(Type type) {
+                if(type == Type.IMAGE) {
+                    return context.getFilesDir().getAbsolutePath() + "/images/";
+                } else if(type == Type.TEXT) {
+                    return context.getFilesDir().getAbsolutePath() + "/texts/";
+                }
+                return null;
+            }
+
+            public static Attachment fromJson(JSONObject json, boolean loadFile) { // 从json中读取附件
+                return loadExist(
+                        json.getStr("uuid", null),
+                        json.getStr("name", null),
+                        Type.valueOf(json.getStr("type", "TEXT")),
+                        loadFile
+                );
+            }
+
+            public JSONObject toJson() { // 将附件转换为json
+                JSONObject json = new JSONObject();
+                json.putOpt("uuid", uuid)
+                    .putOpt("name", name)
+                    .putOpt("type", type.name());
+                return json;
+            }
+
+            private String getFilePath() {
+                if(type == Type.IMAGE) {
+                    return getDirPath(type) + uuid + ".jpg";
+                } else if(type == Type.TEXT) {
+                    return getDirPath(type) + uuid + ".txt";
+                }
+                return null;
+            }
+
+            public void saveFile() {
+                try {
+                    File file = new File(getFilePath());
+                    if(!file.exists()) {
+                        file.getParentFile().mkdirs();
+                        file.createNewFile();
+                        FileOutputStream fos = new FileOutputStream(file);
+                        if(type == Type.IMAGE) {
+                            fos.write(Base64.decode(content, Base64.NO_WRAP));
+                        } else if(type == Type.TEXT) {
+                            fos.write(content.getBytes());
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            public void loadFile() {
+                try {
+                    File file = new File(getFilePath());
+                    if(file.exists()) {
+                        FileInputStream fis = new FileInputStream(file);
+                        byte[] buffer = new byte[fis.available()];
+                        fis.read(buffer);
+                        if(type == Type.IMAGE) {
+                            content = Base64.encodeToString(buffer, Base64.NO_WRAP);
+                        } else if(type == Type.TEXT) {
+                            content = new String(buffer);
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            public void deleteFile() {
+                File file = new File(getFilePath());
+                if(file.exists()) {
+                    file.delete();
+                }
+            }
+        }
+
         public ChatRole role;
         public String contentText;
-        public String contentImageBase64;
-        private String imageUuid;
         public String functionName;
+        public ArrayList<Attachment> attachments;
 
-        public ChatMessage(ChatRole role) { this.role = role; }
+        public ChatMessage(ChatRole role) {
+            this.role = role;
+            this.attachments = new ArrayList<>();
+        }
 
         public ChatMessage setText(String text) {
             this.contentText = text;
@@ -67,82 +181,61 @@ public class ChatManager{
             return this;
         }
 
-        public ChatMessage setImage(String base64) {
-            this.contentImageBase64 = base64;
-            this.imageUuid = UUID.randomUUID().toString();
+        public ChatMessage addAttachment(Attachment attachment) {
+            attachments.add(attachment);
             return this;
         }
 
-        // 删除uuid对应的图片文件
-        public void deleteImageFile() {
-            if(imageUuid != null) {
-                File file = new File(getImagePath(imageUuid));
-                if(file.exists()) {
-                    file.delete();
-                }
+        // 删除指定的附件
+        void deleteAttachment(Attachment attachment) {
+            if(attachments != null) {
+                attachment.deleteFile();
+                attachments.remove(attachment);
             }
         }
 
-        // 保存base64到图片文件
-        public void saveImageFile() {
-            if(imageUuid != null && contentImageBase64 != null) {
-                try {
-                    File file = new File(getImagePath(imageUuid));
-                    if(!file.exists()) {
-                        file.getParentFile().mkdirs();
-                        file.createNewFile();
-                        FileOutputStream fos = new FileOutputStream(file);
-                        fos.write(Base64.decode(contentImageBase64, Base64.NO_WRAP));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+        // 删除所有附件
+        void deleteAllAttachments() {
+            if(attachments != null) {
+                for(Attachment attachment : attachments) {
+                    attachment.deleteFile();
                 }
+                attachments.clear();
             }
-        }
-
-        // 根据uuid加载图片文件base64
-        public void loadImageFile() {
-            if(imageUuid != null) {
-                try {
-                    File file = new File(getImagePath(imageUuid));
-                    if(file.exists()) {
-                        FileInputStream fis = new FileInputStream(file);
-                        byte[] buffer = new byte[fis.available()];
-                        fis.read(buffer);
-                        contentImageBase64 = Base64.encodeToString(buffer, Base64.NO_WRAP);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        // 根据uuid拼接图片文件路径
-        static public String getImagePath(String uuid) {
-            return context.getFilesDir().getAbsolutePath() + "/images/" + uuid + ".jpg";
         }
 
         // 将消息转换为json
         public JSONObject toJson() {
-            saveImageFile();
-
+            JSONArray attachmentsJson = new JSONArray();
+            for(Attachment attachment : attachments) {
+                attachment.saveFile();
+                attachmentsJson.put(attachment.toJson());
+            }
             JSONObject json = new JSONObject();
             json.putOpt("role", role.name())
-                    .putOpt("text", contentText)
-                    .putOpt("image", imageUuid)
-                    .putOpt("function", functionName);
+                    .putOpt("text", contentText);
+            if(functionName != null) {
+                json.putOpt("function", functionName);
+            }
+            if(attachments.size() > 0) {
+                json.putOpt("attachments", attachmentsJson);
+            }
             return json;
         }
 
-        // 从json中读取消息
-        public static ChatMessage fromJson(JSONObject json, boolean loadImage) {
+        public static ChatMessage fromJson(JSONObject json, boolean loadFiles) {
             ChatMessage msg = new ChatMessage(ChatRole.fromName(json.getStr("role", "USER")));
             msg.contentText = json.getStr("text", null);
-            msg.imageUuid = json.getStr("image", null);
             msg.functionName = json.getStr("function", null);
-
-            if(loadImage) { // 从文件中读取图片数据
-                msg.loadImageFile();
+            if(json.containsKey("image")) { // 历史遗留，旧版本仅能添加一张图片
+                msg.addAttachment(Attachment.loadExist(json.getStr("image", null), null, Attachment.Type.IMAGE, loadFiles));
+            } else {
+                JSONArray attachmentsJson = json.getJSONArray("attachments");
+                if(attachmentsJson != null) {
+                    for(int i = 0; i < attachmentsJson.size(); i++) {
+                        msg.addAttachment(Attachment.fromJson(attachmentsJson.getJSONObject(i), loadFiles));
+                    }
+                }
             }
             return msg;
         }
@@ -151,9 +244,9 @@ public class ChatManager{
     // 用于存储一轮对话中的一组聊天消息
     public static class MessageList extends ArrayList<ChatMessage> {
 
-        public void deleteAllImageFiles() {
+        public void deteteAllAttachments() {
             for(ChatMessage msg : this) {
-                msg.deleteImageFile();
+                msg.deleteAllAttachments();
             }
         }
 
@@ -312,7 +405,7 @@ public class ChatManager{
         Cursor cursor = db.query(DatabaseHelper.tableName, null, "id=?", new String[]{String.valueOf(id)}, null, null, null);
         if (cursor.moveToFirst()) {
             Conversation conversation = getConversationByCursor(cursor, false);
-            conversation.messages.deleteAllImageFiles();
+            conversation.messages.deteteAllAttachments();
         }
         db.delete(DatabaseHelper.tableName, "id=?", new String[]{String.valueOf(id)});
     }
@@ -320,10 +413,12 @@ public class ChatManager{
 
     // 删除所有会话
     public void removeAllConversations() {
-        File imageDir = new File(ChatMessage.getImagePath("abc")).getParentFile(); // 删除所有图片文件
-        if(imageDir.exists()) {
-            for(File file : imageDir.listFiles()) {
-                file.delete();
+        for(ChatMessage.Attachment.Type type : ChatMessage.Attachment.Type.values()) {
+            File dir = new File(ChatMessage.Attachment.getDirPath(type));
+            if(dir.exists()) {
+                for(File file : dir.listFiles()) {
+                    file.delete();
+                }
             }
         }
         db.delete(DatabaseHelper.tableName, null, null);

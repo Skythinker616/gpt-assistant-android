@@ -20,6 +20,7 @@
             android:layout_weight="1" />
 
         <LinearLayout
+            android:id="@+id/ll_main"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/main_card_background"
@@ -97,40 +98,40 @@
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp" />
 
-<!--                <androidx.cardview.widget.CardView-->
-<!--                    android:id="@+id/cv_history"-->
-<!--                    android:layout_width="30dp"-->
-<!--                    android:layout_height="30dp"-->
-<!--                    android:layout_marginLeft="5dp"-->
-<!--                    android:background="#FFFFFF"-->
-<!--                    android:foreground="@drawable/history_btn"-->
-<!--                    app:cardBackgroundColor="#00DADADA"-->
-<!--                    app:cardCornerRadius="20dp"-->
-<!--                    app:cardElevation="0dp" />-->
+                <!--                <androidx.cardview.widget.CardView-->
+                <!--                    android:id="@+id/cv_history"-->
+                <!--                    android:layout_width="30dp"-->
+                <!--                    android:layout_height="30dp"-->
+                <!--                    android:layout_marginLeft="5dp"-->
+                <!--                    android:background="#FFFFFF"-->
+                <!--                    android:foreground="@drawable/history_btn"-->
+                <!--                    app:cardBackgroundColor="#00DADADA"-->
+                <!--                    app:cardCornerRadius="20dp"-->
+                <!--                    app:cardElevation="0dp" />-->
 
-<!--                <androidx.cardview.widget.CardView-->
-<!--                    android:id="@+id/cv_settings"-->
-<!--                    android:layout_width="30dp"-->
-<!--                    android:layout_height="30dp"-->
-<!--                    android:layout_marginLeft="5dp"-->
-<!--                    android:background="#FFFFFF"-->
-<!--                    android:foreground="@drawable/settings_btn"-->
-<!--                    android:visibility="gone"-->
-<!--                    app:cardBackgroundColor="#00DADADA"-->
-<!--                    app:cardCornerRadius="20dp"-->
-<!--                    app:cardElevation="0dp" />-->
+                <!--                <androidx.cardview.widget.CardView-->
+                <!--                    android:id="@+id/cv_settings"-->
+                <!--                    android:layout_width="30dp"-->
+                <!--                    android:layout_height="30dp"-->
+                <!--                    android:layout_marginLeft="5dp"-->
+                <!--                    android:background="#FFFFFF"-->
+                <!--                    android:foreground="@drawable/settings_btn"-->
+                <!--                    android:visibility="gone"-->
+                <!--                    app:cardBackgroundColor="#00DADADA"-->
+                <!--                    app:cardCornerRadius="20dp"-->
+                <!--                    app:cardElevation="0dp" />-->
 
-<!--                <androidx.cardview.widget.CardView-->
-<!--                    android:id="@+id/cv_close"-->
-<!--                    android:layout_width="30dp"-->
-<!--                    android:layout_height="30dp"-->
-<!--                    android:layout_marginLeft="5dp"-->
-<!--                    android:background="#FFFFFF"-->
-<!--                    android:foreground="@drawable/close_btn"-->
-<!--                    android:visibility="gone"-->
-<!--                    app:cardBackgroundColor="#00DADADA"-->
-<!--                    app:cardCornerRadius="20dp"-->
-<!--                    app:cardElevation="0dp" />-->
+                <!--                <androidx.cardview.widget.CardView-->
+                <!--                    android:id="@+id/cv_close"-->
+                <!--                    android:layout_width="30dp"-->
+                <!--                    android:layout_height="30dp"-->
+                <!--                    android:layout_marginLeft="5dp"-->
+                <!--                    android:background="#FFFFFF"-->
+                <!--                    android:foreground="@drawable/close_btn"-->
+                <!--                    android:visibility="gone"-->
+                <!--                    app:cardBackgroundColor="#00DADADA"-->
+                <!--                    app:cardCornerRadius="20dp"-->
+                <!--                    app:cardElevation="0dp" />-->
 
                 <androidx.cardview.widget.CardView
                     android:id="@+id/cv_more"
@@ -178,7 +179,7 @@
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 app:cardBackgroundColor="#0C000000"
                 app:cardCornerRadius="10dp"
@@ -196,7 +197,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginVertical="10dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
@@ -252,14 +253,34 @@
                         android:orientation="horizontal"
                         android:paddingHorizontal="5dp">
 
-                        <ImageButton
-                            android:id="@+id/bt_image"
+                        <FrameLayout
                             android:layout_width="35dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="0"
-                            android:background="#00FFFFFF"
-                            android:scaleType="fitCenter"
-                            android:src="@drawable/image" />
+                            android:layout_height="35dp"
+                            android:layout_gravity="bottom"
+                            android:layout_weight="0">
+
+                            <ImageButton
+                                android:id="@+id/bt_attachment"
+                                android:layout_width="35dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="0"
+                                android:background="#00FFFFFF"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/attachment_btn" />
+
+                            <TextView
+                                android:id="@+id/tv_attachment_num"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="start|top"
+                                android:layout_marginStart="21dp"
+                                android:layout_marginTop="18dp"
+                                android:text="0"
+                                android:textColor="#6dbb7b"
+                                android:textSize="8sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
+                        </FrameLayout>
 
                         <EditText
                             android:id="@+id/et_user_input"
@@ -283,7 +304,8 @@
                 <ImageButton
                     android:id="@+id/bt_send"
                     android:layout_width="60dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="33dp"
+                    android:layout_gravity="bottom"
                     android:layout_weight="0"
                     android:background="#00FFFFFF"
                     android:scaleType="centerInside"

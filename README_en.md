@@ -1,5 +1,5 @@
 <p>
-	<b><a href="README_en.md">简体中文</a> | English</b>
+	<b>English | <a href="README.md">简体中文</a></b>
 </p>
 
 <div align=center>
@@ -7,11 +7,10 @@
 	<h1>GPT Assistant</h1>
 </div>
 
-This is an Android voice assistant based on ChatGPT, allowing users to invoke and engage in voice conversations directly from any interface using the phone's volume keys, in the fastest way to ask questions and receive replies.
-
 <div align=center>
 	<font size=3>
-		<b>Free Chatting · Voice Interaction · Internet Connection · Image Recognition</b>
+		<b>Full-featured GPT Assistant for Android</b><br>
+		<b>Quick Launch · Voice Interaction · Web Access · File Upload</b>
 	</font>
 </div>
 
@@ -35,300 +34,288 @@ This is an Android voice assistant based on ChatGPT, allowing users to invoke an
 
 ## Introduction
 
-### Project Features
+### Key Features
 
-- Supports predefined **question templates**, including using advanced template syntax to add dropdowns and other controls to the interface.
-- **Internet connectivity support**, allowing GPT to fetch online web pages.
-- Supports uploading images from the camera or gallery to the GPT Vision model.
-- Captures volume key events through accessibility features to enable invocation from **any interface**.
-- Supports direct invocation from the **global context menu** (system menu that appears after selecting text).
-- Supports invocation through the status bar **shortcut button**.
-- Supports rendering **Markdown**.
-- Uses Huawei/Baidu/Whisper/Google APIs for **voice input**.
-- Utilizes the system TTS engine for voice output.
+- **Multi-scenario file processing**:
+	- Upload via camera / gallery / share / open / drag & drop
+	- Support for images / TXT / PDF / DOCX / PPTX / XLSX files
 
-### Instructions for Use in China
+- **Web browsing capability**: Fetch web content as needed for GPT
 
-This software retrieves responses from the OpenAI API. When used in China, you can use a third-party forwarding service, such as [Chatanywhere](https://github.com/chatanywhere/GPT_API_free), which provides both free and paid services. Please refer to the [instructions below](#Usage) for details.
+- **Global quick access**: Volume key activation / status bar shortcut / cross-app text selection
 
-> Note: Chatanywhere registration requires a GitHub account, so make sure you can log in to GitHub when registering.
+- **Smart templates**: Easily customize interface for each template (custom dropdowns and input fields)
 
-### Cost Explanation
+- **Multiple voice input/output interfaces**: Huawei / Baidu / Whisper / Google / System TTS
 
-This software does not incur any charges; users can use all features for free. However, if there are special requirements, the following third-party services used **may** incur charges:
-
-1. ChatGPT API usage fees
-
-   - For example, with Chatanywhere, the **free service** limits the call frequency to `gpt-3.5-turbo` model to no more than **200 requests/day/IP & Key**. This is sufficient for personal use. If a higher call frequency or the `gpt-4` model is required, you can choose the paid service.
-
-2. Speech recognition API fees
-
-   This software currently supports Huawei, Google, Baidu, and Whisper four speech recognition interfaces:
-
-   - (Default interface) **Huawei HMS** provides a free speech recognition interface. Therefore, the program includes the author's API key for direct use. Unless there are special circumstances, this interface will remain available during the Huawei free period.
-
-   - **Google** also provides a free interface but may not be accessible in China. It is recommended for users outside China.
-
-   - **Baidu** offers 150,000 times and 180 days of free usage for new users of short speech recognition, with additional charges of ¥0.0034/call beyond the free limit.
-
-   - **Whisper** interface is provided by OpenAI and uses the same interface parameters as GPT chat. Call charges can be referenced in the [official documentation](https://openai.com/pricing).
+- **Fully open source**: Powered by OpenAI API (or compatible interfaces), completely free to use
 
 ---
 
-## Demonstration
+## Feature Showcase
 
-**I. Basic Usage: Control using only the volume keys**
+**1. Basic Usage: Control with just volume keys**
 
-1. Long-press the volume down key to bring up the interface.
-
-2. Hold down the volume key to start voice input.
-
-3. Release and press again to send the question.
-
-4. While receiving a reply, automatic voice playback is enabled.
+1. Long press the volume down key to bring up the interface
+2. Hold the volume key to start voice input
+3. Release and press again to send your question
+4. Receive reply with automatic voice narration
 
 <div align="center">
 	<img src="readme_img/usage.gif" height="400px">
 </div>
 
-**II. Trigger with status bar shortcut button**
+**2. Status Bar Quick Access**
 
-Pull down the status bar, click the "GPT" button to bring up the interface. The keyboard will automatically appear for manual question input.
+Pull down the status bar, tap the "GPT" button to bring up the interface. The keyboard will automatically appear for manual input.
 
 <div align="center">
 	<img src="readme_img/tile_btn.gif" height="400px">
 </div>
 
-**III. Invoking from the global context menu**
+**3. Continuous Conversation Support**
 
-In the system menu that appears after selecting text, click on the "GPTAssistant" option to directly invoke the application and add the selected text to the input box.
-
-<div align="center">
-	<img src="readme_img/context_menu.gif" height="400px">
-</div>
-
-> Note: Context menu is disabled in some apps. In this case, you can share the selected text to GPTAssistant, and the effect is the same as above.
-
-**IV. Supports continuous conversation**
-
-Activate the conversation icon above to keep the current session and engage in continuous conversation (click the avatar icon on the left to perform actions such as deleting, retrying, etc., for individual messages).
+Activate the conversation icon at the top of the interface to enable continuous dialogue. Click the avatar icon on the left to delete, retry, or perform other operations on individual messages.
 
 <div align="center">
 	<img src="readme_img/multi_chat.gif" height="400px">
 </div>
 
-**V. Supports advanced template syntax**
+**4. Upload Text/Images/Documents**
 
-Advanced template syntax allows the addition of dropdowns and other controls to the interface by adding parameters at the beginning of the template. You can find specific instructions in [Template Writing Instructions](template_help_en.md).
+- **In-app upload**: Click the attachment button in the bottom left to upload documents via camera, gallery, or file selection
+- **Share upload**: Select text or images in other apps (like Gallery), click share, and choose this app
+- **Open with**: In other apps (like WeChat/QQ), select "Open with" and choose this app
+- **Drag & drop upload**: In apps that support dragging (WeChat, QQ, Super Transfer Station, PC multi-screen collaboration), drag files to this app's interface
+- **Text selection**: Select text in other apps and choose this app to process it
+
+<div align="center">
+	<img src="readme_img/take_photo.gif" height="400px">
+	<img src="readme_img/share_file.gif" height="400px">
+</div>
+
+<div align="center">
+	<img src="readme_img/drag_file.gif" height="400px">
+	<img src="readme_img/context_menu.gif" height="400px">
+</div>
+
+**5. Smart Templates**
+
+Through advanced template syntax, you can add dropdown menus and other elements to the interface. For detailed instructions, see [Template Writing Guide](template_help_en.md).
 
 <div align="center">
 	<img src="readme_img/template_code.png" height="140px">
 	<img src="readme_img/template_ui.png" height="140px">
 </div>
 
-Click the button in the upper right corner of the template editing page to load the online template list. More templates or sharing your own templates can be obtained in the [discussion community](https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates). Shared templates may be dynamically updated to the online template list.
+Click the button in the top right corner of the template editing page to load the online template list. You can find more templates or share your own in the [Discussion Community](https://github.com/Skythinker616/gpt-assistant-android/discussions/categories/templates). Shared templates may be dynamically updated to the online template list!
 
-**VI. Supports uploading images to Vision**
+**6. Web Browsing Support**
 
-When a model with vision capability is selected, a camera icon will appear on the left side of the input box. Clicking it allows you to take photos or choose images from the gallery.
-
-When sharing images from other applications, you can also choose this program to add images to the input box.
-
-<div align="center">
-	<img src="readme_img/vision.gif" height="400px">
-	<img src="readme_img/vision_room.jpg" height="400px">
-	<img src="readme_img/vision_math.jpg" height="400px">
-</div>
-
-Test results show that the `gpt-4-vision-preview` model has good recognition performance and can be used for scenarios such as photo recognition, text translation, and photo answering.
-
-> Note: Vision models are generally not available for free (such as Chatanywhere). Users who need it may consider paid services.
-
-**VII. Supports GPT Internet Connection**
-
-This program implements OpenAI's Function interface, allowing GPT to make internet requests. The program will automatically return the required web page data to GPT, giving GPT internet capabilities (requires enabling internet options in settings).
+The Function interface allows GPT to initiate web requests. The app automatically returns the required web data to GPT, giving it internet capability (must be enabled in settings first).
 
 <div align="center">
 	<img src="readme_img/web_time.png" height="120px">
 	<img src="readme_img/web_weather.png" height="120px">
 </div>
+
 <div align="center">
 	<img src="readme_img/web_jd.png" height="180px">
 	<img src="readme_img/web_zhihu.png" height="180px">
 </div>
 
-> Note 1: The above images are test results using the `gpt-3.5-turbo` model. It is recommended to add phrases such as "Baidu search," "Bing search," "online retrieval," or "retrieve from xxx" before asking questions to achieve better internet results.
+> Note 1: The images above show test results using the `gpt-3.5-turbo` model. For better web browsing results, include phrases like "Baidu search", "Bing search", "get online", or "retrieve from xxx" in your queries.
 > 
-> Note 2: If you use the questions in the images but do not get the correct answer, it may be due to the randomness of GPT, resulting in accessing the wrong URL or website content changes causing fetching failure. You can try modifying the way you ask questions.
+> Note 2: If you use the same queries as shown but don't get correct answers, it might be due to GPT's randomness accessing incorrect URLs or website content changes. Try modifying your query.
 > 
-> Note 3: Due to the need to send web content to GPT, internet usage will consume a large number of tokens. Please use the `gpt-4` model cautiously.
+> Note 3: Since web content must be sent to GPT, web browsing consumes a large number of tokens. Use the `gpt-4` model cautiously.
 >
-> Note 4: Models without function call support (e.g. `gpt-4-vision-preview`) does not support internet access.
+> Note 4: Models that don't support Functions (like `gpt-4-vision-preview`) cannot use the web browsing feature.
 
 ---
 
-## Usage Instructions
+## Installation & Configuration
 
 ### 1. Download and Install
 
-Directly download the latest release APK file and install it.
+Simply download the APK file from the latest release and install it.
 
 ### 2. Configure OpenAI
 
-The program uses the OpenAI API and requires users to enter their own API_KEY in the settings. You can choose to use the official service or a third-party forwarding service.
-
-- **Using the Chatanywhere forwarding service** (recommended for use in China)
-
-   Chatanywhere provides free and paid OpenAI API forwarding services. The free service currently limits the call frequency to `gpt-3.5-turbo` model to no more than **200 requests/day/IP&Key**. The paid service has no limitations. Users can refer to their [project homepage](https://github.com/chatanywhere/GPT_API_free) to obtain the address and key and fill in the settings.
+The program uses the OpenAI API, requiring users to enter their own API_KEY in settings. You can choose to use the official service or a third-party forwarding service.
 
 - **Using the official service**
 
-   Register an account on the OpenAI website and obtain the API_KEY. Fill in the website `https://api.openai.com/` and API_KEY in the settings.
+	Register an account on the OpenAI website and get an API_KEY. Enter the URL `https://api.openai.com/` and your API_KEY in the app settings.
 
-### 3. Configure Speech Recognition (Optional)
+- **Using third-party forwarding services** (for users in China)
 
-> Note: The program defaults to using the Huawei speech recognition interface. If there are no special circumstances, this step is not required.
+	The official service is not directly accessible in China. Users can choose third-party forwarding services. We recommend [GPT_API_free](https://github.com/chatanywhere/GPT_API_free), which provides free access to models like `gpt-3.5-turbo` and `gpt-4o-mini`, with a limit of 200 requests/day/IP&Key, accessible within China.
 
-**Baidu Speech Recognition Interface**
+### 3. Configure Voice Recognition (Optional)
 
-Users can refer to the [official documentation for Baidu Speech Recognition](https://cloud.baidu.com/doc/SPEECH/s/qknh9i8ed) to register and create an application. Obtain the AppID, API Key, and Secret Key and fill in the settings.
+> Note: The app uses Huawei voice recognition by default. This step is usually not necessary.
 
-If the "Enable long speech" option is turned off, the program uses the Baidu short speech recognition interface. If enabled, it uses the real-time speech recognition interface, and users need to select the corresponding service when creating the application based on their needs.
+**Baidu Voice Recognition Interface**
 
-Additionally, when creating the application, set the "Voice Package Name" to "Android" and fill in the software package name `com.skythinker.gptassistant`.
+Users can refer to the [Baidu Voice Recognition Official Documentation](https://cloud.baidu.com/doc/SPEECH/s/qknh9i8ed) to register and create an application, then obtain the AppID, API Key, and Secret Key to fill in the settings.
 
-![Set Voice Package Name](readme_img/asr_set_package.jpg)
+If the "Enable Long Voice" option in settings is turned off, the Baidu short voice recognition interface is used. If enabled, the real-time voice recognition interface is used. Users need to select the corresponding service when creating their application.
 
-**Google Speech Recognition Interface**
+Additionally, when creating the application, set the "Voice Package Name" to "Android" and enter the app package name `com.skythinker.gptassistant`.
 
-Users need to ensure that the [Google app](https://play.google.com/store/apps/details?id=com.google.android.googlequicksearchbox) is installed on the system. Then, follow the app's instructions to set Google as the system speech recognition engine and allow it to use microphone permissions. In the software settings, choose the Google speech recognition interface.
+**Google Voice Recognition Interface**
 
-**Whisper Speech Recognition Interface**
+Users need to ensure that [Google](https://play.google.com/store/apps/details?id=com.google.android.googlequicksearchbox) is installed on their system, then follow the app's guidance to set Google as the system voice recognition engine and allow it to use microphone permissions. Then select the Google voice recognition interface in the app settings.
 
-If the OpenAI interface used supports the Whisper model, select the Whisper speech recognition interface in the software settings to use it.
+**Whisper Voice Recognition Interface**
+
+If the OpenAI interface used supports the Whisper model, simply select the Whisper voice recognition interface in the app settings.
 
 ### 4. Start Using
 
-1. Enable accessibility service as prompted by the software and allow the software to run in the background.
+- If you want to use volume key activation, you need to:
+	1. Enable the accessibility service as prompted by the app, and allow the app to run in the background
+	2. Check if there is a "Background Pop-up Interface" permission in system settings. Allow it if available, ignore if not.
 
-2. Check if the "Pop-up window" permission exists in the settings. If it does, allow it; if not, ignore it.
+		> If you find that the phone vibrates after long-pressing the volume down key but no interface appears, it's likely due to missing this permission.
 
-   > If you find that the phone vibrates after long-pressing the volume down key but the interface does not pop up, it is likely due to the lack of this permission.
-
-3. Start using normally, referring to the operational steps in the [demonstration section](#Demonstration).
+- Please refer to the operations in [Feature Showcase](#feature-showcase) to use the software.
 
 ---
 
 ## Q&A
 
-### Software Invocation
+### App Activation
 
-**Q: Long-pressing the volume down key only adjusts the volume and nothing else happens?**
+**Q: Long-pressing the volume down key only adjusts the volume, with no other effect?**
 
-A: Please enable the accessibility service for this software in the settings (may need to be re-enabled after restarting the phone, it is recommended to set it as an accessibility shortcut).
+A: Please enable the accessibility service for this app in system settings (may need to be re-enabled after restarting the phone).
 
-**Q: After long-pressing the volume down key, the phone vibrates, but no interface pops up?**
+**Q: After long-pressing the volume down key, the phone vibrates but no interface appears?**
 
-A: Please allow the program the "pop-up interface in the background" permission in the settings.
+A: Please allow the "Background Pop-up Interface" permission for the app in system settings.
 
-**Q: Unable to use the volume key to invoke after a period of inactivity?**
+**Q: Volume key activation stops working after a period of inactivity?**
 
-A: Please allow the program to run in the background in the settings.
+A: Please allow the app to run in the background in system settings.
 
-### Speaking
+### Voice Interaction
 
-**Q: No sound when speaking / not pleasant to listen to?**
+**Q: No sound from voice narration / poor quality?**
 
-A: The software calls the system's built-in TTS (Text To Speech) service. You can enter the system settings through the software setting "Open system speech settings" and choose a suitable speech engine. If you are not satisfied with the system's built-in engine, you can also install third-party TTS engines like Xunfei and [TTS Server](https://github.com/jing332/tts-server-android).
+A: The app uses the system's built-in TTS (Text To Speech) service. You can access system voice settings through the app settings to select an appropriate voice engine. If you're not satisfied with the built-in engines, you can install third-party TTS engines like iFlytek or [TTS Server](https://github.com/jing332/tts-server-android).
 
-**Q: What is the difference in the recognition effect of different interfaces?**
+**Q: What are the differences in performance between voice recognition interfaces?**
 
-A: Tested in scenes of mixed Chinese and English speech:
+A: Testing with Chinese and mixed Chinese-English scenarios:
+- Huawei interface (real-time voice recognition) has high accuracy and performs best for single sentences
+- Baidu performs well for long sentences with reasonable segmentation but struggles with mixed Chinese-English recognition (uses standard Mandarin model)
+- Google supports many languages, has average Chinese recognition, and doesn't add punctuation
+- Whisper supports many languages with decent Chinese recognition but sometimes has uncontrollable simplified/traditional character issues and doesn't support real-time output
 
-- Huawei interface (real-time speech recognition) has high accuracy, especially for single-sentence recognition.
-- Baidu performs well in recognizing long sentences, and the segmentation of sentences is reasonable, but it is difficult to achieve mixed Chinese and English recognition (uses the Chinese Mandarin model).
-- Google supports many languages, and the Chinese recognition effect is average, and it does not add punctuation.
-- Whisper supports many languages, the Chinese recognition effect is acceptable, but there are sometimes uncontrolled situations between simplified and traditional Chinese, and it does not support speaking while outputting.
+For English-only scenarios, Huawei, Google, and Whisper all perform well.
 
-In a pure English scene, Huawei, Google, and Whisper all perform well.
+**Q: What about voice recognition interface costs?**
 
-### Networking Related
+The app currently supports four voice recognition interfaces, with Huawei (the default) being free:
+- **Huawei HMS** (default interface) provides free voice recognition, so the author's API Key is built-in for direct use. This interface will remain available as long as Huawei's free period continues.
+- **Google** is also free but may be inaccessible in China, recommended only for overseas users
+- **Baidu** short voice recognition offers new users 150,000 calls & 180 days free quota, beyond which it costs ¥0.0034 per call
+- **Whisper** interface is provided by OpenAI, using the same interface parameters as GPT chat. For costs, refer to the [official documentation](https://openai.com/pricing)
 
-**Q: What websites can GPT access when connected to the Internet?**
+### Web Browsing Related
 
-A: The program uses Android WebView to load web pages, and websites that can be opened by the native browser can be accessed.
+**Q: What websites can GPT access when browsing?**
 
-**Q: What content can GPT get from the website?**
+A: The program uses Android WebView to load web pages. Any site that can be opened with your device's browser can be accessed.
 
-A: For general websites, GPT is only allowed to access pure text content. For specially adapted websites, GPT can also get search result links. Adapted websites include Baidu, Bing, Google, Google Scholar, Zhihu, Weibo, JD, GitHub, Bilibili, and CNKI.
+**Q: What content can GPT retrieve from websites?**
 
-> If you think other websites need to be adapted, you can submit an Issue.
+A: For general websites, GPT can only retrieve plain text content. For specially adapted sites like Baidu, Bing, Google, Google Scholar, Zhihu, Weibo, JD, GitHub, Bilibili, and CNKI, GPT can also access search result links.
 
-**Q: Why does GPT say it cannot retrieve content when accessing some websites?**
+> If you think other websites need adaptation, please submit an Issue.
 
-A: Reasons such as webpage loading timeout (15s), requiring login, and requiring verification may cause this problem. You can try asking again or ask GPT to change the website it accesses.
+**Q: Why does GPT say it can't retrieve content from some websites?**
 
-### Other Usage Issues
+A: Page loading timeout (15s), login requirements, verification requirements, etc. can all cause this issue. You can try asking again or ask GPT to try a different website.
 
-**Q: Why doesn't the list have the model I need?**
+### Other Usage Questions
 
-A: The software only includes a few commonly used models. You can add custom models in the settings (separated by English semicolons), and the added models will appear in the list.
+**Q: Why isn't the model I need in the list?**
 
-**Q: Display failure, timeout prompt, or error code 502/503?**
+A: The app only includes a few common models by default. You can add custom models in settings (separated by English semicolons), which will then appear in the list.
 
-A: Exclude network factors. This error is generally generated by the OpenAI interface, and it may be due to high server load. Please try again or wait for some time before trying again. [View OpenAI real-time status](https://status.openai.com/)
+**Q: It shows "Request failed", "Request timeout", or error codes 502/503?**
+
+A: Excluding network factors, this error is generally produced by the OpenAI interface, possibly due to high server load. Please retry or wait for a while before trying again. [Check OpenAI real-time status](https://status.openai.com/)
+
+**Q: How to use non-OpenAI format model interfaces?**
+
+A: There are many LLM interfaces (like Claude, Gemini, Ollama, etc.), and this project does not plan to adapt to each one individually. Users can consider deploying systems like [OneAPI](https://github.com/songquanpeng/one-api) or [NewAPI](https://github.com/QuantumNous/new-api) to convert various interfaces to OpenAI format.
 
 ### Development Related
 
-**Q: After compiling the repository code, Huawei HMS speech recognition cannot be used?**
+**Q: Can't use Huawei HMS voice recognition after compiling the repository code?**
 
-A: To prevent abuse, the keys in the repository have package name and signature verification enabled. Therefore, if you want to compile and use it yourself, you need to create an AppGallery application according to [Huawei's official documentation](https://developer.huawei.com/consumer/cn/doc/hiai-Guides/ml-asr-0000001050066212#section699935381711) and replace the authentication information, including the `app/agconnect-services.json` file and the `hms_api_key` field in `app/src/main/res/values/strings.xml`.
+A: To prevent abuse, the repository Key has package name and signature verification enabled. If you want to compile and use it yourself, you need to create an AppGallery application according to the [Huawei official documentation](https://developer.huawei.com/consumer/cn/doc/hiai-Guides/ml-asr-0000001050066212#section699935381711) and replace the authentication information, including the `app/agconnect-services.json` file and the `hms_api_key` field in `app/src/main/res/values/strings.xml`.
 
 ---
 
 ## Major Feature Update Log
 
-- **2023.09.10** Released the first version, supporting basic dialogue, Baidu voice input, TTS output, Markdown rendering, and other functions.
-- **2023.09.13** Added support for continuous dialogue, GPT-4, Baidu long speech recognition, and context menu invocation.
-- **2023.10.06** Added Huawei HMS speech recognition.
-- **2023.11.06** Added networking functionality.
-- **2023.12.04** Added Vision image recognition functionality.
-- **2023.12.21** Added support for advanced template syntax.
-- **2024.01.08** Added support for Google and Whisper speech recognition, online template list.
+- **2023.09.10** Released first version with basic conversation, Baidu voice input, TTS output, Markdown rendering, etc.
+
+- **2023.09.13** Added continuous conversation, GPT-4, Baidu long voice recognition, context menu activation
+
+- **2023.10.06** Added Huawei HMS voice recognition
+
+- **2023.11.06** Added web browsing functionality
+
+- **2023.12.04** Added Vision image recognition
+
+- **2023.12.21** Added advanced template syntax
+
+- **2024.01.08** Added Google and Whisper voice recognition, online template list
+
+- **2024.05.25** Added continuous voice conversation
+
+- **2025.04.23** Added support for multiple document formats
 
 ---
 
 ## TODO
 
-- Support question and reply length restrictions
-- Support message compression
-- Support upload other format files
-- Download and install updates automatically
+- Support for question and reply length limits
+
+- Support for message compression
+
+- In-app direct download and update installation
 
 ---
 
 ## Test Environment
 
-Tested models:
+Tested devices:
 
-| Model           | System Version  | Android Version | Program Version |
-| :-------------: | :-------------: | :-------------: | :-------------: |
-| Honor 7C        | EMUI 8.0.0       | Android 8        | 1.9.1           |
-| Honor 20        | HarmonyOS 3.0.0  | Android 10       | 1.9.1           |
-| Honor 20        | HarmonyOS 4.0    | Android 10       | 1.11.0          |
-| Huawei Mate 30  | HarmonyOS 3.0.0  | Android 12       | 1.6.0           |
-| Huawei Mate 30  | HarmonyOS 4.0    | Android 12       | 1.8.0           |
-| Honor Magic 4   | MagicOS 7.0      | Android 13       | 1.9.1           |
-| Honor Magic 6   | MagicOS 8.0      | Android 14       | 1.11.1           |
-| Honor Magic 6   | MagicOS 9.0      | Android 15       | 1.11.3           |
-| Redmi K20 Pro   | MIUI 12.5.6      | Android 11       | 1.5.0           |
-| Redmi K60 Pro   | MIUI 14.0.23     | Android 13       | 1.7.0           |
-| Xiaomi 13       | MIUI 14.0.5      | Android 14       | 1.10.0          |
-| Pixel 2 (Emulator) | Android 12    | Android 12       | 1.7.0           |
+| Device | System Version | Android Version | App Version |
+| :--: | :-----: | :----------: | :-------: |
+| Honor 7C | EMUI 8.0.0 | Android 8 | 1.9.1 |
+| Honor 20 | HarmonyOS 3.0.0 | Android 10 | 1.9.1 |
+| Honor 20 | HarmonyOS 4.0 | Android 10 | 2.0.0 |
+| Huawei Mate 30 | HarmonyOS 3.0.0 | Android 12 | 1.6.0 |
+| Huawei Mate 30 | HarmonyOS 4.0 | Android 12 | 1.8.0 |
+| Honor Magic 4 | MagicOS 7.0 | Android 13 | 1.9.1 |
+| Honor Magic 6 | MagicOS 8.0 | Android 14 | 1.11.1 |
+| Honor Magic 6 | MagicOS 9.0 | Android 15 | 2.0.0 |
+| Redmi K20 Pro | MIUI 12.5.6 | Android 11 | 1.5.0 |
+| Redmi K60 Pro | MIUI 14.0.23 | Android 13 | 1.7.0 |
+| Xiaomi 13 | MIUI 14.0.5 | Android 14 | 1.10.0 |
+| Pixel 2 (emulator) | Android 12 | Android 12 | 1.7.0 |
 
 ---
 
-## Improvement & Contribution
+## Improvements & Contributions
 
 If you have improvement suggestions or want to contribute, feel free to submit an Issue or Pull Request.
 
@@ -336,25 +323,27 @@ If you have improvement suggestions or want to contribute, feel free to submit a
 
 ## Privacy Statement
 
-This program will not collect any personal information from users in any way. Voice input will be sent directly to those voice APIs, and questions will be sent directly to the OpenAI API without passing through other intermediate servers.
+This application does not collect any personal user information. Voice input is sent directly to the respective voice interfaces, and questions are sent directly to the OpenAI API without passing through any intermediate servers.
 
 ---
 
 ## Open Source Projects Used
 
-- [Markwon](https://github.com/noties/Markwon): Markdown renderer on Android.
-- [chatgpt-java](https://github.com/Grt1228/chatgpt-java): Java wrapper for the OpenAI API.
+- [Markwon](https://github.com/noties/Markwon): Markdown renderer for Android
+
+- [chatgpt-java](https://github.com/Grt1228/chatgpt-java): Java wrapper for OpenAI API
 
 ---
-<!--
-## Support/Donation
 
-If you find GPT Assistant helpful, you can give it a star, or you can donate to buy me a cup of tea. Thank you very much for your support!
+<!--
+## Support/Donate
+
+If you find GPT Assistant helpful, please give it a Star. You can also donate to buy me a cup of milk tea. Thank you very much for your support!
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Skythinker616/gpt-assistant-android&type=Date)](https://star-history.com/#Skythinker616/gpt-assistant-android&Date)
 
 <details>
-	<summary>View Donation Codes</summary>
+	<summary>View donation QR codes</summary>
 	<div align="center">
 		<img src="readme_img/wechat.png" height="180px">
 		<img src="readme_img/alipay.jpg" height="180px">

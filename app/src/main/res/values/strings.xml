@@ -174,4 +174,7 @@
     <string name="text_releases_title">Releases</string>
     <string name="toast_update_available">Update available. Please check the settings page for detail.</string>
     <string name="toast_get_releases_failed">Failed to download releases list. Please check project homepage for information.</string>
+    <string name="assist_label">Ask GPT</string>
+    <string name="text_temp_param_input_hint">Input here</string>
+    <string name="toast_unsupported_file">Unsupported file: </string>
 </resources>

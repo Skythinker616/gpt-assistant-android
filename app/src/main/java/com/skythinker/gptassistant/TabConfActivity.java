@@ -392,8 +392,8 @@ public class TabConfActivity extends Activity {
                     handler.post(() -> {
                         ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_available), BuildConfig.VERSION_NAME, version));
                     });
-                    GlobalDataHolder.saveUpdateSetting(version);
                 }
+                GlobalDataHolder.saveUpdateSetting(version);
             } catch (JSONException | IOException e) {
                 e.printStackTrace();
             }

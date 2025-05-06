@@ -11,6 +11,8 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.unfbx.chatgpt.entity.assistant.Tool;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -161,14 +163,42 @@ public class ChatManager{
             }
         }
 
+        public static class ToolCall {
+            public String id; // 注意历史遗留，id可能为null
+            public String functionName;
+            public String arguments;
+            public String content;
+
+            public static ToolCall fromJson(JSONObject json) {
+                ToolCall toolCall = new ToolCall();
+                toolCall.id = json.getStr("id", null);
+                toolCall.functionName = json.getStr("function", null);
+                toolCall.arguments = json.getStr("arguments", null);
+                toolCall.content = json.getStr("content", null);
+                return toolCall;
+            }
+
+            public JSONObject toJson() {
+                JSONObject json = new JSONObject();
+                json.putOpt("id", id)
+                        .putOpt("function", functionName)
+                        .putOpt("arguments", arguments);
+                if(content != null) {
+                    json.putOpt("content", content);
+                }
+                return json;
+            }
+        }
+
         public ChatRole role;
         public String contentText;
-        public String functionName;
         public ArrayList<Attachment> attachments;
+        public ArrayList<ToolCall> toolCalls;
 
         public ChatMessage(ChatRole role) {
             this.role = role;
             this.attachments = new ArrayList<>();
+            this.toolCalls = new ArrayList<>();
         }
 
         public ChatMessage setText(String text) {
@@ -176,8 +206,18 @@ public class ChatManager{
             return this;
         }
 
-        public ChatMessage setFunction(String name) {
-            this.functionName = name;
+        public ChatMessage addFunctionCall(String toolId, String functionName, String arguments, String content) {
+            ToolCall toolCall = new ToolCall();
+            toolCall.id = toolId;
+            toolCall.functionName = functionName;
+            toolCall.arguments = arguments;
+            toolCall.content = content;
+            toolCalls.add(toolCall);
+            return this;
+        }
+
+        public ChatMessage addFunctionCall(ToolCall toolCall) {
+            toolCalls.add(toolCall);
             return this;
         }
 
@@ -211,11 +251,15 @@ public class ChatManager{
                 attachment.saveFile();
                 attachmentsJson.put(attachment.toJson());
             }
+            JSONArray toolCallsJson = new JSONArray();
+            for(ToolCall toolCall : toolCalls) {
+                toolCallsJson.put(toolCall.toJson());
+            }
             JSONObject json = new JSONObject();
             json.putOpt("role", role.name())
                     .putOpt("text", contentText);
-            if(functionName != null) {
-                json.putOpt("function", functionName);
+            if(toolCalls.size() > 0) {
+                json.putOpt("tools", toolCallsJson);
             }
             if(attachments.size() > 0) {
                 json.putOpt("attachments", attachmentsJson);
@@ -226,7 +270,6 @@ public class ChatManager{
         public static ChatMessage fromJson(JSONObject json, boolean loadFiles) {
             ChatMessage msg = new ChatMessage(ChatRole.fromName(json.getStr("role", "USER")));
             msg.contentText = json.getStr("text", null);
-            msg.functionName = json.getStr("function", null);
             if(json.containsKey("image")) { // 历史遗留，旧版本仅能添加一张图片
                 msg.addAttachment(Attachment.loadExist(json.getStr("image", null), null, Attachment.Type.IMAGE, loadFiles));
             } else {
@@ -234,6 +277,17 @@ public class ChatManager{
                 if(attachmentsJson != null) {
                     for(int i = 0; i < attachmentsJson.size(); i++) {
                         msg.addAttachment(Attachment.fromJson(attachmentsJson.getJSONObject(i), loadFiles));
+                    }
+                }
+            }
+            if(json.containsKey("function")) { // 历史遗留，旧版本仅能添加一个函数调用
+                msg.addFunctionCall(null, json.getStr("function", null), msg.contentText, null);
+                msg.contentText = null;
+            } else {
+                JSONArray toolCallsJson = json.getJSONArray("tools");
+                if(toolCallsJson != null) {
+                    for(int i = 0; i < toolCallsJson.size(); i++) {
+                        msg.addFunctionCall(ToolCall.fromJson(toolCallsJson.getJSONObject(i)));
                     }
                 }
             }

@@ -312,12 +312,12 @@ public class MainActivity extends Activity {
                                 for(int i = questionIndex + 1; i < multiChatList.size(); i++) { // 依次检查函数调用，并获取网页URL
                                     if(multiChatList.get(i).role == ChatRole.FUNCTION
                                         && multiChatList.get(i-1).role == ChatRole.ASSISTANT
-                                        && multiChatList.get(i-1).functionName != null) {
-                                        String funcName = multiChatList.get(i-1).functionName;
-                                        String funcArgs = multiChatList.get(i-1).contentText;
-                                        if(funcName.equals("get_html_text")) {
-                                            String url = new JSONObject(funcArgs).getStr("url");
-                                            referenceStr += String.format("[[%s]](%s) ", ++referenceCount, url);
+                                        && multiChatList.get(i-1).toolCalls.size() > 0) {
+                                        for(ChatMessage.ToolCall toolCall : multiChatList.get(i-1).toolCalls) {
+                                            if(toolCall.functionName.equals("get_html_text")) {
+                                                String url = new JSONObject(toolCall.arguments).getStr("url");
+                                                referenceStr += String.format("[[%s]](%s) ", ++referenceCount, url);
+                                            }
                                         }
                                     }
                                 }
@@ -355,41 +355,67 @@ public class MainActivity extends Activity {
                         });
                     }
 
-                    @Override
-                    public void onFunctionCall(String name, String arg) { // 收到函数调用请求
-                        Log.d("FunctionCall", String.format("%s: %s", name, arg));
-                        multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setFunction(name).setText(arg)); // 保存请求到聊天数据列表
-                        if (name.equals("get_html_text")) { // 调用联网函数
+                    private final ArrayList<ChatApiClient.CallingFunction> callingFunctions = new ArrayList<>();
+
+                    private void callFunction(ChatApiClient.CallingFunction function) {
+                        if (function.name.equals("get_html_text")) { // 调用联网函数
                             try {
-                                JSONObject argJson = new JSONObject(arg);
+                                JSONObject argJson = new JSONObject(function.arguments);
                                 String url = argJson.getStr("url"); // 获取URL
                                 runOnUiThread(() -> {
                                     markdownRenderer.render(tvGptReply, String.format(getString(R.string.text_visiting_web_prefix) + "[%s](%s)", URLDecoder.decode(url), url));
                                     webScraper.load(url, new WebScraper.Callback() { // 抓取网页内容
                                         @Override
                                         public void onLoadResult(String result) {
-                                            postSendFunctionReply(name, result); // 返回网页内容给GPT
+                                            processFunctionResult(function, result); // 返回网页内容给GPT
 //                                            Log.d("FunctionCall", String.format("Response: %s", result));
                                         }
 
                                         @Override
                                         public void onLoadFail(String message) {
-                                            postSendFunctionReply(name, "Failed to get response of this url.");
+                                            processFunctionResult(function, "Failed to get response of this url. " + message);
                                         }
                                     });
                                     Log.d("FunctionCall", String.format("Loading url: %s", url));
                                 });
                             } catch (JSONException e) {
                                 e.printStackTrace();
-                                postSendFunctionReply(name, "Error when getting response.");
+                                processFunctionResult(function, "Error when getting response.");
                             }
-                        } else if(name.equals("exit_voice_chat")){
-                            if(multiVoice)
+                        } else if (function.name.equals("exit_voice_chat")) {
+                            if (multiVoice)
                                 runOnUiThread(() -> findViewById(R.id.cv_voice_chat).performClick());
+                            processFunctionResult(function, "OK");
                         } else {
-                            postSendFunctionReply(name, "Function not found.");
-                            Log.d("FunctionCall", String.format("Function not found: %s", name));
+                            processFunctionResult(function, "Function not found.");
+                            Log.d("FunctionCall", String.format("Function not found: %s", function.name));
                         }
+                    }
+                    private void processFunctionResult(ChatApiClient.CallingFunction function, String result) {
+                        Log.d("MainActivity", "function result: " + function.name);
+                        Log.d("MainActivity", "function result: " + result);
+                        multiChatList.add(new ChatMessage(ChatRole.FUNCTION).addFunctionCall(function.toolId, function.name, function.arguments, result));
+                        callingFunctions.remove(function); // 从函数调用列表中移除已完成的函数
+                        if(callingFunctions.size() == 0) { // 所有函数调用完成，发送给GPT
+                            handler.post(() -> chatApiClient.sendPromptList(multiChatList));
+                        } else {
+                            handler.post(() -> callFunction(callingFunctions.get(0))); // 继续处理下一个函数调用
+                        }
+                    }
+
+                    @Override
+                    public void onFunctionCall(ArrayList<ChatApiClient.CallingFunction> functions) { // 收到函数调用请求
+                        ChatMessage assistantMessage = new ChatMessage(ChatRole.ASSISTANT);
+                        for(ChatApiClient.CallingFunction function : functions) {
+                            Log.d("FunctionCall", String.format("%s: %s", function.name, function.arguments));
+                            assistantMessage.addFunctionCall(function.toolId, function.name, function.arguments, null);
+                        }
+                        multiChatList.add(assistantMessage); // 保存请求到聊天数据列表
+
+                        callingFunctions.clear();
+                        callingFunctions.addAll(functions); // 保存函数调用列表（浅拷贝）
+
+                        callFunction(callingFunctions.get(0)); // 处理第一个函数调用
                     }
                 });
 
@@ -1053,7 +1079,7 @@ public class MainActivity extends Activity {
                 int index = multiChatList.indexOf(chat);
                 multiChatList.remove(chat);
                 while(--index > 0 && (multiChatList.get(index).role == ChatRole.FUNCTION
-                        || multiChatList.get(index).functionName != null && multiChatList.get(index).functionName.equals("get_html_text"))) // 将上方联网数据也删除
+                        || (multiChatList.get(index).role == ChatRole.ASSISTANT && multiChatList.get(index).toolCalls.size() > 0))) // 将上方ToolCall也删除
                     multiChatList.remove(index);
             }
             if(tvContent == tvGptReply) { // 删除的是GPT正在回复的消息框，停止回复和TTS
@@ -1240,15 +1266,6 @@ public class MainActivity extends Activity {
             btSend.setImageResource(R.drawable.cancel_btn);
             updateAttachmentButton(); // 更新附件按钮状态
         }
-    }
-
-    // 向GPT返回Function结果
-    private void postSendFunctionReply(String funcName, String reply) {
-        handler.post(() -> {
-            Log.d("FunctionCall", "postSendFunctionReply: " + funcName);
-            multiChatList.add(new ChatMessage(ChatRole.FUNCTION).setFunction(funcName).setText(reply));
-            chatApiClient.sendPromptList(multiChatList);
-        });
     }
 
     // 获取附件弹窗
@@ -1516,7 +1533,7 @@ public class MainActivity extends Activity {
 
         llChatList.removeViewAt(0); // 删除占位TextView
         for(ChatMessage chatItem : multiChatList) { // 依次添加对话布局
-            if(chatItem.role == ChatRole.USER || (chatItem.role == ChatRole.ASSISTANT && chatItem.functionName == null)) {
+            if(chatItem.role == ChatRole.USER || (chatItem.role == ChatRole.ASSISTANT && chatItem.toolCalls.size() == 0)) {
                 LinearLayout llChatItem = addChatView(chatItem.role, chatItem.contentText, chatItem.attachments);
                 llChatItem.setTag(chatItem);
             }
@@ -1696,6 +1713,12 @@ public class MainActivity extends Activity {
         chatManager.removeEmptyConversations();
         chatManager.destroy();
         super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+        super.onBackPressed();
     }
 
     @Override

@@ -47,7 +47,7 @@ public class HistoryActivity extends Activity {
             holder.tvTitle.setText(conversation.title);
             holder.tvDetail.setText("");
             for(ChatMessage message : conversation.messages) {
-                if (message.role == ChatMessage.ChatRole.ASSISTANT && message.functionName == null) {
+                if (message.role == ChatMessage.ChatRole.ASSISTANT && message.toolCalls.isEmpty()) {
                     holder.tvDetail.setText(message.contentText.replaceAll("\n", " "));
                     break;
                 }

@@ -199,40 +199,48 @@ public class WebScraper {
             }
             @Override
             public void onPageFinished(WebView view, String url) { // 页面加载完成（重定向后原有页面加载完成也会触发）
-                Log.d("WebView", "onPageFinished " + url);
-                if(jumpCount == 1 || url.equals(loadingUrl)) { // 判定为最终页面加载完成
-                    handler.postDelayed(() -> {
-                        if (callback != null){
-                            // 执行JS代码抓取页面内容
-                            webView.evaluateJavascript(websiteRule.jsCode,
-                                new ValueCallback<String>() {
-                                    @Override
-                                    public void onReceiveValue(String responseText) {
-                                        responseText = responseText.replaceAll("\\\\n", "\n")
-                                                .replaceAll("\\u003C", "<")
-                                                .replaceAll("\\\"", "\"");
-                                        if (responseText.length() > GlobalDataHolder.getWebMaxCharCount())
-                                            responseText = responseText.substring(0, GlobalDataHolder.getWebMaxCharCount());
-                                        if (responseText.isEmpty())
-                                            responseText = "The response is empty.";
-                                        if(callback != null)
-                                            callback.onLoadResult(responseText);
-                                        else
-                                            Log.e("WebView", "callback is null when finished");
-                                        endLoading();
-                                    }
-                                });
-                        }
-                    }, websiteRule.extraDelay);
-                    loadingUrl = "";
+                Log.d("WebView", "onPageFinished " + url + " progress " + view.getProgress());
+                if(view.getProgress() >= 100) { // 确保页面加载完成
+                    if(jumpCount == 1 || url.equals(loadingUrl)) { // 判定为最终页面加载完成
+                        handler.postDelayed(() -> {
+                            if (callback != null){
+                                // 执行JS代码抓取页面内容
+                                webView.evaluateJavascript(websiteRule.jsCode,
+                                        new ValueCallback<String>() {
+                                            @Override
+                                            public void onReceiveValue(String responseText) {
+                                                responseText = responseText.replaceAll("\\\\n", "\n")
+                                                        .replaceAll("\\u003C", "<")
+                                                        .replaceAll("\\\"", "\"");
+                                                if (responseText.length() > GlobalDataHolder.getWebMaxCharCount())
+                                                    responseText = responseText.substring(0, GlobalDataHolder.getWebMaxCharCount());
+                                                if (responseText.isEmpty())
+                                                    responseText = "The response is empty.";
+                                                Log.d("WebView", "onReceiveValue " + responseText);
+                                                if(callback != null)
+                                                    callback.onLoadResult(responseText);
+                                                else
+                                                    Log.e("WebView", "callback is null when finished");
+                                                endLoading();
+                                            }
+                                        });
+                            }
+                        }, websiteRule.extraDelay);
+                        loadingUrl = "";
+                    }
+                    if(jumpCount > 0) // 跳转深度减一
+                        jumpCount--;
                 }
-                if(jumpCount > 0) // 跳转深度减一
-                    jumpCount--;
                 super.onPageFinished(view, url);
             }
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                Log.e("WebView", "onReceivedError " + error.getErrorCode() + " " + error.getDescription());
+                Log.e("WebView", "onReceivedError " + error.getErrorCode() + " " + error.getDescription() + " " + request.isForMainFrame());
+                if(request.isForMainFrame()) { // 仅处理主页面的错误
+                    if(callback != null)
+                        callback.onLoadFail(error.getDescription().toString());
+                    endLoading();
+                }
                 super.onReceivedError(view, request, error);
             }
             @Override

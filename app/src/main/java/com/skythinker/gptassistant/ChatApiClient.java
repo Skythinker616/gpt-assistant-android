@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import com.unfbx.chatgpt.OpenAiStreamClient;
 import com.unfbx.chatgpt.entity.chat.BaseChatCompletion;
+import com.unfbx.chatgpt.entity.chat.BaseMessage;
 import com.unfbx.chatgpt.entity.chat.ChatCompletionWithPicture;
 import com.unfbx.chatgpt.entity.chat.Content;
 import com.unfbx.chatgpt.entity.chat.FunctionCall;
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import cn.hutool.json.JSONObject;
@@ -34,6 +36,11 @@ import okhttp3.sse.EventSourceListener;
 
 import com.skythinker.gptassistant.ChatManager.ChatMessage.ChatRole;
 import com.skythinker.gptassistant.ChatManager.ChatMessage;
+import com.unfbx.chatgpt.entity.chat.tool.ToolCallFunction;
+import com.unfbx.chatgpt.entity.chat.tool.ToolCalls;
+import com.unfbx.chatgpt.entity.chat.tool.ToolChoice;
+import com.unfbx.chatgpt.entity.chat.tool.Tools;
+import com.unfbx.chatgpt.entity.chat.tool.ToolsFunction;
 import com.unfbx.chatgpt.entity.whisper.WhisperResponse;
 
 public class ChatApiClient {
@@ -41,8 +48,14 @@ public class ChatApiClient {
     public interface OnReceiveListener {
         void onMsgReceive(String message);
         void onError(String message);
-        void onFunctionCall(String name, String arg);
+        void onFunctionCall(ArrayList<CallingFunction> functions);
         void onFinished(boolean completed);
+    }
+
+    public static class CallingFunction {
+        public String toolId = "";
+        public String name = "";
+        public String arguments = "";
     }
 
     String url = "";
@@ -54,10 +67,9 @@ public class ChatApiClient {
     OkHttpClient httpClient = null;
     OpenAiStreamClient chatGPT = null;
 
-    List<Functions> functions = new ArrayList<>();
+    List<Tools> functions = new ArrayList<>();
 
-    String callingFuncName = "";
-    String callingFuncArg = "";
+    ArrayList<CallingFunction> callingFunctions = new ArrayList<>();
 
     boolean isReasoning = false;
 
@@ -101,33 +113,56 @@ public class ChatApiClient {
                 } else if (message.role == ChatRole.USER) {
                     messageList.add(Message.builder().role(Message.Role.USER).content(message.contentText).build());
                 } else if (message.role == ChatRole.ASSISTANT) {
-                    if (message.functionName != null) {
-                        FunctionCall functionCall = FunctionCall.builder()
-                                .name(message.functionName)
-                                .arguments(message.contentText)
+                    if (message.toolCalls.size() > 0) {
+                        if(message.toolCalls.get(0).id != null) { // 用tool方式回复
+                            ArrayList<ToolCalls> toolCallsList = new ArrayList<>();
+                            for(ChatMessage.ToolCall toolCall : message.toolCalls) {
+                                ToolCallFunction functionCall = ToolCallFunction.builder()
+                                        .name(toolCall.functionName)
+                                        .arguments(toolCall.arguments)
+                                        .build();
+                                ToolCalls toolCalls = ToolCalls.builder()
+                                        .id(toolCall.id)
+                                        .type(Tools.Type.FUNCTION.getName())
+                                        .function(functionCall)
+                                        .build();
+                                toolCallsList.add(toolCalls);
+                            }
+                            messageList.add(Message.builder().role(Message.Role.ASSISTANT).toolCalls(toolCallsList).content("").build());
+                        } else { // 用function方式回复（历史遗留）
+                            ChatMessage.ToolCall toolCall = message.toolCalls.get(0);
+                            FunctionCall functionCall = FunctionCall.builder()
+                                .name(toolCall.functionName)
+                                .arguments(toolCall.arguments)
                                 .build();
-                        messageList.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).content("").build());
+                            messageList.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).content("").build());
+                        }
                     } else {
                         messageList.add(Message.builder().role(Message.Role.ASSISTANT)
                                 .content(message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", "")).build()); // 去除思维链内容
                     }
                 } else if (message.role == ChatRole.FUNCTION) {
-                    messageList.add(Message.builder().role(Message.Role.FUNCTION).name(message.functionName).content(message.contentText).build());
+                    ChatMessage.ToolCall toolCall = message.toolCalls.get(0);
+                    if(toolCall.id != null) { // 用tool方式回复
+                        messageList.add(Message.builder().role(Message.Role.TOOL).toolCallId(toolCall.id).name(toolCall.functionName).content(toolCall.content).build());
+                    } else { // 用function方式回复（历史遗留）
+                        messageList.add(Message.builder().role(Message.Role.FUNCTION).name(toolCall.functionName).content(toolCall.content).build());
+                    }
                 }
             }
 
             if (!functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
                 chatCompletion = ChatCompletion.builder()
                         .messages(messageList)
-                        .model(model)
-                        .functions(functions)
-                        .functionCall("auto")
+                        .model(model.replaceAll("\\*$","")) // 去掉自定义模型结尾的*号
+                        .tools(functions)
+                        .toolChoice(ToolChoice.Choice.AUTO.getName())
                         .temperature(temperature)
                         .build();
             } else {
                 chatCompletion = ChatCompletion.builder()
                         .messages(messageList)
-                        .model(model)
+                        .model(model.replaceAll("\\*$","")) // 去掉自定义模型结尾的*号
                         .temperature(temperature)
                         .build();
             }
@@ -140,7 +175,12 @@ public class ChatApiClient {
                             message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", ""); // 去除思维链内容
                     contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(contentText).build());
                 }
-                for(ChatMessage.Attachment attachment : message.attachments) {
+                for(ChatMessage.ToolCall toolCall : message.toolCalls) { // 处理函数调用
+                    if(toolCall.content != null) {
+                        contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(toolCall.content).build());
+                    }
+                }
+                for(ChatMessage.Attachment attachment : message.attachments) { // 处理附件
                     if(attachment.type == ChatMessage.Attachment.Type.IMAGE && GlobalUtils.checkVisionSupport(model)) {
                         ImageUrl imageUrl = ImageUrl.builder().url("data:image/jpeg;base64," + attachment.content).build();
                         contentList.add(Content.builder().type(Content.Type.IMAGE_URL.getName()).imageUrl(imageUrl).build());
@@ -153,17 +193,40 @@ public class ChatApiClient {
                 } else if (message.role == ChatRole.USER) {
                     messageList.add(MessagePicture.builder().role(Message.Role.USER).content(contentList).build());
                 } else if (message.role == ChatRole.ASSISTANT) {
-                    if (message.functionName != null) {
-                        FunctionCall functionCall = FunctionCall.builder()
-                                .name(message.functionName)
-                                .arguments(message.contentText)
-                                .build();
-                        messageList.add(MessagePicture.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
+                    if (message.toolCalls.size() > 0) {
+                        if(message.toolCalls.get(0).id != null) { // 用tool方式回复
+                            ArrayList<ToolCalls> toolCallsList = new ArrayList<>();
+                            for(ChatMessage.ToolCall toolCall : message.toolCalls) {
+                                ToolCallFunction functionCall = ToolCallFunction.builder()
+                                        .name(toolCall.functionName)
+                                        .arguments(toolCall.arguments)
+                                        .build();
+                                ToolCalls toolCalls = ToolCalls.builder()
+                                        .id(toolCall.id)
+                                        .type(Tools.Type.FUNCTION.getName())
+                                        .function(functionCall)
+                                        .build();
+                                toolCallsList.add(toolCalls);
+                            }
+                            messageList.add(MessagePicture.builder().role(Message.Role.ASSISTANT).toolCalls(toolCallsList).build());
+                        } else { // 用function方式回复（历史遗留）
+                            ChatMessage.ToolCall toolCall = message.toolCalls.get(0);
+                            FunctionCall functionCall = FunctionCall.builder()
+                                    .name(toolCall.functionName)
+                                    .arguments(toolCall.arguments)
+                                    .build();
+                            messageList.add(MessagePicture.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).build());
+                        }
                     } else {
                         messageList.add(MessagePicture.builder().role(Message.Role.ASSISTANT).content(contentList).build());
                     }
                 } else if (message.role == ChatRole.FUNCTION) {
-                    messageList.add(MessagePicture.builder().role(Message.Role.FUNCTION).name(message.functionName).content(contentList).build());
+                    ChatMessage.ToolCall toolCall = message.toolCalls.get(0);
+                    if(toolCall.id != null) { // 用tool方式回复
+                        messageList.add(MessagePicture.builder().role(Message.Role.TOOL).toolCallId(toolCall.id).name(toolCall.functionName).content(contentList).build());
+                    } else { // 用function方式回复（历史遗留）
+                        messageList.add(MessagePicture.builder().role(Message.Role.FUNCTION).name(toolCall.functionName).content(contentList).build());
+                    }
                 }
             }
 
@@ -171,8 +234,8 @@ public class ChatApiClient {
                 chatCompletion = ChatCompletionWithPicture.builder()
                         .messages(messageList)
                         .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
-                        .functions(functions)
-                        .functionCall("auto")
+                        .tools(functions)
+                        .toolChoice(ToolChoice.Choice.AUTO.getName())
                         .temperature(temperature)
                         .build();
             } else {
@@ -184,7 +247,7 @@ public class ChatApiClient {
             }
         }
 
-        callingFuncName = callingFuncArg = "";
+        callingFunctions.clear(); // 清空当前函数调用列表
 
         chatGPT.streamChatCompletion(chatCompletion, new EventSourceListener() { // GPT返回消息回调
             @Override
@@ -196,22 +259,29 @@ public class ChatApiClient {
             public void onEvent(EventSource eventSource, @Nullable String id, @Nullable String type, String data) {
                 if(data.equals("[DONE]")){ // 回复完成
                     Log.d("ChatApiClient", "onEvent: DONE");
-                    if(callingFuncName.isEmpty()) {
+                    if(callingFunctions.isEmpty()) {
                         listener.onFinished(true);
                     } else {
-                        listener.onFunctionCall(callingFuncName, callingFuncArg);
+                        listener.onFunctionCall(callingFunctions);
                     }
                 } else { // 正在回复
-//                    Log.d("ChatApiClient", "onEvent: " + data);
+                    Log.d("ChatApiClient", "onEvent: " + data);
                     JSONObject json = new JSONObject(data);
                     if(json.containsKey("choices") && json.getJSONArray("choices").size() > 0) {
                         JSONObject delta = ((JSONObject) json.getJSONArray("choices").get(0)).getJSONObject("delta");
                         if (delta != null) {
-                            if (delta.containsKey("function_call")) { // GPT请求函数调用
-                                JSONObject functionCall = delta.getJSONObject("function_call");
-                                if (functionCall.containsKey("name"))
-                                    callingFuncName = functionCall.getStr("name");
-                                callingFuncArg += functionCall.getStr("arguments");
+                            if (delta.containsKey("tool_calls")) { // GPT请求函数调用
+                                JSONObject toolCall = delta.getJSONArray("tool_calls").getJSONObject(0);
+                                JSONObject functionCall = toolCall.getJSONObject("function");
+                                if (toolCall.containsKey("id") && functionCall.containsKey("name")) {
+                                    CallingFunction callingFunction = new CallingFunction();
+                                    callingFunction.toolId = toolCall.getStr("id");
+                                    callingFunction.name = functionCall.getStr("name");
+                                    callingFunctions.add(callingFunction);
+                                }
+                                if (callingFunctions.size() > 0 && functionCall.containsKey("arguments")) {
+                                    callingFunctions.get(callingFunctions.size() - 1).arguments += functionCall.getStr("arguments");
+                                }
                             } else if (delta.containsKey("content") && delta.getStr("content") != null) { // GPT返回普通消息
                                 if (isReasoning) {
                                     isReasoning = false;
@@ -319,19 +389,28 @@ public class ChatApiClient {
                 .required(Arrays.asList(required))
                 .build();
 
-        Functions functions = Functions.builder()
-                .name(name)
-                .description(desc)
-                .parameters(parameters)
+        Tools tools = Tools.builder()
+                .type(Tools.Type.FUNCTION.getName())
+                .function(ToolsFunction.builder()
+                        .name(name)
+                        .description(desc)
+                        .parameters(parameters)
+                        .build())
                 .build();
 
-        this.functions.add(functions);
+//        Functions functions = Functions.builder()
+//                .name(name)
+//                .description(desc)
+//                .parameters(parameters)
+//                .build();
+
+        this.functions.add(tools);
     }
 
     // 删除一个函数
     public void removeFunction(String name) {
         for(int i = 0; i < this.functions.size(); i++) {
-            if(this.functions.get(i).getName().equals(name)) {
+            if(this.functions.get(i).getFunction().getName().equals(name)) {
                 this.functions.remove(i);
                 break;
             }

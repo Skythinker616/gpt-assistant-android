@@ -77,8 +77,8 @@ public class ChatApiClient {
         this.model = model;
         httpClient = new OkHttpClient.Builder()
             .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(180, java.util.concurrent.TimeUnit.SECONDS)
             .connectionSpecs(Arrays.asList(ConnectionSpec.CLEARTEXT, ConnectionSpec.COMPATIBLE_TLS))
             .build();
         setApiInfo(url, apiKey);
@@ -266,7 +266,7 @@ public class ChatApiClient {
                     if(json.containsKey("choices") && json.getJSONArray("choices").size() > 0) {
                         JSONObject delta = ((JSONObject) json.getJSONArray("choices").get(0)).getJSONObject("delta");
                         if (delta != null) {
-                            if (delta.containsKey("tool_calls")) { // GPT请求函数调用
+                            if (delta.containsKey("tool_calls") && delta.getJSONArray("tool_calls") != null) { // GPT请求函数调用
                                 JSONObject toolCall = delta.getJSONArray("tool_calls").getJSONObject(0);
                                 JSONObject functionCall = toolCall.getJSONObject("function");
                                 if (toolCall.containsKey("id") && functionCall.containsKey("name")) {

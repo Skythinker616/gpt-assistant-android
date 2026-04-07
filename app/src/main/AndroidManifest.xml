@@ -79,6 +79,9 @@
             android:name=".ui.TabDetailConfActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.MainActionConfActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.TabConfActivity"
             android:exported="true" />
         <activity

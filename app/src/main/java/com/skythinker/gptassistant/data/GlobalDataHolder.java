@@ -45,6 +45,7 @@ public class GlobalDataHolder {
     private static boolean useGitee;
     private static boolean agentMode;
     private static String latestVersion;
+    private static String mainActionLayout;
     private static SharedPreferences sp = null;
 
     public static void init(Context context) {
@@ -68,6 +69,7 @@ public class GlobalDataHolder {
         loadOnlineResourceSetting();
         loadAgentModeSetting();
         loadUpdateSetting();
+        loadMainActionLayout();
     }
 
     public static List<PromptTabData> getTabDataList() {
@@ -307,6 +309,21 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    public static void loadMainActionLayout() {
+        mainActionLayout = sp.getString("main_action_layout", "");
+    }
+
+    public static void saveMainActionLayout(String layoutJson) {
+        mainActionLayout = layoutJson;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString("main_action_layout", mainActionLayout);
+        editor.apply();
+    }
+
+    public static void resetMainActionLayout() {
+        saveMainActionLayout("");
+    }
+
     public static boolean getAsrUseWhisper() { return asrUseWhisper; }
 
     public static boolean getAsrUseGoogle() { return asrUseGoogle; }
@@ -356,4 +373,6 @@ public class GlobalDataHolder {
     public static boolean getAgentMode() { return agentMode; }
 
     public static String getLatestVersion() { return latestVersion; }
+
+    public static String getMainActionLayout() { return mainActionLayout; }
 }

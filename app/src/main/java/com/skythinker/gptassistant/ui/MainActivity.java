@@ -70,8 +70,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 import cn.hutool.json.JSONArray;
@@ -88,6 +90,9 @@ import com.skythinker.gptassistant.data.ChatManager.Conversation;
 import com.skythinker.gptassistant.service.AgentAccessibilityService;
 import com.skythinker.gptassistant.tool.DocumentParser;
 import com.skythinker.gptassistant.data.GlobalDataHolder;
+import com.skythinker.gptassistant.data.MainActionLayoutItem;
+import com.skythinker.gptassistant.data.MainActionRegistry;
+import com.skythinker.gptassistant.data.MainActionSpec;
 import com.skythinker.gptassistant.tool.GlobalUtils;
 import com.skythinker.gptassistant.tool.MarkdownRenderer;
 import com.skythinker.gptassistant.service.MyAccessbilityService;
@@ -111,7 +116,11 @@ public class MainActivity extends Activity {
     private ImageButton btSend, btAttachment;
     private ScrollView svChatArea;
     private LinearLayout llChatList;
+    private LinearLayout llPrimaryActionList;
+    private LinearLayout llSecondaryActionList;
+    private CardView cvMore;
     private PopupWindow pwMenu;
+    private final Map<String, CardView> mainActionButtonMap = new HashMap<>();
     private Handler handler;
     private MarkdownRenderer markdownRenderer;
     private long asrStartTime = 0;
@@ -228,6 +237,8 @@ public class MainActivity extends Activity {
         btAttachment = findViewById(R.id.bt_attachment);
         svChatArea = findViewById(R.id.sv_chat_list);
         llChatList = findViewById(R.id.ll_chat_list);
+        llPrimaryActionList = findViewById(R.id.ll_main_primary_actions);
+        cvMore = findViewById(R.id.cv_more);
 
         documentParser = new DocumentParser(this); // 初始化文档解析器
         handleShareIntent(getIntent()); // 处理分享的文本/图片
@@ -484,7 +495,7 @@ public class MainActivity extends Activity {
                             }
                         } else if (function.name.equals("exit_voice_chat")) {
                             if (multiVoice)
-                                runOnUiThread(() -> pwMenu.getContentView().findViewById(R.id.cv_voice_chat).performClick());
+                                runOnUiThread(() -> {toggleVoiceChat();});
                             processFunctionResult(function, "OK");
                         } else {
                             processFunctionResult(function, "Function not found.");
@@ -621,130 +632,13 @@ public class MainActivity extends Activity {
             return false;
         });
 
-        View menuView = LayoutInflater.from(this).inflate(R.layout.main_popup_menu, null);
-        pwMenu = new PopupWindow(menuView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
-        pwMenu.setOutsideTouchable(true);
+        initMainActionMenu();
 
-        // 连续对话按钮点击事件（切换连续对话开关状态）
-        (menuView.findViewById(R.id.cv_multi_chat)).setOnClickListener(view -> {
-            multiChat = !multiChat;
-            if(multiChat){
-                ((CardView) menuView.findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn_enabled));
-                GlobalUtils.showToast(this, R.string.toast_multi_chat_on, false);
-            }else{
-                ((CardView) menuView.findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn));
-                GlobalUtils.showToast(this, R.string.toast_multi_chat_off, false);
+        // 更多按钮仍然保留为固定入口，避免二级菜单被隐藏后没有打开方式。
+        cvMore.setOnClickListener(view -> {
+            if(cvMore.getVisibility() == View.VISIBLE) {
+                pwMenu.showAsDropDown(view, 0, 0);
             }
-        });
-
-        // 新建对话按钮点击事件
-        (findViewById(R.id.cv_new_chat)).setOnClickListener(view -> {
-            clearChatListView();
-
-            if(currentConversation != null &&
-                    ((multiChatList.size() > 0 && multiChatList.get(0).role != ChatRole.SYSTEM) || (multiChatList.size() > 1 && multiChatList.get(0).role == ChatRole.SYSTEM)) &&
-                    GlobalDataHolder.getAutoSaveHistory()) // 包含有效对话则保存当前对话
-                chatManager.addConversation(currentConversation);
-
-            currentConversation = new Conversation();
-            multiChatList = currentConversation.messages;
-        });
-
-        (findViewById(R.id.cv_new_chat)).performClick(); // 初始化对话列表
-
-        // TTS开关按钮点击事件（切换TTS开关状态）
-        (findViewById(R.id.cv_tts_off)).setOnClickListener(view -> {
-            ttsEnabled = !ttsEnabled;
-            if(ttsEnabled) {
-                ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off));
-                GlobalUtils.showToast(this, R.string.toast_tts_on, false);
-            }else{
-                ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
-                GlobalUtils.showToast(this, R.string.toast_tts_off, false);
-                tts.stop();
-            }
-        });
-
-        // 连续语音对话按钮点击事件（切换连续语音对话开关状态）
-        (menuView.findViewById(R.id.cv_voice_chat)).setOnClickListener(view -> {
-            if(!multiVoice && !ttsEnabled) { // 未开启TTS时不允许开启连续语音对话
-                GlobalUtils.showToast(this, R.string.toast_voice_chat_tts_off, false);
-                return;
-            }
-            multiVoice = !multiVoice;
-            if(multiVoice){
-                ((CardView) menuView.findViewById(R.id.cv_voice_chat)).setForeground(getDrawable(R.drawable.voice_chat_btn_enabled));
-                asrClient.setEnableAutoStop(true);
-//                chatApiClient.addFunction("exit_voice_chat", "this should be called when a conversation ends", "{}", new String[]{});
-                Intent intent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
-                LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-                GlobalUtils.showToast(this, R.string.toast_multi_voice_on, false);
-            } else {
-                ((CardView) menuView.findViewById(R.id.cv_voice_chat)).setForeground(getDrawable(R.drawable.voice_chat_btn));
-                asrClient.setEnableAutoStop(false);
-//                chatApiClient.removeFunction("exit_voice_chat");
-                Intent intent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_STOP");
-                LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-                GlobalUtils.showToast(this, R.string.toast_multi_voice_off, false);
-            }
-        });
-
-        // 联网按钮点击事件
-        (findViewById(R.id.cv_network)).setOnClickListener(view -> {
-            networkEnabled = !networkEnabled;
-            if(networkEnabled) {
-                ((CardView) findViewById(R.id.cv_network)).setForeground(getDrawable(R.drawable.network_btn_enabled));
-                GlobalUtils.showToast(this, R.string.toast_network_on, false);
-            }else{
-                ((CardView) findViewById(R.id.cv_network)).setForeground(getDrawable(R.drawable.network_btn));
-                GlobalUtils.showToast(this, R.string.toast_network_off, false);
-            }
-            setNetworkEnabled(networkEnabled);
-            GlobalDataHolder.saveFunctionSetting(networkEnabled, GlobalDataHolder.getWebMaxCharCount(), GlobalDataHolder.getOnlyLatestWebResult());
-        });
-
-        // Agent模式按钮点击事件
-        (findViewById(R.id.cv_agent_mode)).setOnClickListener(view -> {
-            agentMode = !agentMode;
-            if(agentMode) {
-                if(AgentAccessibilityService.isConnected()) {
-                    ((CardView) findViewById(R.id.cv_agent_mode)).setForeground(getDrawable(R.drawable.agent_btn_enabled));
-                    GlobalUtils.showToast(this, R.string.toast_agent_on, false);
-                }else{
-                    agentMode = false;
-                    GlobalUtils.showToast(this, R.string.toast_agent_accessibility_off, false);
-                    Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                    startActivity(intent);
-                }
-            }else{
-                ((CardView) findViewById(R.id.cv_agent_mode)).setForeground(getDrawable(R.drawable.agent_btn));
-                GlobalUtils.showToast(this, R.string.toast_agent_off, false);
-            }
-            setAgentModeEnabled(agentMode);
-            GlobalDataHolder.saveAgentModeSetting(agentMode);
-        });
-
-        // 历史按钮点击事件，跳转到历史记录页面
-        (menuView.findViewById(R.id.cv_history)).setOnClickListener(view -> {
-            pwMenu.dismiss();
-            Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
-            startActivityForResult(intent, 3);
-        });
-
-        // 设置按钮点击事件，跳转到设置页面
-        (menuView.findViewById(R.id.cv_settings)).setOnClickListener(view -> {
-            pwMenu.dismiss();
-            startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
-        });
-
-        // 关闭按钮点击事件，退出程序
-        (menuView.findViewById(R.id.cv_close)).setOnClickListener(view -> {
-            finish();
-        });
-
-        // 更多按钮点击事件，显示更多菜单
-        (findViewById(R.id.cv_more)).setOnClickListener(view -> {
-            pwMenu.showAsDropDown(view, 0, 0);
         });
 
         // 上方空白区域点击事件，退出程序
@@ -755,31 +649,30 @@ public class MainActivity extends Activity {
         // 用户设置为启动时开启连续对话
         if(GlobalDataHolder.getDefaultEnableMultiChat()){
             multiChat = true;
-            ((CardView) menuView.findViewById(R.id.cv_multi_chat)).setForeground(getDrawable(R.drawable.chat_btn_enabled));
         }
 
         // 用户设置为启动时开启TTS
         if(!GlobalDataHolder.getDefaultEnableTts()){
             ttsEnabled = false;
-            ((CardView) findViewById(R.id.cv_tts_off)).setForeground(getDrawable(R.drawable.tts_off_enable));
         }
 
         // 上次开启了联网
         if(GlobalDataHolder.getEnableInternetAccess()){
             networkEnabled = true;
-            ((CardView) findViewById(R.id.cv_network)).setForeground(getDrawable(R.drawable.network_btn_enabled));
         }
 
         // 上次开启了Agent模式
         if(GlobalDataHolder.getAgentMode()){
             if(AgentAccessibilityService.isConnected()){
                 agentMode = true;
-                ((CardView) findViewById(R.id.cv_agent_mode)).setForeground(getDrawable(R.drawable.agent_btn_enabled));
             }else{
                 agentMode = false;
                 GlobalDataHolder.saveAgentModeSetting(false);
             }
         }
+
+        renderMainActionButtons();
+        startNewChat(); // 初始化对话列表
 
         // 处理选中的模板
         if(GlobalDataHolder.getSelectedTab() != -1 && GlobalDataHolder.getSelectedTab() < GlobalDataHolder.getTabDataList().size())
@@ -804,7 +697,7 @@ public class MainActivity extends Activity {
                     Toast.makeText(MainActivity.this, getString(R.string.text_asr_error_prefix) + msg, Toast.LENGTH_LONG).show();
                 }
                 if(multiVoice) {
-                    (menuView.findViewById(R.id.cv_voice_chat)).performClick();
+                    toggleVoiceChat();
                 }
             }
 
@@ -956,6 +849,237 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 初始化“更多”弹出菜单，后续二级按钮全部动态渲染到这个容器里
+    private void initMainActionMenu() {
+        View menuView = LayoutInflater.from(this).inflate(R.layout.main_popup_menu, null);
+        llSecondaryActionList = menuView.findViewById(R.id.ll_main_secondary_actions);
+        pwMenu = new PopupWindow(menuView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        pwMenu.setOutsideTouchable(true);
+    }
+
+    // 根据用户配置和默认规则重建主界面按钮
+    private void renderMainActionButtons() {
+        llPrimaryActionList.removeAllViews();
+        llSecondaryActionList.removeAllViews();
+        mainActionButtonMap.clear();
+
+        int primaryCount = 0;
+        int secondaryCount = 0;
+        List<MainActionLayoutItem> actionItems = MainActionRegistry.getResolvedLayout(GlobalDataHolder.getMainActionLayout());
+        for (MainActionLayoutItem item : actionItems) {
+            if(item.placement == MainActionRegistry.PLACEMENT_HIDDEN) {
+                continue;
+            }
+            MainActionSpec spec = MainActionRegistry.findSpec(item.actionId);
+            if(spec == null) {
+                continue;
+            }
+
+            LinearLayout parent = llSecondaryActionList;
+            boolean addToPrimary = item.placement == MainActionRegistry.PLACEMENT_PRIMARY
+                    && primaryCount < MainActionRegistry.MAX_PRIMARY_ACTION_COUNT;
+            if(addToPrimary) {
+                parent = llPrimaryActionList;
+                primaryCount++;
+            } else {
+                secondaryCount++;
+            }
+            addMainActionButton(parent, spec);
+        }
+
+        cvMore.setVisibility(secondaryCount > 0 ? View.VISIBLE : View.GONE);
+        if(secondaryCount == 0 && pwMenu.isShowing()) {
+            pwMenu.dismiss();
+        }
+    }
+
+    private void addMainActionButton(LinearLayout parent, MainActionSpec spec) {
+        CardView button = (CardView) LayoutInflater.from(this).inflate(R.layout.main_action_button, parent, false);
+        button.setCardBackgroundColor(Color.TRANSPARENT);
+        button.setForeground(ContextCompat.getDrawable(this, getMainActionForegroundRes(spec.id)));
+        button.setContentDescription(getString(spec.titleRes));
+        button.setOnClickListener(view -> handleMainActionClick(spec.id));
+        parent.addView(button);
+        mainActionButtonMap.put(spec.id, button);
+    }
+
+    private void handleMainActionClick(String actionId) {
+        switch (actionId) {
+            case MainActionRegistry.ACTION_NEW_CHAT:
+                startNewChat();
+                break;
+            case MainActionRegistry.ACTION_TTS:
+                toggleTts();
+                break;
+            case MainActionRegistry.ACTION_NETWORK:
+                toggleNetwork();
+                break;
+            case MainActionRegistry.ACTION_AGENT:
+                toggleAgentMode();
+                break;
+            case MainActionRegistry.ACTION_MULTI_CHAT:
+                toggleMultiChat();
+                break;
+            case MainActionRegistry.ACTION_VOICE_CHAT:
+                toggleVoiceChat();
+                break;
+            case MainActionRegistry.ACTION_HISTORY:
+                openHistory();
+                break;
+            case MainActionRegistry.ACTION_SETTINGS:
+                openSettings();
+                break;
+            case MainActionRegistry.ACTION_CLOSE:
+                closeMain();
+                break;
+        }
+    }
+
+    private void refreshMainActionButtonState(String actionId) {
+        CardView button = mainActionButtonMap.get(actionId);
+        if(button == null) {
+            return;
+        }
+        button.setForeground(ContextCompat.getDrawable(this, getMainActionForegroundRes(actionId)));
+    }
+
+    private int getMainActionForegroundRes(String actionId) {
+        MainActionSpec spec = MainActionRegistry.findSpec(actionId);
+        if(spec == null) {
+            return R.drawable.more_btn;
+        }
+        if(spec.alternateIconRes == 0) {
+            return spec.normalIconRes;
+        }
+        switch (actionId) {
+            case MainActionRegistry.ACTION_TTS:
+                return ttsEnabled ? spec.normalIconRes : spec.alternateIconRes;
+            case MainActionRegistry.ACTION_NETWORK:
+                return networkEnabled ? spec.alternateIconRes : spec.normalIconRes;
+            case MainActionRegistry.ACTION_AGENT:
+                return agentMode ? spec.alternateIconRes : spec.normalIconRes;
+            case MainActionRegistry.ACTION_MULTI_CHAT:
+                return multiChat ? spec.alternateIconRes : spec.normalIconRes;
+            case MainActionRegistry.ACTION_VOICE_CHAT:
+                return multiVoice ? spec.alternateIconRes : spec.normalIconRes;
+            default:
+                return spec.normalIconRes;
+        }
+    }
+
+    // 新建会话一个会话
+    private void startNewChat() {
+        if(pwMenu.isShowing()) {
+            pwMenu.dismiss();
+        }
+        clearChatListView();
+
+        if(currentConversation != null &&
+                ((multiChatList.size() > 0 && multiChatList.get(0).role != ChatRole.SYSTEM) || (multiChatList.size() > 1 && multiChatList.get(0).role == ChatRole.SYSTEM)) &&
+                GlobalDataHolder.getAutoSaveHistory()) {
+            chatManager.addConversation(currentConversation);
+        }
+
+        currentConversation = new Conversation();
+        multiChatList = currentConversation.messages;
+    }
+
+    private void toggleTts() {
+        ttsEnabled = !ttsEnabled;
+        refreshMainActionButtonState(MainActionRegistry.ACTION_TTS);
+        if(ttsEnabled) {
+            GlobalUtils.showToast(this, R.string.toast_tts_on, false);
+        }else{
+            GlobalUtils.showToast(this, R.string.toast_tts_off, false);
+            tts.stop();
+        }
+    }
+
+    private void toggleMultiChat() {
+        multiChat = !multiChat;
+        refreshMainActionButtonState(MainActionRegistry.ACTION_MULTI_CHAT);
+        if(multiChat) {
+            GlobalUtils.showToast(this, R.string.toast_multi_chat_on, false);
+        }else{
+            GlobalUtils.showToast(this, R.string.toast_multi_chat_off, false);
+        }
+    }
+
+    private void toggleVoiceChat() {
+        if(!multiVoice && !ttsEnabled) { // 未开启TTS时不允许开启连续语音对话
+            GlobalUtils.showToast(this, R.string.toast_voice_chat_tts_off, false);
+            return;
+        }
+        multiVoice = !multiVoice;
+        refreshMainActionButtonState(MainActionRegistry.ACTION_VOICE_CHAT);
+        if(multiVoice){
+            asrClient.setEnableAutoStop(true);
+//            chatApiClient.addFunction("exit_voice_chat", "this should be called when a conversation ends", "{}", new String[]{});
+            Intent intent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_START");
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+            GlobalUtils.showToast(this, R.string.toast_multi_voice_on, false);
+        } else {
+            asrClient.setEnableAutoStop(false);
+//            chatApiClient.removeFunction("exit_voice_chat");
+            Intent intent = new Intent("com.skythinker.gptassistant.KEY_SPEECH_STOP");
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+            GlobalUtils.showToast(this, R.string.toast_multi_voice_off, false);
+        }
+    }
+
+    private void toggleNetwork() {
+        networkEnabled = !networkEnabled;
+        refreshMainActionButtonState(MainActionRegistry.ACTION_NETWORK);
+        if(networkEnabled) {
+            GlobalUtils.showToast(this, R.string.toast_network_on, false);
+        }else{
+            GlobalUtils.showToast(this, R.string.toast_network_off, false);
+        }
+        setNetworkEnabled(networkEnabled);
+        GlobalDataHolder.saveFunctionSetting(networkEnabled, GlobalDataHolder.getWebMaxCharCount(), GlobalDataHolder.getOnlyLatestWebResult());
+    }
+
+    private void toggleAgentMode() {
+        agentMode = !agentMode;
+        if(agentMode) {
+            if(AgentAccessibilityService.isConnected()) {
+                GlobalUtils.showToast(this, R.string.toast_agent_on, false);
+            }else{
+                agentMode = false;
+                GlobalUtils.showToast(this, R.string.toast_agent_accessibility_off, false);
+                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                startActivity(intent);
+            }
+        }else{
+            GlobalUtils.showToast(this, R.string.toast_agent_off, false);
+        }
+        refreshMainActionButtonState(MainActionRegistry.ACTION_AGENT);
+        setAgentModeEnabled(agentMode);
+        GlobalDataHolder.saveAgentModeSetting(agentMode);
+    }
+
+    private void openHistory() {
+        if(pwMenu.isShowing()) {
+            pwMenu.dismiss();
+        }
+        Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+        startActivityForResult(intent, 3);
+    }
+
+    private void openSettings() {
+        if(pwMenu.isShowing()) {
+            pwMenu.dismiss();
+        }
+        startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
+    }
+
+    private void closeMain() {
+        if(pwMenu.isShowing()) {
+            pwMenu.dismiss();
+        }
+        finish();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -989,6 +1113,7 @@ public class MainActivity extends Activity {
             }
 
             setNetworkEnabled(currentTemplateParams.getBool("network", GlobalDataHolder.getEnableInternetAccess())); // 更新GPT联网设置
+            renderMainActionButtons(); // 设置页可能改了一级/二级布局，返回时需要重建按钮
         } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) { // 从相册或相机返回
             Uri uri = requestCode == 1 ? photoUri : data.getData(); // 获取图片URI
             addAttachment(uri);
@@ -1096,7 +1221,7 @@ public class MainActivity extends Activity {
                 if(finalI != selectedTab) {
                     switchToTemplate(finalI);
                     if(multiChatList.size() > 0)
-                        (findViewById(R.id.cv_new_chat)).performClick();
+                        startNewChat();
                 }
             });
             tabList.addView(tabBtn);
@@ -1425,7 +1550,7 @@ public class MainActivity extends Activity {
         boolean isMultiChat = currentTemplateParams.getBool("chat", multiChat);
 
         if(!isMultiChat) { // 若为单次对话模式则新建一个聊天
-            ((CardView) findViewById(R.id.cv_new_chat)).performClick();
+            startNewChat();
         }
 
         // 处理提问文本内容
@@ -1835,7 +1960,7 @@ public class MainActivity extends Activity {
 
     // 将聊天记录恢复到界面上
     private void reloadConversation(Conversation conversation) {
-        (findViewById(R.id.cv_new_chat)).performClick(); // 新建一个聊天
+        startNewChat(); // 新建一个聊天
 
         currentConversation = conversation;
         multiChatList = conversation.messages;

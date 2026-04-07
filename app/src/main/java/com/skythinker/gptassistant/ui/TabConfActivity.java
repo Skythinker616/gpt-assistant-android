@@ -347,6 +347,11 @@ public class TabConfActivity extends Activity {
             startActivity(intent); // 跳转到系统的TTS设置界面
         });
 
+        // 主界面按钮管理独立成子页面，避免把当前设置页继续堆得更复杂。
+        ((View) findViewById(R.id.tv_main_action_conf).getParent()).setOnClickListener(view -> {
+            startActivity(new Intent(TabConfActivity.this, MainActionConfActivity.class));
+        });
+
         ((Switch) findViewById(R.id.sw_enable_internet_conf)).setChecked(GlobalDataHolder.getEnableInternetAccess());
 //        setInternetItemHidden(!GlobalDataHolder.getEnableInternetAccess());
         ((Switch) findViewById(R.id.sw_enable_internet_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {

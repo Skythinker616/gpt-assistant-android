@@ -54,6 +54,7 @@ dependencies {
     implementation "io.noties.markwon:core:$markwon_version"
     implementation "io.noties.markwon:ext-latex:$markwon_version"
     implementation "io.noties.markwon:ext-tables:$markwon_version"
+    implementation "io.noties.markwon:html:$markwon_version"
     implementation "io.noties.markwon:linkify:$markwon_version"
     implementation "io.noties.markwon:image:$markwon_version"
     implementation "io.noties.markwon:syntax-highlight:$markwon_version"

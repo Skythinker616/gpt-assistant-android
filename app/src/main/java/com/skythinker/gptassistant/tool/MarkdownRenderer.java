@@ -36,6 +36,7 @@ import io.noties.markwon.ext.tables.TablePlugin;
 import io.noties.markwon.image.ImageSize;
 import io.noties.markwon.image.ImageSizeResolverDef;
 import io.noties.markwon.image.ImagesPlugin;
+import io.noties.markwon.html.HtmlPlugin;
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin;
 import io.noties.markwon.linkify.LinkifyPlugin;
 import io.noties.markwon.movement.MovementMethodPlugin;
@@ -120,6 +121,10 @@ public class MarkdownRenderer {
                 .usePlugin(ImagesPlugin.create())
                 .usePlugin(MarkwonInlineParserPlugin.create())
                 .usePlugin(LinkifyPlugin.create())
+                .usePlugin(HtmlPlugin.create(plugin -> {
+                    plugin.excludeDefaults(true); // 仅启用details折叠，避免影响其他原始HTML显示
+                    plugin.addHandler(new DetailsTagHandler());
+                }))
                 .usePlugin(new AbstractMarkwonPlugin() {
                     @NonNull
                     @Override
@@ -134,18 +139,23 @@ public class MarkdownRenderer {
                             // 为图片添加指向同一URL的链接
                             String regexImage = "!\\[(.*?)\\]\\((.*?)\\)"; // 匹配“![...](...)”
                             String imageReplacement = "[$0]($2)"; // 替换为“[![...](...)](...)”
-                            // 将开头的<think>内容替换为代码块
-                            String regexThinkComplete = "(?s)^<think>\\n(.*?)\\n</think>\\n"; // 匹配开头的“<think>...</think>”
-                            String thinkCompleteReplacement = "```text\n" + context.getString(R.string.text_think_header) + "\n\n$1\n```\n"; // 替换为代码块
-                            String regexThinkStart = "(?s)^<think>\\n(.*?)$"; // 匹配开头的“<think>...”到结尾
-                            String thinkStartReplacement = "```text\n" + context.getString(R.string.text_thinking_header) + "\n\n$1\n```\n"; // 替换为代码块
+                            // 将所有已闭合的<think>替换为details，保留多次思考穿插输出的顺序
+                            String regexThinkComplete = "(?s)<think>\\n(.*?)\\n</think>(?:\\n|$)";
+                            String thinkCompleteReplacement = "<details>\n<summary>"
+                                    + context.getString(R.string.text_think_complete_summary)
+                                    + "</summary>\n<p>\n\n$1\n</p>\n</details>\n";
+                            String regexThinkStart = "(?s)<think>\\n(.*)$"; // 匹配最后一个未闭合的“<think>...”到结尾
+                            // 这里的<p>换行是Markwon处理details内Markdown所必需的格式
+                            String thinkStartReplacement = "<details open>\n<summary>"
+                                    + context.getString(R.string.text_thinking_summary)
+                                    + "</summary>\n<p>\n\n$1\n</p>\n</details>\n";
                             // 进行替换
                             sepList.set(i, sepList.get(i).replaceAll(regexDollar, latexReplacement)
                                     .replaceAll(regexBrackets, latexReplacement)
                                     .replaceAll(regexParentheses, latexReplacement)
                                     .replaceAll(regexImage, imageReplacement)
                                     .replaceAll(regexThinkComplete, thinkCompleteReplacement)
-                                    .replaceAll(regexThinkStart, thinkStartReplacement));
+                                    .replaceFirst(regexThinkStart, thinkStartReplacement));
                         }
                         return String.join("```", sepList);
                     }
@@ -196,7 +206,8 @@ public class MarkdownRenderer {
     public void render(TextView textView, String markdown) {
         if(textView != null && markdown != null) {
             try {
-                markwon.setMarkdown(textView, markdown);
+                Spanned spanned = markwon.toMarkdown(markdown);
+                DetailsTagHandler.renderParsedMarkdown(markwon, textView, spanned);
 //                Log.d("MarkdownRenderer", "render: " + markdown);
             } catch (Exception e) {
                 e.printStackTrace();

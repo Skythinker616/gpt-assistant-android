@@ -68,7 +68,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -123,12 +122,15 @@ public class MainActivity extends Activity {
 
     ChatApiClient chatApiClient = null;
     private String chatApiBuffer = "";
+    private String pendingAssistantSegmentBuffer = "";
+    private ChatMessage currentReplyAnchorMessage = null;
 
     private TextToSpeech tts = null;
     private boolean ttsEnabled = true;
     final private List<String> ttsSentenceSeparator = Arrays.asList("。", ".", "？", "?", "！", "!", "……", "\n"); // 用于为TTS断句
     private int ttsSentenceEndIndex = 0;
     private String ttsLastId = "";
+    private long lastReplyRenderTime = 0;
 
     private boolean multiChat = false;
     ChatManager chatManager = null;
@@ -276,17 +278,17 @@ public class MainActivity extends Activity {
                 GlobalDataHolder.getGptApiKey(),
                 GlobalDataHolder.getGptModel(),
                 new ChatApiClient.OnReceiveListener() {
-                    private long lastRenderTime = 0;
-
                     @Override
                     public void onMsgReceive(String message) { // 收到GPT回复（增量）
                         chatApiBuffer += message;
-                        if(System.currentTimeMillis() - lastRenderTime > 100) { // 限制最高渲染频率10Hz
+                        pendingAssistantSegmentBuffer += message;
+                        if(System.currentTimeMillis() - lastReplyRenderTime > 100) { // 限制最高渲染频率10Hz
                             handler.post(() -> {
                                 boolean isBottom = svChatArea.getChildAt(0).getBottom()
                                         <= svChatArea.getHeight() + svChatArea.getScrollY(); // 判断消息布局是否在底部
 
                                 markdownRenderer.render(tvGptReply, chatApiBuffer); // 渲染Markdown
+                                tvGptReply.requestLayout();
 
                                 if (isBottom) {
                                     scrollChatAreaToBottom(); // 渲染前在底部则渲染后滚动到底部
@@ -319,46 +321,31 @@ public class MainActivity extends Activity {
                                 }
                             });
 
-                            lastRenderTime = System.currentTimeMillis();
+                            lastReplyRenderTime = System.currentTimeMillis();
                         }
                     }
 
                     @Override
                     public void onFinished(boolean completed) { // GPT回复完成
                         handler.post(() -> {
-                            String referenceStr = "\n\n" + getString(R.string.text_ref_web_prefix);
-                            int referenceCount = 0;
-                            if(completed) { // 如果是完整回复则添加参考网页
-                                int questionIndex = multiChatList.size() - 1;
-                                while(questionIndex >= 0 && multiChatList.get(questionIndex).role != ChatRole.USER) { // 找到上一个提问消息
-                                    questionIndex--;
-                                }
-                                for(int i = questionIndex + 1; i < multiChatList.size(); i++) { // 依次检查函数调用，并获取网页URL
-                                    if(multiChatList.get(i).role == ChatRole.FUNCTION
-                                        && multiChatList.get(i-1).role == ChatRole.ASSISTANT
-                                        && multiChatList.get(i-1).toolCalls.size() > 0) {
-                                        for(ChatMessage.ToolCall toolCall : multiChatList.get(i-1).toolCalls) {
-                                            if(toolCall.functionName.equals("get_html_text")) {
-                                                String url = new JSONObject(toolCall.arguments).getStr("url");
-                                                referenceStr += String.format("[[%s]](%s) ", ++referenceCount, url);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                             try {
                                 markdownRenderer.render(tvGptReply, chatApiBuffer); // 渲染Markdown
+                                tvGptReply.requestLayout();
                                 String ttsText = tvGptReply.getText().toString();
                                 if(currentTemplateParams.getBool("speak", ttsEnabled) && ttsText.length() > ttsSentenceEndIndex) { // 如果TTS开启则朗读剩余文本
                                     String id = UUID.randomUUID().toString();
                                     tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null, id);
                                     ttsLastId = id;
                                 }
-                                if(referenceCount > 0)
-                                    chatApiBuffer += referenceStr; // 添加参考网页
-                                multiChatList.add(new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer)); // 保存回复内容到聊天数据列表
-                                ((LinearLayout) tvGptReply.getParent()).setTag(multiChatList.get(multiChatList.size() - 1)); // 绑定该聊天数据到布局
-                                markdownRenderer.render(tvGptReply, chatApiBuffer); // 再次渲染Markdown添加参考网页
+                                if(!pendingAssistantSegmentBuffer.isEmpty()) { // 仅保存自上个tool边界之后的新assistant文本
+                                    ChatMessage assistantMessage = new ChatMessage(ChatRole.ASSISTANT).setText(pendingAssistantSegmentBuffer);
+                                    multiChatList.add(assistantMessage);
+                                    currentReplyAnchorMessage = assistantMessage;
+                                    if(tvGptReply.getParent() instanceof LinearLayout) {
+                                        ((LinearLayout) tvGptReply.getParent()).setTag(currentReplyAnchorMessage);
+                                    }
+                                    pendingAssistantSegmentBuffer = "";
+                                }
                                 btSend.setImageResource(R.drawable.send_btn);
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -387,7 +374,6 @@ public class MainActivity extends Activity {
                                 JSONObject argJson = new JSONObject(function.arguments);
                                 String url = argJson.getStr("url"); // 获取URL
                                 runOnUiThread(() -> {
-                                    markdownRenderer.render(tvGptReply, String.format(getString(R.string.text_visiting_web_prefix) + "[%s](%s)", URLDecoder.decode(url), url));
                                     webScraper.load(url, new WebScraper.Callback() { // 抓取网页内容
                                         @Override
                                         public void onLoadResult(String result) {
@@ -506,30 +492,76 @@ public class MainActivity extends Activity {
                         }
                     }
                     private void processFunctionResult(ChatApiClient.CallingFunction function, String result) {
-                        Log.d("MainActivity", "function result: " + function.name);
-                        Log.d("MainActivity", "function result: " + result);
-                        multiChatList.add(new ChatMessage(ChatRole.FUNCTION).addFunctionCall(function.toolId, function.name, function.arguments, result));
-                        callingFunctions.remove(function); // 从函数调用列表中移除已完成的函数
-                        if(callingFunctions.size() == 0) { // 所有函数调用完成，发送给GPT
-                            handler.post(() -> sendChatList(true));
-                        } else {
-                            handler.post(() -> callFunction(callingFunctions.get(0))); // 继续处理下一个函数调用
-                        }
+                        handler.post(() -> {
+                            Log.d("MainActivity", "function result: " + function.name);
+                            Log.d("MainActivity", "function result: " + result);
+                            ChatMessage functionMessage = new ChatMessage(ChatRole.FUNCTION).addFunctionCall(function.toolId, function.name, function.arguments, result);
+                            multiChatList.add(functionMessage);
+                            currentReplyAnchorMessage = functionMessage;
+                            if(tvGptReply != null && tvGptReply.getParent() instanceof LinearLayout) {
+                                ((LinearLayout) tvGptReply.getParent()).setTag(currentReplyAnchorMessage);
+                            }
+                            callingFunctions.remove(function); // 从函数调用列表中移除已完成的函数
+                            if(callingFunctions.size() == 0) { // 所有函数调用完成，发送给GPT
+                                lastReplyRenderTime = 0;
+                                sendChatList();
+                            } else {
+                                callFunction(callingFunctions.get(0)); // 继续处理下一个函数调用
+                            }
+                        });
                     }
 
                     @Override
                     public void onFunctionCall(ArrayList<ChatApiClient.CallingFunction> functions) { // 收到函数调用请求
-                        ChatMessage assistantMessage = new ChatMessage(ChatRole.ASSISTANT);
-                        for(ChatApiClient.CallingFunction function : functions) {
-                            Log.d("FunctionCall", String.format("%s: %s", function.name, function.arguments));
-                            assistantMessage.addFunctionCall(function.toolId, function.name, function.arguments, null);
-                        }
-                        multiChatList.add(assistantMessage); // 保存请求到聊天数据列表
+                        handler.post(() -> {
+                            if(!pendingAssistantSegmentBuffer.isEmpty()) { // 先保存tool边界前的assistant文本
+                                ChatMessage assistantTextMessage = new ChatMessage(ChatRole.ASSISTANT).setText(pendingAssistantSegmentBuffer);
+                                multiChatList.add(assistantTextMessage);
+                                currentReplyAnchorMessage = assistantTextMessage;
+                                if(tvGptReply != null && tvGptReply.getParent() instanceof LinearLayout) {
+                                    ((LinearLayout) tvGptReply.getParent()).setTag(currentReplyAnchorMessage);
+                                }
+                            }
+                            ChatMessage assistantMessage = new ChatMessage(ChatRole.ASSISTANT);
+                            for(ChatApiClient.CallingFunction function : functions) {
+                                Log.d("FunctionCall", String.format("%s: %s", function.name, function.arguments));
+                                assistantMessage.addFunctionCall(function.toolId, function.name, function.arguments, null);
+                            }
+                            multiChatList.add(assistantMessage); // 保存请求到聊天数据列表
+                            currentReplyAnchorMessage = assistantMessage;
+                            if(tvGptReply != null && tvGptReply.getParent() instanceof LinearLayout) {
+                                ((LinearLayout) tvGptReply.getParent()).setTag(currentReplyAnchorMessage);
+                            }
 
-                        callingFunctions.clear();
-                        callingFunctions.addAll(functions); // 保存函数调用列表（浅拷贝）
+                            pendingAssistantSegmentBuffer = "";
+                            for(ChatApiClient.CallingFunction function : functions) { // 仅向UI追加提示，不写入assistant文本分段
+                                if(!chatApiBuffer.isEmpty() && !chatApiBuffer.endsWith("\n")) {
+                                    chatApiBuffer += "\n\n";
+                                }
+                                if(function.name.equals("get_html_text")) {
+                                    try {
+                                        String url = new JSONObject(function.arguments).getStr("url");
+                                        chatApiBuffer += formatWebReferenceNotice(url) + "\n\n";
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                } else {
+									chatApiBuffer += String.format(getString(R.string.text_tool_call_notice_format), function.name) + "\n\n";
+								}
+                            }
+                            boolean isBottom = svChatArea.getChildAt(0).getBottom()
+                                    <= svChatArea.getHeight() + svChatArea.getScrollY();
+                            markdownRenderer.render(tvGptReply, chatApiBuffer);
+                            tvGptReply.requestLayout();
+                            if(isBottom) {
+                                scrollChatAreaToBottom();
+                            }
 
-                        callFunction(callingFunctions.get(0)); // 处理第一个函数调用
+                            callingFunctions.clear();
+                            callingFunctions.addAll(functions); // 保存函数调用列表（浅拷贝）
+
+                            callFunction(callingFunctions.get(0)); // 处理第一个函数调用
+                        });
                     }
                 });
 
@@ -890,6 +922,19 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String formatWebReferenceNotice(String url) {
+        String displayHost = url;
+        try {
+            String host = Uri.parse(url).getHost();
+            if(host != null && host.length() > 0) {
+                displayHost = host.startsWith("www.") && host.length() > 4 ? host.substring(4) : host;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return String.format(getString(R.string.text_ref_web_notice_format), displayHost, url);
+    }
+
     // 设置是否启用Agent模式
     private void setAgentModeEnabled(boolean enabled) {
         if(enabled) {
@@ -1165,7 +1210,7 @@ public class MainActivity extends Activity {
         ViewGroup.MarginLayoutParams iconParams = new ViewGroup.MarginLayoutParams(dpToPx(30), dpToPx(30)); // 头像布局参数
         iconParams.setMargins(dpToPx(4), dpToPx(12), dpToPx(4), dpToPx(12));
 
-        ViewGroup.MarginLayoutParams contentParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); // 内容布局参数
+        LinearLayout.LayoutParams contentParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1); // 内容布局参数
         contentParams.setMargins(dpToPx(4), dpToPx(15), dpToPx(4), dpToPx(15));
 
         LinearLayout.LayoutParams popupIconParams = new LinearLayout.LayoutParams(dpToPx(30), dpToPx(30)); // 弹出的操作按钮布局参数
@@ -1245,6 +1290,10 @@ public class MainActivity extends Activity {
         tvContent.setTextSize(16);
         tvContent.setTextColor(Color.BLACK);
         tvContent.setLayoutParams(contentParams);
+        tvContent.setSingleLine(false);
+        tvContent.setMaxLines(Integer.MAX_VALUE);
+        tvContent.setHorizontallyScrolling(false);
+        tvContent.setVerticalScrollBarEnabled(false);
         tvContent.setTextIsSelectable(true);
         tvContent.setMovementMethod(LinkMovementMethod.getInstance());
 
@@ -1265,12 +1314,20 @@ public class MainActivity extends Activity {
             ChatMessage chat = (ChatMessage) llOuter.getTag(); // 获取布局上绑定的聊天记录数据
             if(chat != null) {
                 int index = multiChatList.indexOf(chat);
-                multiChatList.remove(chat);
-                while(--index > 0 && (multiChatList.get(index).role == ChatRole.FUNCTION
-                        || (multiChatList.get(index).role == ChatRole.ASSISTANT && multiChatList.get(index).toolCalls.size() > 0))) // 将上方ToolCall也删除
-                    multiChatList.remove(index);
+                if(chat.role == ChatRole.USER) {
+                    multiChatList.remove(chat);
+                } else {
+                    while(index >= 0 && multiChatList.get(index).role != ChatRole.USER && multiChatList.get(index).role != ChatRole.SYSTEM) {
+                        multiChatList.remove(index);
+                        index--;
+                    }
+                }
             }
             if(tvContent == tvGptReply) { // 删除的是GPT正在回复的消息框，停止回复和TTS
+                chatApiBuffer = "";
+                pendingAssistantSegmentBuffer = "";
+                currentReplyAnchorMessage = null;
+                lastReplyRenderTime = 0;
                 if(chatApiClient.isStreaming())
                     chatApiClient.stop();
                 tts.stop();
@@ -1445,11 +1502,15 @@ public class MainActivity extends Activity {
         scrollChatAreaToBottom();
 
         chatApiBuffer = "";
+        pendingAssistantSegmentBuffer = "";
+        currentReplyAnchorMessage = null;
+        lastReplyRenderTime = 0;
         ttsSentenceEndIndex = 0;
         if (BuildConfig.DEBUG && userInput.startsWith("#markdowndebug\n")) { // Markdown渲染测试
             markdownRenderer.render(tvGptReply, userInput.replace("#markdowndebug\n", ""));
         } else {
-            sendChatList(false);
+            chatApiClient.resetReasoningState();
+            sendChatList();
             selectedAttachments.clear();
             btSend.setImageResource(R.drawable.cancel_btn);
             updateAttachmentButton(); // 更新附件按钮状态
@@ -1457,7 +1518,7 @@ public class MainActivity extends Activity {
     }
 
     // 预处理并发送聊天列表给GPT
-    void sendChatList(boolean isFunctionReply) {
+    void sendChatList() {
         MessageList chatList = new MessageList();
         for(ChatMessage message : multiChatList) { // 深拷贝聊天记录
             chatList.add(message.clone());
@@ -1484,35 +1545,31 @@ public class MainActivity extends Activity {
                 String functionName = message.toolCalls.get(0).functionName;
                 if(functionName.equals("get_widget_tree") || functionName.equals("widget_action")) {
                     foundLastWidgetMessageCount++;
-                    if(foundLastWidgetMessageCount > 1) { // 只保留最后1条手机屏幕信息
+                    if(foundLastWidgetMessageCount > 2) { // 只保留最后2条手机屏幕信息
                         message.toolCalls.get(0).content = "";
                     }
                 }
             }
         }
 
-        // 向上查找第一个USER之前的所有普通聊天消息，超过最大限制则删除之前的(不包括system)
-        int normalChatCount = -1;
-        for(int i = chatList.size() - 1; i >= 0; i--) {
-            ChatMessage message = chatList.get(i);
-            if(normalChatCount >= 0 &&
-                    (message.role == ChatRole.USER || (message.role == ChatRole.ASSISTANT && message.toolCalls.size() == 0))) {
-                normalChatCount++;
+        // 仅保留最近N个USER回合对应的完整消息链，避免assistant拆段后过早丢失上下文
+        if(GlobalDataHolder.getGptMaxContextNum() > 0) {
+            int foundUserTurnCount = 0;
+            int firstKeptUserIndex = -1;
+            for(int i = chatList.size() - 1; i >= 0; i--) {
+                if(chatList.get(i).role == ChatRole.USER) {
+                    foundUserTurnCount++;
+                    if(foundUserTurnCount >= GlobalDataHolder.getGptMaxContextNum()) {
+                        firstKeptUserIndex = i;
+                        break;
+                    }
+                }
             }
-            if(normalChatCount > GlobalDataHolder.getGptMaxContextNum() && message.role != ChatRole.SYSTEM) {
-                chatList.remove(i);
-            }
-            if(normalChatCount == -1 && message.role == ChatRole.USER) { // 找到第一个USER，开始计数
-                normalChatCount = 0;
-            }
-        }
-
-        if(isFunctionReply) { // 如果是返回函数调用结果，需要将接收到一半的回复加到聊天列表
-            for (int i = chatList.size() - 1; i >= 0; i--) {
-                ChatMessage message = chatList.get(i);
-                if(message.role == ChatRole.ASSISTANT && message.toolCalls.size() > 0) { // 找到调用工具的消息，在前面插入
-                    chatList.add(i, new ChatMessage(ChatRole.ASSISTANT).setText(chatApiBuffer));
-                    break;
+            if(firstKeptUserIndex > 0) {
+                for(int i = firstKeptUserIndex - 1; i >= 0; i--) {
+                    if(chatList.get(i).role != ChatRole.SYSTEM) {
+                        chatList.remove(i);
+                    }
                 }
             }
         }
@@ -1784,11 +1841,67 @@ public class MainActivity extends Activity {
         multiChatList = conversation.messages;
 
         llChatList.removeViewAt(0); // 删除占位TextView
-        for(ChatMessage chatItem : multiChatList) { // 依次添加对话布局
-            if(chatItem.role == ChatRole.USER || (chatItem.role == ChatRole.ASSISTANT && chatItem.toolCalls.size() == 0)) {
+        for(int i = 0; i < multiChatList.size(); i++) {
+            ChatMessage chatItem = multiChatList.get(i);
+            if(chatItem.role == ChatRole.USER) {
                 LinearLayout llChatItem = addChatView(chatItem.role, chatItem.contentText, chatItem.attachments);
                 llChatItem.setTag(chatItem);
+                continue;
             }
+            if(chatItem.role == ChatRole.SYSTEM) {
+                continue;
+            }
+
+            int roundEnd = i;
+            boolean hasLegacyReferenceBlock = false;
+            ChatMessage assistantAnchor = null;
+            while(roundEnd < multiChatList.size()
+                    && multiChatList.get(roundEnd).role != ChatRole.USER
+                    && multiChatList.get(roundEnd).role != ChatRole.SYSTEM) {
+                ChatMessage roundMessage = multiChatList.get(roundEnd);
+                assistantAnchor = roundMessage;
+                if(roundMessage.role == ChatRole.ASSISTANT && roundMessage.toolCalls.size() == 0
+                        && roundMessage.contentText != null
+                        && (roundMessage.contentText.contains(getString(R.string.text_ref_web_prefix))
+                        || roundMessage.contentText.contains("Ref web: ")
+                        || roundMessage.contentText.contains("参考网页: "))) {
+                    hasLegacyReferenceBlock = true;
+                }
+                roundEnd++;
+            }
+
+            StringBuilder assistantText = new StringBuilder();
+            for(int j = i; j < roundEnd; j++) {
+                ChatMessage roundMessage = multiChatList.get(j);
+                if(roundMessage.role == ChatRole.ASSISTANT) {
+                    if(roundMessage.toolCalls.size() == 0) {
+                        if(roundMessage.contentText != null) {
+                            assistantText.append(roundMessage.contentText);
+                        }
+                    } else {
+                        for(ChatMessage.ToolCall toolCall : roundMessage.toolCalls) {
+                            if(assistantText.length() > 0 && !assistantText.toString().endsWith("\n")) {
+                                assistantText.append("\n\n");
+                            }
+                            if(!hasLegacyReferenceBlock && toolCall.functionName.equals("get_html_text")) {
+                                try {
+                                    String url = new JSONObject(toolCall.arguments).getStr("url");
+                                    assistantText.append(formatWebReferenceNotice(url)).append("\n\n");
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+								assistantText.append(String.format(getString(R.string.text_tool_call_notice_format), toolCall.functionName)).append("\n\n");
+							}
+                        }
+                    }
+                }
+            }
+            if(assistantText.length() > 0) {
+                LinearLayout llChatItem = addChatView(ChatRole.ASSISTANT, assistantText.toString(), null);
+                llChatItem.setTag(assistantAnchor);
+            }
+            i = roundEnd - 1;
         }
         scrollChatAreaToBottom();
     }
@@ -1800,6 +1913,10 @@ public class MainActivity extends Activity {
         }
         llChatList.removeAllViews();
         tts.stop();
+        chatApiBuffer = "";
+        pendingAssistantSegmentBuffer = "";
+        currentReplyAnchorMessage = null;
+        lastReplyRenderTime = 0;
 
         TextView tv = new TextView(this); // 清空列表后添加一个占位TextView
         tv.setTextColor(Color.parseColor("#000000"));

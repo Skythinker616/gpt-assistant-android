@@ -119,6 +119,8 @@
     <string name="img_preview_reselect">Reselect</string>
     <string name="toast_use_vision_model">Choose a vision model to send images</string>
     <string name="text_ref_web_prefix">"Ref web: "</string>
+    <string name="text_tool_call_notice_format">**&gt;&gt;&gt; Call Tool %s**</string>
+    <string name="text_ref_web_notice_format">**&gt;&gt;&gt; Visit Web [%1$s](%2$s)**</string>
     <string name="text_gpt_error_prefix">"Failed to get: "</string>
     <string name="text_visiting_web_prefix">"Visiting: "</string>
     <string name="text_cancel_web">Webpage visit canceled.</string>
@@ -132,6 +134,8 @@
     <string name="text_waiting_reply">Waiting for reply...</string>
     <string name="text_think_header">Thinking process:</string>
     <string name="text_thinking_header">Thinking...</string>
+    <string name="text_think_complete_summary">Thinking complete</string>
+    <string name="text_thinking_summary">Thinking</string>
     <string name="toast_enable_network">Reminder: Web access will increase token usage, use GPT-4 wisely!</string>
     <string name="dialog_help_title">Help</string>
     <string name="dialog_help_cancel">Back</string>

@@ -47,12 +47,39 @@ public class HistoryActivity extends Activity {
             Conversation conversation = historyActivity.chatManager.getConversationAtPosition(position, historyActivity.searchKeyword);
             holder.tvTitle.setText(conversation.title);
             holder.tvDetail.setText("");
+            boolean foundFirstUser = false;
+            boolean collectingAssistantRound = false;
+            StringBuilder detailBuilder = new StringBuilder();
             for(ChatMessage message : conversation.messages) {
-                if (message.role == ChatMessage.ChatRole.ASSISTANT && message.toolCalls.isEmpty()) {
-                    holder.tvDetail.setText(message.contentText.replaceAll("\n", " "));
-                    break;
+                if(message.role == ChatMessage.ChatRole.USER) {
+                    if(collectingAssistantRound) {
+                        break;
+                    }
+                    foundFirstUser = true;
+                    continue;
+                }
+                if(message.role == ChatMessage.ChatRole.SYSTEM) {
+                    if(collectingAssistantRound) {
+                        break;
+                    }
+                    continue;
+                }
+                if(!foundFirstUser) {
+                    continue;
+                }
+                if(message.role == ChatMessage.ChatRole.ASSISTANT && message.toolCalls.isEmpty()) {
+                    collectingAssistantRound = true;
+                    if(message.contentText != null) {
+                        detailBuilder.append(message.contentText);
+                    }
                 }
             }
+            String detailText = detailBuilder.toString()
+                    .replaceAll("(?s)<think>\\n.*?\\n</think>\\n?", "")
+                    .replaceAll("(?s)\\n{0,2}\"?(Ref web: |参考网页: ).*$", "")
+                    .replaceAll("\n+", " ")
+                    .trim();
+            holder.tvDetail.setText(detailText);
             LocalDateTime now = LocalDateTime.now();
             if (now.getYear() == conversation.time.getYear() && now.getMonthValue() == conversation.time.getMonthValue() && now.getDayOfMonth() == conversation.time.getDayOfMonth())
                 holder.tvTime.setText(conversation.time.format(DateTimeFormatter.ofPattern("HH:mm")));

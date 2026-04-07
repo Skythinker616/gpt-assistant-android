@@ -82,6 +82,8 @@
     <string name="img_preview_reselect">重选</string>
     <string name="toast_use_vision_model">请选择支持vision的模型以发送图片</string>
     <string name="text_ref_web_prefix">"参考网页: "</string>
+    <string name="text_tool_call_notice_format">**&gt;&gt;&gt; 调用工具 %s**</string>
+    <string name="text_ref_web_notice_format">**&gt;&gt;&gt; 访问网页 [%1$s](%2$s)**</string>
     <string name="text_gpt_error_prefix">"获取失败: "</string>
     <string name="text_visiting_web_prefix">"正在访问: "</string>
     <string name="text_cancel_web">已取消访问网页。</string>
@@ -95,6 +97,8 @@
     <string name="text_waiting_reply">正在等待回复...</string>
     <string name="text_think_header">思考内容：</string>
     <string name="text_thinking_header">思考中...</string>
+    <string name="text_think_complete_summary">思考完成</string>
+    <string name="text_thinking_summary">思考中</string>
     <string name="toast_enable_network">提醒：访问网络时会大幅增加token用量，GPT4请谨慎使用！</string>
     <string name="dialog_help_title">帮助</string>
     <string name="dialog_help_cancel">返回</string>

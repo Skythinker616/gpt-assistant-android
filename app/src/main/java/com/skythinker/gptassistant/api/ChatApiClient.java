@@ -84,6 +84,12 @@ public class ChatApiClient {
         setApiInfo(url, apiKey);
     }
 
+    // 重置当前流式回复相关状态，仅在用户新发起提问前调用
+    public void resetReasoningState() {
+        isReasoning = false;
+        callingFunctions.clear();
+    }
+
     // 向GPT发送消息列表
     public void sendPromptList(List<ChatMessage> promptList) {
         if(url.isEmpty() || apiKey.isEmpty() || chatGPT == null) {
@@ -93,8 +99,104 @@ public class ChatApiClient {
 
         BaseChatCompletion chatCompletion = null;
 
+        // 发送前按消息顺序处理assistant文本中的think段，兼容被tool调用打断的情况
+        final String thinkStartTag = "<think>\n";
+        final String thinkEndTag = "\n</think>\n";
+        ArrayList<ChatMessage> normalizedPromptList = new ArrayList<>();
+        ArrayList<ChatMessage> pendingThinkMessages = new ArrayList<>();
+        boolean inThink = false;
+        String pendingThinkFirstVisiblePrefix = "";
+        for(ChatMessage sourceMessage : promptList) {
+            ChatMessage message = sourceMessage.clone();
+            boolean isPlainAssistant = message.role == ChatRole.ASSISTANT && message.toolCalls.size() == 0;
+            if(!isPlainAssistant) {
+                normalizedPromptList.add(message);
+                continue;
+            }
+
+            String rawText = message.contentText == null ? "" : message.contentText;
+            normalizedPromptList.add(message); // 先保留原顺序，后续若think闭合再回填内容
+
+            if(inThink) {
+                pendingThinkMessages.add(message);
+                int thinkEndIndex = rawText.indexOf(thinkEndTag);
+                if(thinkEndIndex == -1) { // 当前消息仍处于未闭合think中，原样保留等待后续闭合
+                    continue;
+                }
+
+                for(int i = 0; i < pendingThinkMessages.size() - 1; i++) {
+                    pendingThinkMessages.get(i).contentText = i == 0 ? pendingThinkFirstVisiblePrefix : "";
+                }
+
+                inThink = false;
+                String remainingText = rawText.substring(thinkEndIndex + thinkEndTag.length());
+                StringBuilder visibleText = new StringBuilder();
+                boolean openedNewThink = false;
+                while(true) {
+                    int thinkStartIndex = remainingText.indexOf(thinkStartTag);
+                    if(thinkStartIndex == -1) {
+                        visibleText.append(remainingText);
+                        message.contentText = visibleText.toString();
+                        break;
+                    }
+                    int nextThinkEndIndex = remainingText.indexOf(thinkEndTag, thinkStartIndex + thinkStartTag.length());
+                    if(nextThinkEndIndex != -1) {
+                        visibleText.append(remainingText, 0, thinkStartIndex);
+                        remainingText = remainingText.substring(nextThinkEndIndex + thinkEndTag.length());
+                    } else { // 同一条消息中再次开启了未闭合think，保留从新起点开始的原始内容
+                        visibleText.append(remainingText, 0, thinkStartIndex);
+                        message.contentText = visibleText + remainingText.substring(thinkStartIndex);
+                        pendingThinkMessages.clear();
+                        pendingThinkMessages.add(message);
+                        pendingThinkFirstVisiblePrefix = visibleText.toString();
+                        inThink = true;
+                        openedNewThink = true;
+                        break;
+                    }
+                }
+                if(!openedNewThink) {
+                    pendingThinkMessages.clear();
+                    pendingThinkFirstVisiblePrefix = "";
+                }
+                continue;
+            }
+
+            String remainingText = rawText;
+            StringBuilder visibleText = new StringBuilder();
+            while(true) {
+                int thinkStartIndex = remainingText.indexOf(thinkStartTag);
+                if(thinkStartIndex == -1) {
+                    visibleText.append(remainingText);
+                    message.contentText = visibleText.toString();
+                    break;
+                }
+                int thinkEndIndex = remainingText.indexOf(thinkEndTag, thinkStartIndex + thinkStartTag.length());
+                if(thinkEndIndex != -1) { // 同一条消息内完整闭合的think直接剥离
+                    visibleText.append(remainingText, 0, thinkStartIndex);
+                    remainingText = remainingText.substring(thinkEndIndex + thinkEndTag.length());
+                } else { // 记录从该起点开始的未闭合think，若直到上下文末尾仍未闭合则保留原始内容
+                    visibleText.append(remainingText, 0, thinkStartIndex);
+                    message.contentText = visibleText + remainingText.substring(thinkStartIndex);
+                    pendingThinkMessages.clear();
+                    pendingThinkMessages.add(message);
+                    pendingThinkFirstVisiblePrefix = visibleText.toString();
+                    inThink = true;
+                    break;
+                }
+            }
+        }
+        for(int i = 0; i < normalizedPromptList.size(); i++) {
+            ChatMessage message = normalizedPromptList.get(i);
+            if(message.role == ChatRole.ASSISTANT
+                    && message.toolCalls.size() == 0
+                    && (message.contentText == null || message.contentText.isEmpty())) {
+                normalizedPromptList.remove(i);
+                i--;
+            }
+        }
+
         boolean hasAnyAtttachment = false;
-        for(ChatMessage message : promptList) {
+        for(ChatMessage message : normalizedPromptList) {
             if(message.attachments.size() > 0) {
                 hasAnyAtttachment = true;
                 break;
@@ -103,7 +205,7 @@ public class ChatApiClient {
 
         if(!hasAnyAtttachment) { // 没有任何附件，使用普通content格式（兼容旧模型）
             ArrayList<Message> messageList = new ArrayList<>(); // 将消息数据转换为ChatGPT需要的格式
-            for (ChatMessage message : promptList) {
+            for (ChatMessage message : normalizedPromptList) {
                 if (message.role == ChatRole.SYSTEM) {
                     messageList.add(Message.builder().role(Message.Role.SYSTEM).content(message.contentText).build());
                 } else if (message.role == ChatRole.USER) {
@@ -134,8 +236,7 @@ public class ChatApiClient {
                             messageList.add(Message.builder().role(Message.Role.ASSISTANT).functionCall(functionCall).content("").build());
                         }
                     } else {
-                        messageList.add(Message.builder().role(Message.Role.ASSISTANT)
-                                .content(message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", "")).build()); // 去除思维链内容
+                        messageList.add(Message.builder().role(Message.Role.ASSISTANT).content(message.contentText).build());
                     }
                 } else if (message.role == ChatRole.FUNCTION) {
                     ChatMessage.ToolCall toolCall = message.toolCalls.get(0);
@@ -164,12 +265,10 @@ public class ChatApiClient {
             }
         } else { // 含有附件，使用contentList格式
             ArrayList<MessagePicture> messageList = new ArrayList<>(); // 将消息数据转换为ChatGPT需要的格式
-            for (ChatMessage message : promptList) {
+            for (ChatMessage message : normalizedPromptList) {
                 List<Content> contentList = new ArrayList<>();
                 if (message.contentText != null) {
-                    String contentText = message.role != ChatRole.ASSISTANT ? message.contentText :
-                            message.contentText.replaceFirst("(?s)^<think>\\n.*?\\n</think>\\n", ""); // 去除思维链内容
-                    contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(contentText).build());
+                    contentList.add(Content.builder().type(Content.Type.TEXT.getName()).text(message.contentText).build());
                 }
                 for(ChatMessage.ToolCall toolCall : message.toolCalls) { // 处理函数调用
                     if(toolCall.content != null) {
@@ -258,7 +357,22 @@ public class ChatApiClient {
                     if(callingFunctions.isEmpty()) {
                         listener.onFinished(true);
                     } else {
-                        listener.onFunctionCall(callingFunctions);
+                        ArrayList<CallingFunction> functionListCopy = new ArrayList<>();
+                        for(CallingFunction callingFunction : callingFunctions) {
+                            if(callingFunction.toolId.isEmpty() && callingFunction.name.isEmpty() && callingFunction.arguments.isEmpty()) {
+                                continue;
+                            }
+                            CallingFunction functionCopy = new CallingFunction();
+                            functionCopy.toolId = callingFunction.toolId;
+                            functionCopy.name = callingFunction.name;
+                            functionCopy.arguments = callingFunction.arguments;
+                            functionListCopy.add(functionCopy);
+                        }
+                        if(functionListCopy.isEmpty()) {
+                            listener.onFinished(true);
+                        } else {
+                            listener.onFunctionCall(functionListCopy);
+                        }
                     }
                 } else { // 正在回复
 //                    Log.d("ChatApiClient", "onEvent: " + data);
@@ -267,29 +381,49 @@ public class ChatApiClient {
                         JSONObject delta = ((JSONObject) json.getJSONArray("choices").get(0)).getJSONObject("delta");
                         if (delta != null) {
                             if (delta.containsKey("tool_calls") && delta.getJSONArray("tool_calls") != null) { // GPT请求函数调用
-                                JSONObject toolCall = delta.getJSONArray("tool_calls").getJSONObject(0);
-                                JSONObject functionCall = toolCall.getJSONObject("function");
-                                if (toolCall.containsKey("id") && functionCall.containsKey("name")) {
-                                    CallingFunction callingFunction = new CallingFunction();
-                                    callingFunction.toolId = toolCall.getStr("id");
-                                    callingFunction.name = functionCall.getStr("name");
-                                    callingFunctions.add(callingFunction);
+                                for(int i = 0; i < delta.getJSONArray("tool_calls").size(); i++) {
+                                    JSONObject toolCall = delta.getJSONArray("tool_calls").getJSONObject(i);
+                                    JSONObject functionCall = toolCall.getJSONObject("function");
+                                    CallingFunction targetFunction;
+                                    int toolIndex = toolCall.getInt("index", -1);
+                                    if(toolIndex >= 0) {
+                                        while(callingFunctions.size() <= toolIndex) {
+                                            callingFunctions.add(new CallingFunction());
+                                        }
+                                        targetFunction = callingFunctions.get(toolIndex);
+                                    } else if (toolCall.containsKey("id") || (functionCall != null && functionCall.containsKey("name"))) {
+                                        targetFunction = new CallingFunction();
+                                        callingFunctions.add(targetFunction);
+                                    } else if(callingFunctions.size() > 0) {
+                                        targetFunction = callingFunctions.get(callingFunctions.size() - 1);
+                                    } else {
+                                        targetFunction = new CallingFunction();
+                                        callingFunctions.add(targetFunction);
+                                    }
+                                    if(toolCall.containsKey("id") && toolCall.getStr("id") != null) {
+                                        targetFunction.toolId += toolCall.getStr("id");
+                                    }
+                                    if(functionCall != null && functionCall.containsKey("name") && functionCall.getStr("name") != null) {
+                                        targetFunction.name += functionCall.getStr("name");
+                                    }
+                                    if(functionCall != null && functionCall.containsKey("arguments") && functionCall.getStr("arguments") != null) {
+                                        targetFunction.arguments += functionCall.getStr("arguments");
+                                    }
                                 }
-                                if (callingFunctions.size() > 0 && functionCall.containsKey("arguments")) {
-                                    callingFunctions.get(callingFunctions.size() - 1).arguments += functionCall.getStr("arguments");
-                                }
-                            } else if (delta.containsKey("content") && delta.getStr("content") != null) { // GPT返回普通消息
-                                if (isReasoning) {
-                                    isReasoning = false;
-                                    listener.onMsgReceive("\n</think>\n");
-                                }
-                                listener.onMsgReceive(delta.getStr("content"));
-                            } else if (delta.containsKey("reasoning_content") && delta.getStr("reasoning_content") != null) { // GPT返回思维链消息
+                            }
+                            if (delta.containsKey("reasoning_content") && delta.getStr("reasoning_content") != null) { // GPT返回思维链消息
                                 if (!isReasoning) {
                                     isReasoning = true;
                                     listener.onMsgReceive("<think>\n");
                                 }
                                 listener.onMsgReceive(delta.getStr("reasoning_content"));
+                            }
+                            if (delta.containsKey("content") && delta.getStr("content") != null) { // GPT返回普通消息
+                                if (isReasoning) {
+                                    isReasoning = false;
+                                    listener.onMsgReceive("\n</think>\n");
+                                }
+                                listener.onMsgReceive(delta.getStr("content"));
                             }
                         }
                     }

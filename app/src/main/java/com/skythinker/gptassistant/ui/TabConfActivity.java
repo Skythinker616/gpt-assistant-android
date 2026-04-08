@@ -54,6 +54,8 @@ import okhttp3.Response;
 
 public class TabConfActivity extends Activity {
 
+    private static final int REQUEST_DATA_TRANSFER = 1000;
+
     private RecyclerView rvTabList;
     private TabConfListAdapter adapter;
     private BroadcastReceiver localReceiver;
@@ -141,6 +143,9 @@ public class TabConfActivity extends Activity {
 
         List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models))); // 内置模型列表
         models.addAll(GlobalDataHolder.getCustomModels()); // 自定义模型列表
+        if(!GlobalDataHolder.getGptModel().isEmpty() && !models.contains(GlobalDataHolder.getGptModel())) {
+            models.add(GlobalDataHolder.getGptModel()); // 兼容导入后暂未补全到列表里的模型名
+        }
         ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.model_spinner_item, models) { // 设置Spinner样式和列表数据
             @Override
             public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // 设置选中/未选中的选项样式
@@ -352,6 +357,10 @@ public class TabConfActivity extends Activity {
             startActivity(new Intent(TabConfActivity.this, MainActionConfActivity.class));
         });
 
+        ((View) findViewById(R.id.tv_data_transfer_conf).getParent()).setOnClickListener(view -> {
+            startActivityForResult(new Intent(TabConfActivity.this, DataTransferActivity.class), REQUEST_DATA_TRANSFER);
+        });
+
         ((Switch) findViewById(R.id.sw_enable_internet_conf)).setChecked(GlobalDataHolder.getEnableInternetAccess());
 //        setInternetItemHidden(!GlobalDataHolder.getEnableInternetAccess());
         ((Switch) findViewById(R.id.sw_enable_internet_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
@@ -494,7 +503,14 @@ public class TabConfActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) { // 处理模板编辑页面返回的数据
         super.onActivityResult(requestCode, resultCode, data);
-        if(resultCode == RESULT_OK && data.hasExtra("ok")) {
+        if(requestCode == REQUEST_DATA_TRANSFER) {
+            if(resultCode == RESULT_OK) {
+                restartSelf();
+            }
+            return;
+        }
+
+        if(resultCode == RESULT_OK && data != null && data.hasExtra("ok")) {
             if(data.getBooleanExtra("ok", false)) {
                 String title = data.getStringExtra("title");
                 String prompt = data.getStringExtra("prompt");
@@ -516,6 +532,15 @@ public class TabConfActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(localReceiver);
+    }
+
+    private void restartSelf() {
+        Intent intent = new Intent(getIntent());
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        finish();
+        overridePendingTransition(0, 0);
+        startActivity(intent);
+        overridePendingTransition(0, 0);
     }
 
     @Override

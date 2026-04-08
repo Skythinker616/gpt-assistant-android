@@ -10,10 +10,6 @@ import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.unfbx.chatgpt.entity.assistant.Tool;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import cn.hutool.crypto.digest.MD5;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 
@@ -389,6 +384,10 @@ public class ChatManager{
     private DatabaseHelper dbHelper;
     private SQLiteDatabase db;
 
+    public interface ConversationVisitor {
+        void visit(Conversation conversation);
+    }
+
     public ChatManager(Context context) {
         dbHelper = new DatabaseHelper(context);
         db = dbHelper.getWritableDatabase();
@@ -406,8 +405,12 @@ public class ChatManager{
         String selection = (filterTitleText == null) ? null : "title LIKE ? ESCAPE '\\'";
         String[] selectionArgs = (filterTitleText == null) ? null : new String[]{"%" + escapeLikeText(filterTitleText) + "%"};
         Cursor cursor = db.query(DatabaseHelper.tableName, new String[]{"COUNT(*)"}, selection, selectionArgs, null, null, null);
-        cursor.moveToFirst();
-        return cursor.getLong(0);
+        try {
+            cursor.moveToFirst();
+            return cursor.getLong(0);
+        } finally {
+            cursor.close();
+        }
     }
     public long getConversationCount() {
         return getConversationCount(null);
@@ -429,35 +432,72 @@ public class ChatManager{
     // 根据会话ID获取会话
     public Conversation getConversation(long id) {
         Cursor cursor = db.query(DatabaseHelper.tableName, null, "id=?", new String[]{String.valueOf(id)}, null, null, null);
-        if (cursor.moveToFirst()) {
-            return getConversationByCursor(cursor);
+        try {
+            if (cursor.moveToFirst()) {
+                return getConversationByCursor(cursor);
+            }
+            return null;
+        } finally {
+            cursor.close();
         }
-        return null;
+    }
+
+    public boolean hasConversation(long id) {
+        Cursor cursor = db.query(DatabaseHelper.tableName, new String[]{"id"}, "id=?", new String[]{String.valueOf(id)}, null, null, null);
+        try {
+            return cursor.moveToFirst();
+        } finally {
+            cursor.close();
+        }
     }
 
     // 根据会话在数据库中的位置获取会话（按时间倒序）
     public Conversation getConversationAtPosition(int position, String filterTitleText) {
         String selection = (filterTitleText == null) ? null : "title LIKE ? ESCAPE '\\'";
         String[] selectionArgs = (filterTitleText == null) ? null : new String[]{"%" + escapeLikeText(filterTitleText) + "%"};
-        Cursor cursor = db.query(DatabaseHelper.tableName, null, selection, selectionArgs, null, null, "id DESC", String.valueOf(position) + ",1");
-        if (cursor.moveToFirst()) {
-            return getConversationByCursor(cursor);
+        Cursor cursor = db.query(DatabaseHelper.tableName, null, selection, selectionArgs, null, null, "time DESC, id DESC", String.valueOf(position) + ",1");
+        try {
+            if (cursor.moveToFirst()) {
+                return getConversationByCursor(cursor);
+            }
+            return null;
+        } finally {
+            cursor.close();
         }
-        return null;
     }
     public Conversation getConversationAtPosition(int position) {
         return getConversationAtPosition(position, null);
     }
 
     // 获取所有会话（按时间倒序）
-    public List<Conversation> getAllConversations() {
-        Cursor cursor = db.query(DatabaseHelper.tableName, null, null, null, null, null, "id DESC");
+    public List<Conversation> getAllConversations(boolean loadImages) {
+        Cursor cursor = db.query(DatabaseHelper.tableName, null, null, null, null, null, "time DESC, id DESC");
         List<Conversation> conversations = new ArrayList<>();
-        while (cursor.moveToNext()) {
-            Conversation conversation = getConversationByCursor(cursor);
-            conversations.add(conversation);
+        try {
+            while (cursor.moveToNext()) {
+                Conversation conversation = getConversationByCursor(cursor, loadImages);
+                conversations.add(conversation);
+            }
+            return conversations;
+        } finally {
+            cursor.close();
         }
-        return conversations;
+    }
+
+    public List<Conversation> getAllConversations() {
+        return getAllConversations(true);
+    }
+
+    // 逐条遍历会话，避免批量场景下一次性占用过多内存。
+    public void forEachConversation(boolean loadImages, ConversationVisitor visitor) {
+        Cursor cursor = db.query(DatabaseHelper.tableName, null, null, null, null, null, "time DESC, id DESC");
+        try {
+            while (cursor.moveToNext()) {
+                visitor.visit(getConversationByCursor(cursor, loadImages));
+            }
+        } finally {
+            cursor.close();
+        }
     }
 
     // 添加会话到数据库
@@ -481,9 +521,13 @@ public class ChatManager{
     // 删除指定的会话
     public void removeConversation(long id) {
         Cursor cursor = db.query(DatabaseHelper.tableName, null, "id=?", new String[]{String.valueOf(id)}, null, null, null);
-        if (cursor.moveToFirst()) {
-            Conversation conversation = getConversationByCursor(cursor, false);
-            conversation.messages.deteteAllAttachments();
+        try {
+            if (cursor.moveToFirst()) {
+                Conversation conversation = getConversationByCursor(cursor, false);
+                conversation.messages.deteteAllAttachments();
+            }
+        } finally {
+            cursor.close();
         }
         db.delete(DatabaseHelper.tableName, "id=?", new String[]{String.valueOf(id)});
     }

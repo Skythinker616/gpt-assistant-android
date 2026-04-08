@@ -973,15 +973,34 @@ public class MainActivity extends Activity {
             pwMenu.dismiss();
         }
         clearChatListView();
-
-        if(currentConversation != null &&
-                ((multiChatList.size() > 0 && multiChatList.get(0).role != ChatRole.SYSTEM) || (multiChatList.size() > 1 && multiChatList.get(0).role == ChatRole.SYSTEM)) &&
-                GlobalDataHolder.getAutoSaveHistory()) {
-            chatManager.addConversation(currentConversation);
-        }
+        persistCurrentConversation(false);
 
         currentConversation = new Conversation();
         multiChatList = currentConversation.messages;
+    }
+
+    private boolean hasValidConversation() {
+        return currentConversation != null
+                && multiChatList != null
+                && ((multiChatList.size() > 0 && multiChatList.get(0).role != ChatRole.SYSTEM)
+                || (multiChatList.size() > 1 && multiChatList.get(0).role == ChatRole.SYSTEM));
+    }
+
+    // 在离开主界面前保存当前会话，避免设置页导入导出漏掉进行中的内容。
+    private void persistCurrentConversation(boolean forceSave) {
+        if(!hasValidConversation()) {
+            return;
+        }
+        if(!forceSave && !GlobalDataHolder.getAutoSaveHistory()) {
+            return;
+        }
+
+        currentConversation.updateTime();
+        if(currentConversation.id != -1 && chatManager.hasConversation(currentConversation.id)) {
+            chatManager.updateConversation(currentConversation);
+        } else {
+            chatManager.addConversation(currentConversation);
+        }
     }
 
     private void toggleTts() {
@@ -1062,6 +1081,7 @@ public class MainActivity extends Activity {
         if(pwMenu.isShowing()) {
             pwMenu.dismiss();
         }
+        persistCurrentConversation(false);
         Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
         startActivityForResult(intent, 3);
     }
@@ -1070,6 +1090,7 @@ public class MainActivity extends Activity {
         if(pwMenu.isShowing()) {
             pwMenu.dismiss();
         }
+        persistCurrentConversation(false);
         startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
     }
 
@@ -1118,13 +1139,15 @@ public class MainActivity extends Activity {
             Uri uri = requestCode == 1 ? photoUri : data.getData(); // 获取图片URI
             addAttachment(uri);
         } else if(requestCode == 3 && resultCode == RESULT_OK) { // 从聊天历史界面返回
-            if(data.hasExtra("id")) {
+            if(data != null && data.hasExtra("id")) {
                 long id = data.getLongExtra("id", -1);
                 Log.d("MainActivity", "onActivityResult 3: id=" + id);
                 Conversation conversation = chatManager.getConversation(id);
-                chatManager.removeConversation(id);
-                conversation.updateTime();
-                reloadConversation(conversation);
+                if(conversation != null) {
+                    conversation.updateTime();
+                    reloadConversation(conversation);
+                    persistCurrentConversation(true);
+                }
             }
         } else if(requestCode == 4 && resultCode == RESULT_OK) { // 选择文件
             try {
@@ -2201,9 +2224,7 @@ public class MainActivity extends Activity {
         tts.stop();
         tts.shutdown();
         webScraper.destroy();
-        if(((multiChatList.size() > 0 && multiChatList.get(0).role != ChatRole.SYSTEM) || (multiChatList.size() > 1 && multiChatList.get(0).role == ChatRole.SYSTEM)) &&
-                GlobalDataHolder.getAutoSaveHistory()) // 包含有效对话则保存当前对话
-            chatManager.addConversation(currentConversation);
+        persistCurrentConversation(false);
         chatManager.removeEmptyConversations();
         chatManager.destroy();
         super.onDestroy();

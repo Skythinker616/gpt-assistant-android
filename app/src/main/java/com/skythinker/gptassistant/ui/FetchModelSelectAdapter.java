@@ -19,10 +19,14 @@ import java.util.List;
 public class FetchModelSelectAdapter extends RecyclerView.Adapter<FetchModelSelectAdapter.ViewHolder> {
 
     public static class FetchModelItem {
+        // 远端返回的模型 ID。
         public final String modelId;
+        // 是否已存在于本地配置中。
         public final boolean added;
+        // 是否被用户勾选导入。
         public boolean checked;
 
+        // 记录一条待导入模型项的状态。
         public FetchModelItem(String modelId, boolean added) {
             this.modelId = modelId;
             this.added = added;
@@ -30,6 +34,7 @@ public class FetchModelSelectAdapter extends RecyclerView.Adapter<FetchModelSele
     }
 
     public interface IItemClickListener {
+        // 响应远端模型项点击事件。
         void onItemClick(FetchModelItem item);
     }
 
@@ -37,6 +42,7 @@ public class FetchModelSelectAdapter extends RecyclerView.Adapter<FetchModelSele
     private final List<FetchModelItem> items;
     private final IItemClickListener itemClickListener;
 
+    // 绑定远端模型列表与勾选回调。
     public FetchModelSelectAdapter(Context context,
                                    List<FetchModelItem> items,
                                    IItemClickListener itemClickListener) {
@@ -51,6 +57,7 @@ public class FetchModelSelectAdapter extends RecyclerView.Adapter<FetchModelSele
         final CheckBox checkBox;
         final TextView tvAdded;
 
+        // 缓存远端模型列表项视图。
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             llOuter = itemView.findViewById(R.id.ll_fetch_model_item_outer);
@@ -62,12 +69,14 @@ public class FetchModelSelectAdapter extends RecyclerView.Adapter<FetchModelSele
 
     @NonNull
     @Override
+    // 创建远端模型列表项视图。
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.fetch_model_dialog_item, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
+    // 绑定远端模型的选中与已添加状态。
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FetchModelItem item = items.get(position);
         holder.tvTitle.setText(item.modelId);
@@ -88,6 +97,7 @@ public class FetchModelSelectAdapter extends RecyclerView.Adapter<FetchModelSele
     }
 
     @Override
+    // 返回远端模型列表数量。
     public int getItemCount() {
         return items.size();
     }

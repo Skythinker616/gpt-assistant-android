@@ -36,6 +36,7 @@ public class GlobalDataHolder {
     private static String gptModel;
     private static float gptTemperature;
     private static int gptMaxContextNum;
+    // 用户维护的自定义模型配置列表。
     private static List<CustomModelProfile> customModelProfiles = null;
     private static boolean checkAccessOnStart;
     private static boolean defaultEnableTts;
@@ -49,6 +50,7 @@ public class GlobalDataHolder {
     private static boolean useGitee;
     private static boolean agentMode;
     private static String latestVersion;
+    // 主界面功能按钮布局的持久化 JSON。
     private static String mainActionLayout;
     private static SharedPreferences sp = null;
 
@@ -162,6 +164,7 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    // 加载大模型接口配置，并兼容旧版本模型存储格式。
     public static void loadGptApiInfo() {
         gptApiHost = sp.getString("gpt_api_host", "https://api.openai.com/");
         gptApiKey = sp.getString("gpt_api_key", "");
@@ -223,6 +226,7 @@ public class GlobalDataHolder {
         }
     }
 
+    // 保存大模型接口配置和自定义模型列表。
     public static void saveGptApiInfo(String host, String key, String model, List<CustomModelProfile> customModelList) {
         gptApiHost = host;
         gptApiKey = key;
@@ -370,10 +374,12 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    // 读取主界面按钮布局配置。
     public static void loadMainActionLayout() {
         mainActionLayout = sp.getString("main_action_layout", "");
     }
 
+    // 保存主界面按钮布局配置。
     public static void saveMainActionLayout(String layoutJson) {
         mainActionLayout = layoutJson;
         SharedPreferences.Editor editor = sp.edit();
@@ -381,6 +387,7 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
+    // 清空自定义按钮布局，回退到默认布局。
     public static void resetMainActionLayout() {
         saveMainActionLayout("");
     }
@@ -405,6 +412,7 @@ public class GlobalDataHolder {
 
     public static String getGptModel() { return gptModel; }
 
+    // 获取当前自定义模型列表。
     public static List<CustomModelProfile> getCustomModelProfiles() { return customModelProfiles; }
 
     public static float getGptTemperature() {return gptTemperature; }
@@ -435,8 +443,10 @@ public class GlobalDataHolder {
 
     public static String getLatestVersion() { return latestVersion; }
 
+    // 获取主界面按钮布局配置。
     public static String getMainActionLayout() { return mainActionLayout; }
 
+    // 清理模型配置中的重复、空值和多余空白。
     private static List<CustomModelProfile> sanitizeCustomModelProfiles(List<CustomModelProfile> profileList) {
         LinkedHashMap<String, CustomModelProfile> profileMap = new LinkedHashMap<>();
         if(profileList != null) {

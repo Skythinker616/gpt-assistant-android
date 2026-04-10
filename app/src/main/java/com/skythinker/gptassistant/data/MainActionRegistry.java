@@ -16,20 +16,33 @@ import java.util.List;
 import java.util.Map;
 
 public final class MainActionRegistry {
+    // 新建会话按钮。
     public static final String ACTION_NEW_CHAT = "new_chat";
+    // TTS 开关按钮。
     public static final String ACTION_TTS = "tts";
+    // 联网开关按钮。
     public static final String ACTION_NETWORK = "network";
+    // Agent 模式按钮。
     public static final String ACTION_AGENT = "agent";
+    // 多轮对话开关按钮。
     public static final String ACTION_MULTI_CHAT = "multi_chat";
+    // 连续语音对话按钮。
     public static final String ACTION_VOICE_CHAT = "voice_chat";
+    // 历史记录按钮。
     public static final String ACTION_HISTORY = "history";
+    // 设置按钮。
     public static final String ACTION_SETTINGS = "settings";
+    // 关闭按钮。
     public static final String ACTION_CLOSE = "close";
 
+    // 一级按钮区域。
     public static final int PLACEMENT_PRIMARY = 0;
+    // 二级按钮区域。
     public static final int PLACEMENT_SECONDARY = 1;
+    // 隐藏区域。
     public static final int PLACEMENT_HIDDEN = 2;
 
+    // 一级区域最多显示的按钮数。
     public static final int MAX_PRIMARY_ACTION_COUNT = 4;
 
     // 主界面按钮的默认层级、是否允许自定义、允许出现的位置都集中维护在这里。
@@ -135,12 +148,15 @@ public final class MainActionRegistry {
             )
     ));
 
+    // 注册表仅提供静态访问。
     private MainActionRegistry() { }
 
+    // 返回全部按钮定义。
     public static List<MainActionSpec> getAllSpecs() {
         return ACTION_SPECS;
     }
 
+    // 返回允许用户调整的按钮定义。
     public static List<MainActionSpec> getCustomizableSpecs() {
         List<MainActionSpec> specs = new ArrayList<>();
         for (MainActionSpec spec : ACTION_SPECS) {
@@ -152,6 +168,7 @@ public final class MainActionRegistry {
     }
 
     @Nullable
+    // 按动作 ID 查找按钮定义。
     public static MainActionSpec findSpec(String actionId) {
         for (MainActionSpec spec : ACTION_SPECS) {
             if (spec.id.equals(actionId)) {
@@ -161,6 +178,7 @@ public final class MainActionRegistry {
         return null;
     }
 
+    // 生成默认按钮布局。
     public static List<MainActionLayoutItem> getDefaultLayout() {
         List<MainActionLayoutItem> items = new ArrayList<>();
         for (MainActionSpec spec : ACTION_SPECS) {
@@ -170,6 +188,7 @@ public final class MainActionRegistry {
         return items;
     }
 
+    // 将保存的布局与当前注册表合并成可用布局。
     public static List<MainActionLayoutItem> getResolvedLayout(String savedLayoutJson) {
         Map<String, MainActionLayoutItem> savedItemMap = parseSavedLayout(savedLayoutJson);
         List<MainActionLayoutItem> items = new ArrayList<>();
@@ -187,6 +206,7 @@ public final class MainActionRegistry {
         return items;
     }
 
+    // 校正按钮布局中的缺项、非法分组和顺序。
     public static void normalizeLayout(List<MainActionLayoutItem> items) {
         List<MainActionLayoutItem> normalizedItems = new ArrayList<>();
         Map<String, MainActionLayoutItem> itemMap = new LinkedHashMap<>();
@@ -210,6 +230,7 @@ public final class MainActionRegistry {
         rebuildPlacementOrdersFromCurrentSequence(items);
     }
 
+    // 按分组和组内顺序排序布局项。
     public static void sortByPlacementAndOrder(List<MainActionLayoutItem> items) {
         Collections.sort(items, Comparator
                 .comparingInt((MainActionLayoutItem item) -> getPlacementRank(item.placement))
@@ -220,6 +241,7 @@ public final class MainActionRegistry {
                 }));
     }
 
+    // 依据当前排列重建每个分组内的连续顺序号。
     public static void rebuildPlacementOrdersFromCurrentSequence(List<MainActionLayoutItem> items) {
         int primaryOrder = 0;
         int secondaryOrder = 0;
@@ -235,6 +257,7 @@ public final class MainActionRegistry {
         }
     }
 
+    // 统计一级区域当前按钮数量。
     public static int getPrimaryActionCount(List<MainActionLayoutItem> items) {
         int count = 0;
         for (MainActionLayoutItem item : items) {
@@ -245,6 +268,7 @@ public final class MainActionRegistry {
         return count;
     }
 
+    // 计算指定分组下一个可用顺序号。
     public static int getNextOrder(List<MainActionLayoutItem> items, int placement) {
         int maxOrder = -1;
         for (MainActionLayoutItem item : items) {
@@ -255,6 +279,7 @@ public final class MainActionRegistry {
         return maxOrder + 1;
     }
 
+    // 将按钮布局写回 JSON。
     public static String toJson(List<MainActionLayoutItem> items) {
         JSONArray jsonArray = new JSONArray();
         try {
@@ -271,6 +296,7 @@ public final class MainActionRegistry {
         return jsonArray.toString();
     }
 
+    // 解析本地保存的按钮布局。
     private static Map<String, MainActionLayoutItem> parseSavedLayout(String savedLayoutJson) {
         Map<String, MainActionLayoutItem> itemMap = new LinkedHashMap<>();
         if (savedLayoutJson == null || savedLayoutJson.trim().isEmpty()) {
@@ -296,6 +322,7 @@ public final class MainActionRegistry {
         return itemMap;
     }
 
+    // 为排序提供固定的分组优先级。
     private static int getPlacementRank(int placement) {
         if (placement == PLACEMENT_PRIMARY) {
             return 0;

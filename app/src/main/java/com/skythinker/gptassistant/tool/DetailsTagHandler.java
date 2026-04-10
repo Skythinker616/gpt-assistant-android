@@ -28,8 +28,10 @@ import io.noties.markwon.html.MarkwonHtmlRenderer;
 import io.noties.markwon.html.TagHandler;
 
 class DetailsTagHandler extends TagHandler {
+    // 为每个 TextView 记住 details 的展开状态。
     private static final Map<TextView, DetailsState> DETAILS_STATE_MAP = new WeakHashMap<>();
 
+    // 将解析后的 details 结构重新组装成可折叠文本。
     static void renderParsedMarkdown(@NonNull Markwon markwon, @NonNull TextView textView, @NonNull Spanned spanned) {
         DetailsParsingSpan[] spans = spanned.getSpans(0, spanned.length(), DetailsParsingSpan.class);
         if(spans == null || spans.length == 0) {
@@ -38,6 +40,7 @@ class DetailsTagHandler extends TagHandler {
             return;
         }
 
+        // 先把 span 还原成 details 树结构。
         List<DetailsElement> rootElements = new ArrayList<>();
         for(DetailsParsingSpan span : spans) {
             DetailsElement element = settle(new DetailsElement(
@@ -51,6 +54,7 @@ class DetailsTagHandler extends TagHandler {
             }
         }
 
+        // 再补齐正文片段并分配展开状态索引。
         for(DetailsElement element : rootElements) {
             initDetails(element, spanned);
         }
@@ -78,9 +82,11 @@ class DetailsTagHandler extends TagHandler {
     }
 
     @Override
+    // 解析原始 details 节点，并在文本中埋入占位 span。
     public void handle(@NonNull MarkwonVisitor visitor, @NonNull MarkwonHtmlRenderer renderer, @NonNull HtmlTag tag) {
         int summaryEnd = -1;
 
+        // 继续交给其他 tagHandler 处理子节点，同时记住 summary 的结束位置。
         for(HtmlTag child : tag.getAsBlock().children()) {
             if(!child.isClosed()) {
                 continue;
@@ -107,10 +113,12 @@ class DetailsTagHandler extends TagHandler {
 
     @NonNull
     @Override
+    // 声明当前处理器只接管 details 标签。
     public Collection<String> supportedTags() {
         return Collections.singleton("details");
     }
 
+    // 按展开状态递归拼接 details 的显示内容。
     private static void appendDetails(@NonNull SpannableBuilder builder, @NonNull Markwon markwon,
                                       @NonNull TextView textView, @NonNull Spanned spanned,
                                       @NonNull DetailsState state, @NonNull DetailsElement element) {
@@ -142,11 +150,13 @@ class DetailsTagHandler extends TagHandler {
     }
 
     @Nullable
+    // 将 details 节点安放到正确的父子层级中。
     private static DetailsElement settle(@NonNull DetailsElement element, @NonNull List<? extends DetailsElement> elements) {
         for(DetailsElement current : elements) {
             if(element.start > current.start && element.end <= current.end) {
                 DetailsElement settled = settle(element, current.children);
                 if(settled != null) {
+                    // 新节点落入当前节点后，需要把原来被它包住的子节点再下沉一层。
                     Iterator<DetailsElement> iterator = current.children.iterator();
                     while(iterator.hasNext()) {
                         DetailsElement balanced = settle(iterator.next(), Collections.singletonList(element));
@@ -162,10 +172,12 @@ class DetailsTagHandler extends TagHandler {
         return element;
     }
 
+    // 为 details 节点补齐正文片段子节点。
     private static void initDetails(@NonNull DetailsElement element, @NonNull Spanned spanned) {
         int end = element.end;
         for(int i = element.children.size() - 1; i >= 0; i--) {
             DetailsElement child = element.children.get(i);
+            // 两个 details 子节点之间遗落的普通文本，也要补成独立节点。
             if(child.end < end) {
                 element.children.add(new DetailsElement(child.end, end, spanned.subSequence(child.end, end)));
             }
@@ -179,6 +191,7 @@ class DetailsTagHandler extends TagHandler {
         }
     }
 
+    // 按起始位置排序 details 树。
     private static void sort(@NonNull List<DetailsElement> elements) {
         Collections.sort(elements, (left, right) -> Integer.compare(left.start, right.start));
         for(DetailsElement element : elements) {
@@ -188,6 +201,7 @@ class DetailsTagHandler extends TagHandler {
         }
     }
 
+    // 为每个 details 节点分配稳定的状态索引。
     private static void assignStateIndices(@NonNull List<DetailsElement> elements, @NonNull int[] nextIndex) {
         for(DetailsElement element : elements) {
             if(element.isDetails) {
@@ -198,6 +212,7 @@ class DetailsTagHandler extends TagHandler {
     }
 
     @NonNull
+    // 去掉 summary 片段首尾的空白字符。
     private static CharSequence subSequenceTrimmed(@NonNull CharSequence text, int start, int end) {
         while(start < end) {
             boolean startBlank = Character.isWhitespace(text.charAt(start));
@@ -216,6 +231,7 @@ class DetailsTagHandler extends TagHandler {
     }
 
     @NonNull
+    // 获取或创建当前 TextView 对应的展开状态。
     private static DetailsState getDetailsState(@NonNull TextView textView) {
         DetailsState state = DETAILS_STATE_MAP.get(textView);
         if(state != null) {
@@ -226,6 +242,7 @@ class DetailsTagHandler extends TagHandler {
         return state;
     }
 
+    // 仅在末尾缺少换行时补一个换行。
     private static void appendLineBreakIfNeeded(@NonNull SpannableBuilder builder) {
         CharSequence text = builder.spannableStringBuilder();
         if(text.length() > 0) {
@@ -238,13 +255,16 @@ class DetailsTagHandler extends TagHandler {
     }
 
     private static class DetailsState {
+        // 用索引记录每个 details 的展开状态。
         private final SparseBooleanArray expandedStates = new SparseBooleanArray();
 
+        // 读取指定 details 的当前展开状态。
         boolean isExpanded(int stateIndex, boolean defaultValue) {
             int keyIndex = expandedStates.indexOfKey(stateIndex);
             return keyIndex >= 0 ? expandedStates.valueAt(keyIndex) : defaultValue;
         }
 
+        // 更新指定 details 的展开状态。
         void setExpanded(int stateIndex, boolean expanded) {
             expandedStates.put(stateIndex, expanded);
         }
@@ -254,6 +274,7 @@ class DetailsTagHandler extends TagHandler {
         private final CharSequence summary;
         private final boolean defaultExpanded;
 
+        // 暂存 details 的 summary 和默认展开状态。
         DetailsParsingSpan(@NonNull CharSequence summary, boolean defaultExpanded) {
             this.summary = summary;
             this.defaultExpanded = defaultExpanded;
@@ -266,9 +287,12 @@ class DetailsTagHandler extends TagHandler {
         private final CharSequence content;
         private final boolean isDetails;
         private final boolean defaultExpanded;
+        // details 内部按顺序拆出的子节点。
         private final List<DetailsElement> children = new ArrayList<>();
+        // 对应到展开状态表中的索引。
         private int stateIndex = -1;
 
+        // 创建一段普通正文节点。
         DetailsElement(int start, int end, @NonNull CharSequence content) {
             this.start = start;
             this.end = end;
@@ -277,6 +301,7 @@ class DetailsTagHandler extends TagHandler {
             this.defaultExpanded = false;
         }
 
+        // 创建一个 details 节点。
         DetailsElement(int start, int end, @NonNull CharSequence summary, boolean defaultExpanded) {
             this.start = start;
             this.end = end;
@@ -293,6 +318,7 @@ class DetailsTagHandler extends TagHandler {
         private final int stateIndex;
         private final boolean expanded;
 
+        // 创建一个点击后可切换展开状态的 span。
         ToggleDetailsSpan(@NonNull Markwon markwon, @NonNull TextView textView,
                           @NonNull Spanned spanned, int stateIndex, boolean expanded) {
             this.markwon = markwon;
@@ -303,6 +329,7 @@ class DetailsTagHandler extends TagHandler {
         }
 
         @Override
+        // 点击 summary 时切换展开状态并重新渲染。
         public void onClick(@NonNull View widget) {
             DetailsState state = getDetailsState(textView);
             state.setExpanded(stateIndex, !expanded);
@@ -310,6 +337,7 @@ class DetailsTagHandler extends TagHandler {
         }
 
         @Override
+        // 保持 summary 为粗体但不显示下划线。
         public void updateDrawState(@NonNull TextPaint ds) {
             ds.setUnderlineText(false);
             ds.setFakeBoldText(true);

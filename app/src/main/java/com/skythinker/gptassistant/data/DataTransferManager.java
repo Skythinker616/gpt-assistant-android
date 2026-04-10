@@ -42,6 +42,7 @@ import cn.hutool.crypto.digest.MD5;
 
 public class DataTransferManager {
 
+    // 当前导入导出格式版本。
     private static final int FORMAT_VERSION = 2;
     private static final String ENTRY_MANIFEST = "manifest.json";
     private static final String ENTRY_LLM = "llm.json";
@@ -52,11 +53,16 @@ public class DataTransferManager {
     private static final String ENTRY_ATTACHMENT_TEXTS = "attachments/texts/";
 
     public static class Options {
+        // 是否包含大模型配置。
         public boolean includeLlm = true;
+        // 是否包含语音识别配置。
         public boolean includeAsr = true;
+        // 是否包含模板数据。
         public boolean includeTemplates = true;
+        // 是否包含聊天记录。
         public boolean includeChats = true;
 
+        // 判断用户是否未勾选任何导出项。
         public boolean isEmpty() {
             return !includeLlm && !includeAsr && !includeTemplates && !includeChats;
         }
@@ -80,8 +86,10 @@ public class DataTransferManager {
         public int skippedConversationCount;
     }
 
+    // 工具类不需要实例化。
     private DataTransferManager() { }
 
+    // 按选项将本地数据导出为 zip 文件。
     public static ExportResult exportToZip(Context context, Uri uri, Options options) throws Exception {
         GlobalDataHolder.init(context);
         ChatMessage.setContext(context);
@@ -93,6 +101,7 @@ public class DataTransferManager {
 
         ExportResult result = new ExportResult();
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            // 先导出独立配置项，再根据需要导出聊天正文和附件。
             if(options.includeLlm) {
                 writeJsonEntry(zipOutputStream, ENTRY_LLM, buildLlmJson());
                 result.llmExported = true;
@@ -126,6 +135,7 @@ public class DataTransferManager {
         return result;
     }
 
+    // 按选项从 zip 文件导入本地数据。
     public static ImportResult importFromZip(Context context, Uri uri, Options options) throws Exception {
         GlobalDataHolder.init(context);
         ChatMessage.setContext(context);
@@ -138,6 +148,7 @@ public class DataTransferManager {
         File tempDir = new File(context.getCacheDir(), "data_transfer_import_" + System.currentTimeMillis());
         tempDir.mkdirs();
         try {
+            // 先解压到临时目录，再按模块分别读取，便于复用附件文件。
             unzipToTempDir(tempDir, inputStream);
 
             ImportResult result = new ImportResult();
@@ -166,6 +177,7 @@ public class DataTransferManager {
         }
     }
 
+    // 构建导出包清单信息。
     private static JSONObject buildManifestJson(Options options, ExportResult result) throws Exception {
         JSONObject manifestJson = new JSONObject();
         manifestJson.put("formatVersion", FORMAT_VERSION);
@@ -181,6 +193,7 @@ public class DataTransferManager {
         return manifestJson;
     }
 
+    // 构建大模型配置导出内容。
     private static JSONObject buildLlmJson() throws Exception {
         JSONObject llmJson = new JSONObject();
         llmJson.put("apiHost", GlobalDataHolder.getGptApiHost());
@@ -197,6 +210,7 @@ public class DataTransferManager {
         return llmJson;
     }
 
+    // 构建语音识别配置导出内容。
     private static JSONObject buildAsrJson() throws Exception {
         JSONObject asrJson = new JSONObject();
         asrJson.put("useWhisper", GlobalDataHolder.getAsrUseWhisper());
@@ -209,6 +223,7 @@ public class DataTransferManager {
         return asrJson;
     }
 
+    // 构建提示词模板导出内容。
     private static JSONArray buildTemplatesJson() throws Exception {
         JSONArray templatesJson = new JSONArray();
         for(PromptTabData tabData : GlobalDataHolder.getTabDataList()) {
@@ -220,6 +235,7 @@ public class DataTransferManager {
         return templatesJson;
     }
 
+    // 将一条会话序列化为导出 JSON。
     private static JSONObject conversationToJson(
             Conversation conversation,
             ZipOutputStream zipOutputStream,
@@ -238,6 +254,7 @@ public class DataTransferManager {
         return conversationJson;
     }
 
+    // 将一条消息及其附件写入导出 JSON。
     private static JSONObject chatMessageToJson(
             ChatMessage message,
             ZipOutputStream zipOutputStream,
@@ -296,11 +313,13 @@ public class DataTransferManager {
         return messageJson;
     }
 
+    // 导入大模型配置和模型参数。
     private static void importLlmJson(JSONObject llmJson) {
         String host = llmJson.has("apiHost") ? llmJson.optString("apiHost", GlobalDataHolder.getGptApiHost()) : GlobalDataHolder.getGptApiHost();
         String key = llmJson.has("apiKey") ? llmJson.optString("apiKey", GlobalDataHolder.getGptApiKey()) : GlobalDataHolder.getGptApiKey();
         String model = llmJson.has("model") ? llmJson.optString("model", GlobalDataHolder.getGptModel()) : GlobalDataHolder.getGptModel();
         List<CustomModelProfile> customModels = new ArrayList<>(GlobalDataHolder.getCustomModelProfiles());
+        // 如果备份包里带了完整模型列表，则直接用备份内容覆盖本地列表。
         if(llmJson.has("customModelProfiles")) {
             customModels.clear();
             JSONArray customModelsJson = llmJson.optJSONArray("customModelProfiles");
@@ -318,6 +337,7 @@ public class DataTransferManager {
         }
         GlobalDataHolder.saveGptApiInfo(host, key, model, customModels);
 
+        // 模型参数单独读取，缺省时沿用当前本地值。
         float temperature = llmJson.has("temperature")
                 ? (float) llmJson.optDouble("temperature", GlobalDataHolder.getGptTemperature())
                 : GlobalDataHolder.getGptTemperature();
@@ -327,6 +347,7 @@ public class DataTransferManager {
         GlobalDataHolder.saveModelParams(temperature, maxContextNum);
     }
 
+    // 导入语音识别配置。
     private static void importAsrJson(JSONObject asrJson) {
         boolean useWhisper = asrJson.has("useWhisper") ? asrJson.optBoolean("useWhisper", GlobalDataHolder.getAsrUseWhisper()) : GlobalDataHolder.getAsrUseWhisper();
         boolean useBaidu = asrJson.has("useBaidu") ? asrJson.optBoolean("useBaidu", GlobalDataHolder.getAsrUseBaidu()) : GlobalDataHolder.getAsrUseBaidu();
@@ -340,6 +361,7 @@ public class DataTransferManager {
         GlobalDataHolder.saveBaiduAsrInfo(appId, apiKey, secretKey, useRealTime);
     }
 
+    // 导入提示词模板，并处理重名与重复项。
     private static void importTemplatesJson(Context context, JSONArray templatesJson, ImportResult result) {
         List<PromptTabData> templateList = GlobalDataHolder.getTabDataList();
         for(int i = 0; i < templatesJson.length(); i++) {
@@ -367,15 +389,18 @@ public class DataTransferManager {
         }
     }
 
+    // 导入聊天记录，并按指纹跳过重复会话。
     private static void importConversationsJson(Context context, JSONArray conversationsJson, File tempDir, ImportResult result) {
         ChatManager chatManager = new ChatManager(context);
         try {
             Set<String> conversationFingerprints = new HashSet<>();
+            // 先收集本地已有会话指纹，后面导入时直接做内容级去重。
             chatManager.forEachConversation(false, conversation -> {
                 conversationFingerprints.add(buildConversationFingerprint(conversation));
                 clearConversationAttachmentContent(conversation);
             });
 
+            // 再逐条导入备份中的会话。
             for(int i = 0; i < conversationsJson.length(); i++) {
                 JSONObject conversationJson = conversationsJson.optJSONObject(i);
                 if(conversationJson == null) {
@@ -400,6 +425,7 @@ public class DataTransferManager {
         }
     }
 
+    // 从导出 JSON 还原一条会话。
     private static Conversation parseConversationJson(Context context, JSONObject conversationJson, File tempDir) {
         Conversation conversation = new Conversation();
         conversation.title = conversationJson.optString("title", "");
@@ -422,6 +448,7 @@ public class DataTransferManager {
         return conversation;
     }
 
+    // 从导出 JSON 还原一条消息。
     private static ChatMessage parseMessageJson(Context context, JSONObject messageJson, File tempDir) {
         ChatRole role = ChatRole.fromName(messageJson.optString("role", ChatRole.USER.name()));
         if(role == null) {
@@ -431,6 +458,7 @@ public class DataTransferManager {
         ChatMessage message = new ChatMessage(role);
         message.contentText = getOptionalString(messageJson, "text");
 
+        // 先恢复工具调用，再恢复附件列表。
         JSONArray toolsJson = messageJson.optJSONArray("tools");
         if(toolsJson != null) {
             for(int i = 0; i < toolsJson.length(); i++) {
@@ -465,6 +493,7 @@ public class DataTransferManager {
         return message;
     }
 
+    // 从导出 JSON 和附件目录还原一个附件对象。
     private static Attachment parseAttachmentJson(Context context, JSONObject attachmentJson, File tempDir) {
         Attachment.Type type;
         try {
@@ -478,6 +507,7 @@ public class DataTransferManager {
         File attachmentFile = resolveZipEntryFile(tempDir, entryName);
 
         String content = null;
+        // 优先读取解压后的附件文件，缺失时再兼容旧格式内联内容。
         if(attachmentFile.exists()) {
             try {
                 byte[] attachmentBytes = readAllBytes(new FileInputStream(attachmentFile));
@@ -506,6 +536,7 @@ public class DataTransferManager {
         return attachment;
     }
 
+    // 生成用于会话去重的内容指纹。
     private static String buildConversationFingerprint(Conversation conversation) {
         // 聊天记录去重仅比较“实际内容”，不比较数据库 id 和附件 uuid。
         JSONObject normalizedConversationJson = new JSONObject();
@@ -514,6 +545,7 @@ public class DataTransferManager {
             normalizedConversationJson.put("time", conversation.time.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             normalizedConversationJson.put("title", conversation.title);
 
+            // 逐层展开消息、工具和附件内容，生成稳定的去重输入。
             JSONArray messagesJson = new JSONArray();
             for (ChatMessage message : conversation.messages) {
                 JSONObject normalizedMessageJson = new JSONObject();
@@ -552,6 +584,7 @@ public class DataTransferManager {
         return MD5.create().digestHex(normalizedConversationJson.toString());
     }
 
+    // 处理导入附件与本地附件的 uuid 冲突。
     private static void resolveAttachmentUuidConflict(Context context, Attachment attachment) {
         // 默认复用原 uuid，只有真的撞到同名不同内容文件时才重新分配。
         while(true) {
@@ -568,6 +601,7 @@ public class DataTransferManager {
         }
     }
 
+    // 判断模板列表中是否已存在完全相同的模板。
     private static boolean containsSameTemplate(List<PromptTabData> templateList, String title, String prompt) {
         for(PromptTabData tabData : templateList) {
             if(Objects.equals(tabData.getTitle(), title) && Objects.equals(tabData.getPrompt(), prompt)) {
@@ -577,6 +611,7 @@ public class DataTransferManager {
         return false;
     }
 
+    // 判断模板标题是否已被占用。
     private static boolean containsSameTitle(List<PromptTabData> templateList, String title) {
         for(PromptTabData tabData : templateList) {
             if(Objects.equals(tabData.getTitle(), title)) {
@@ -586,6 +621,7 @@ public class DataTransferManager {
         return false;
     }
 
+    // 为导入的重名模板生成新的标题。
     private static String buildImportedTemplateTitle(Context context, List<PromptTabData> templateList, String title) {
         String baseTitle = (title == null || title.isEmpty())
                 ? context.getString(R.string.data_transfer_template_default_title)
@@ -598,6 +634,7 @@ public class DataTransferManager {
         }
     }
 
+    // 将单个附件内容写入 zip 条目。
     private static void writeAttachmentEntry(ZipOutputStream zipOutputStream, String entryName, Attachment attachment) throws Exception {
         byte[] bytes = getAttachmentBytes(attachment);
         zipOutputStream.putNextEntry(new ZipEntry(entryName));
@@ -605,6 +642,7 @@ public class DataTransferManager {
         zipOutputStream.closeEntry();
     }
 
+    // 将附件对象转换为导出字节数组。
     private static byte[] getAttachmentBytes(Attachment attachment) throws Exception {
         if(attachment.type == Attachment.Type.IMAGE) {
             return Base64.decode(attachment.content == null ? "" : attachment.content, Base64.NO_WRAP);
@@ -612,6 +650,7 @@ public class DataTransferManager {
         return (attachment.content == null ? "" : attachment.content).getBytes(StandardCharsets.UTF_8);
     }
 
+    // 生成附件在 zip 包中的条目路径。
     private static String getAttachmentEntryName(String uuid, Attachment.Type type) {
         if(type == Attachment.Type.IMAGE) {
             return ENTRY_ATTACHMENT_IMAGES + uuid + ".jpg";
@@ -619,12 +658,14 @@ public class DataTransferManager {
         return ENTRY_ATTACHMENT_TEXTS + uuid + ".txt";
     }
 
+    // 计算附件落地到本地文件系统后的目标路径。
     private static String getLocalAttachmentPath(Context context, String uuid, Attachment.Type type) {
         String baseDir = type == Attachment.Type.IMAGE ? "images" : "texts";
         String extension = type == Attachment.Type.IMAGE ? ".jpg" : ".txt";
         return context.getFilesDir().getAbsolutePath() + "/" + baseDir + "/" + uuid + extension;
     }
 
+    // 将 JSON 内容写入 zip 条目。
     private static void writeJsonEntry(ZipOutputStream zipOutputStream, String entryName, Object json) throws Exception {
         zipOutputStream.putNextEntry(new ZipEntry(entryName));
         String content = json instanceof JSONArray ? ((JSONArray) json).toString(2) : ((JSONObject) json).toString(2);
@@ -632,10 +673,12 @@ public class DataTransferManager {
         zipOutputStream.closeEntry();
     }
 
+    // 以 UTF-8 读取整个文件内容。
     private static String readFileAsString(File file) throws Exception {
         return new String(readAllBytes(new FileInputStream(file)), StandardCharsets.UTF_8);
     }
 
+    // 读取输入流中的全部字节。
     private static byte[] readAllBytes(InputStream inputStream) throws Exception {
         try (InputStream in = inputStream; ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[4096];
@@ -673,6 +716,7 @@ public class DataTransferManager {
         }
     }
 
+    // 安全解析 zip 条目路径，防止目录穿越。
     private static File resolveZipEntryFile(File tempDir, String entryName) {
         File targetFile = new File(tempDir, entryName);
         try {
@@ -687,6 +731,7 @@ public class DataTransferManager {
         return targetFile;
     }
 
+    // 清空会话中已加载到内存的附件正文。
     private static void clearConversationAttachmentContent(Conversation conversation) {
         for(ChatMessage message : conversation.messages) {
             for(Attachment attachment : message.attachments) {
@@ -695,6 +740,7 @@ public class DataTransferManager {
         }
     }
 
+    // 递归删除临时目录及其子文件。
     private static void deleteRecursively(File file) {
         if(file == null || !file.exists()) {
             return;
@@ -710,6 +756,7 @@ public class DataTransferManager {
         file.delete();
     }
 
+    // 读取 JSON 中允许为空的字符串字段。
     private static String getOptionalString(JSONObject jsonObject, String key) {
         if(!jsonObject.has(key) || jsonObject.isNull(key)) {
             return null;
@@ -717,6 +764,7 @@ public class DataTransferManager {
         return jsonObject.optString(key, null);
     }
 
+    // 生成导出完成后的结果摘要。
     public static String buildExportSummary(Context context, ExportResult result, Options options) {
         List<String> lines = new ArrayList<>();
         if(options.includeLlm) {
@@ -734,6 +782,7 @@ public class DataTransferManager {
         return joinLines(lines);
     }
 
+    // 生成导入完成后的结果摘要。
     public static String buildImportSummary(Context context, ImportResult result, Options options) {
         List<String> lines = new ArrayList<>();
         if(options.includeLlm) {
@@ -766,6 +815,7 @@ public class DataTransferManager {
         return joinLines(lines);
     }
 
+    // 用换行拼接结果摘要中的多行文案。
     private static String joinLines(List<String> lines) {
         StringBuilder builder = new StringBuilder();
         for(int i = 0; i < lines.size(); i++) {
@@ -777,6 +827,7 @@ public class DataTransferManager {
         return builder.toString();
     }
 
+    // 生成默认导出文件名。
     public static String buildDefaultFileName() {
         return String.format(
                 Locale.getDefault(),

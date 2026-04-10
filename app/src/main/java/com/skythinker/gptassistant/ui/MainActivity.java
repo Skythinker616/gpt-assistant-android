@@ -121,6 +121,7 @@ public class MainActivity extends Activity {
     private LinearLayout llSecondaryActionList;
     private CardView cvMore;
     private PopupWindow pwMenu;
+    // 记录主界面动作按钮，便于按状态刷新图标。
     private final Map<String, CardView> mainActionButtonMap = new HashMap<>();
     private Handler handler;
     private MarkdownRenderer markdownRenderer;
@@ -132,7 +133,9 @@ public class MainActivity extends Activity {
 
     ChatApiClient chatApiClient = null;
     private String chatApiBuffer = "";
+    // 暂存当前轮回复中尚未落库的助手文本片段。
     private String pendingAssistantSegmentBuffer = "";
+    // 标记当前正在追加内容的助手/工具消息节点。
     private ChatMessage currentReplyAnchorMessage = null;
 
     private TextToSpeech tts = null;
@@ -292,6 +295,7 @@ public class MainActivity extends Activity {
                 new ChatApiClient.OnReceiveListener() {
                     @Override
                     public void onMsgReceive(String message) { // 收到GPT回复（增量）
+                        // 同步追加到界面缓冲区和待落库的 assistant 片段。
                         chatApiBuffer += message;
                         pendingAssistantSegmentBuffer += message;
                         if(System.currentTimeMillis() - lastReplyRenderTime > 100) { // 限制最高渲染频率10Hz
@@ -299,6 +303,7 @@ public class MainActivity extends Activity {
                                 boolean isBottom = svChatArea.getChildAt(0).getBottom()
                                         <= svChatArea.getHeight() + svChatArea.getScrollY(); // 判断消息布局是否在底部
 
+                                // 节流刷新 Markdown，避免流式输出时频繁重排界面。
                                 markdownRenderer.render(tvGptReply, chatApiBuffer); // 渲染Markdown
                                 tvGptReply.requestLayout();
 
@@ -306,6 +311,7 @@ public class MainActivity extends Activity {
                                     scrollChatAreaToBottom(); // 渲染前在底部则渲染后滚动到底部
                                 }
 
+                                // TTS 只朗读已经形成完整句子的可见正文。
                                 if (currentTemplateParams.getBool("speak", ttsEnabled)) { // 处理TTS
                                     if (chatApiBuffer.startsWith("<think>\n") && !chatApiBuffer.contains("\n</think>\n")) { // 不朗读思维链部分
                                         ttsSentenceEndIndex = tvGptReply.getText().toString().length(); // 正在思考则设置tts起点在末尾
@@ -341,6 +347,7 @@ public class MainActivity extends Activity {
                     public void onFinished(boolean completed) { // GPT回复完成
                         handler.post(() -> {
                             try {
+                                // 完成时做一次最终渲染，并把剩余未朗读文本补进 TTS 队列。
                                 markdownRenderer.render(tvGptReply, chatApiBuffer); // 渲染Markdown
                                 tvGptReply.requestLayout();
                                 String ttsText = tvGptReply.getText().toString();
@@ -349,6 +356,7 @@ public class MainActivity extends Activity {
                                     tts.speak(ttsText.substring(ttsSentenceEndIndex), TextToSpeech.QUEUE_ADD, null, id);
                                     ttsLastId = id;
                                 }
+                                // 只有 tool 边界之后新增的 assistant 文本才在这里真正写回会话。
                                 if(!pendingAssistantSegmentBuffer.isEmpty()) { // 仅保存自上个tool边界之后的新assistant文本
                                     ChatMessage assistantMessage = new ChatMessage(ChatRole.ASSISTANT).setText(pendingAssistantSegmentBuffer);
                                     multiChatList.add(assistantMessage);
@@ -380,6 +388,7 @@ public class MainActivity extends Activity {
 
                     private final ArrayList<ChatApiClient.CallingFunction> callingFunctions = new ArrayList<>();
 
+                    // 依次执行模型返回的工具调用请求。
                     private void callFunction(ChatApiClient.CallingFunction function) {
                         if (function.name.equals("get_html_text")) { // 调用联网函数
                             try {
@@ -503,6 +512,8 @@ public class MainActivity extends Activity {
                             Log.d("FunctionCall", String.format("Function not found: %s", function.name));
                         }
                     }
+
+                    // 收集单个工具调用结果，并在全部完成后继续请求模型。
                     private void processFunctionResult(ChatApiClient.CallingFunction function, String result) {
                         handler.post(() -> {
                             Log.d("MainActivity", "function result: " + function.name);
@@ -527,6 +538,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void onFunctionCall(ArrayList<ChatApiClient.CallingFunction> functions) { // 收到函数调用请求
                         handler.post(() -> {
+                            // 先把 tool 边界前已经生成的助手正文落到会话里。
                             if(!pendingAssistantSegmentBuffer.isEmpty()) { // 先保存tool边界前的assistant文本
                                 ChatMessage assistantTextMessage = new ChatMessage(ChatRole.ASSISTANT).setText(pendingAssistantSegmentBuffer);
                                 multiChatList.add(assistantTextMessage);
@@ -535,6 +547,7 @@ public class MainActivity extends Activity {
                                     ((LinearLayout) tvGptReply.getParent()).setTag(currentReplyAnchorMessage);
                                 }
                             }
+                            // 再写入一条 assistant/tool_calls 消息，保留模型原始调用意图。
                             ChatMessage assistantMessage = new ChatMessage(ChatRole.ASSISTANT);
                             for(ChatApiClient.CallingFunction function : functions) {
                                 Log.d("FunctionCall", String.format("%s: %s", function.name, function.arguments));
@@ -547,6 +560,7 @@ public class MainActivity extends Activity {
                             }
 
                             pendingAssistantSegmentBuffer = "";
+                            // 界面上仅追加简短提示，避免把工具参数原样铺满聊天正文。
                             for(ChatApiClient.CallingFunction function : functions) { // 仅向UI追加提示，不写入assistant文本分段
                                 if(!chatApiBuffer.isEmpty() && !chatApiBuffer.endsWith("\n")) {
                                     chatApiBuffer += "\n\n";
@@ -570,6 +584,7 @@ public class MainActivity extends Activity {
                                 scrollChatAreaToBottom();
                             }
 
+                            // 调用队列按顺序串行执行，执行结果会再回注给模型。
                             callingFunctions.clear();
                             callingFunctions.addAll(functions); // 保存函数调用列表（浅拷贝）
 
@@ -817,6 +832,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 将网页引用格式化为统一的尾注提示。
     private String formatWebReferenceNotice(String url) {
         String displayHost = url;
         try {
@@ -895,6 +911,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 向指定容器添加一个主界面功能按钮。
     private void addMainActionButton(LinearLayout parent, MainActionSpec spec) {
         CardView button = (CardView) LayoutInflater.from(this).inflate(R.layout.main_action_button, parent, false);
         button.setCardBackgroundColor(Color.TRANSPARENT);
@@ -905,6 +922,7 @@ public class MainActivity extends Activity {
         mainActionButtonMap.put(spec.id, button);
     }
 
+    // 按动作 ID 分发主界面按钮点击事件。
     private void handleMainActionClick(String actionId) {
         switch (actionId) {
             case MainActionRegistry.ACTION_NEW_CHAT:
@@ -937,6 +955,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 刷新指定按钮当前应显示的图标状态。
     private void refreshMainActionButtonState(String actionId) {
         CardView button = mainActionButtonMap.get(actionId);
         if(button == null) {
@@ -945,6 +964,7 @@ public class MainActivity extends Activity {
         button.setForeground(ContextCompat.getDrawable(this, getMainActionForegroundRes(actionId)));
     }
 
+    // 根据当前开关状态选择按钮图标资源。
     private int getMainActionForegroundRes(String actionId) {
         MainActionSpec spec = MainActionRegistry.findSpec(actionId);
         if(spec == null) {
@@ -981,6 +1001,7 @@ public class MainActivity extends Activity {
         multiChatList = currentConversation.messages;
     }
 
+    // 判断当前会话是否已经包含需要持久化的有效内容。
     private boolean hasValidConversation() {
         return currentConversation != null
                 && multiChatList != null
@@ -1005,6 +1026,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 切换朗读开关并同步按钮状态。
     private void toggleTts() {
         ttsEnabled = !ttsEnabled;
         refreshMainActionButtonState(MainActionRegistry.ACTION_TTS);
@@ -1016,6 +1038,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 切换多轮对话模式。
     private void toggleMultiChat() {
         multiChat = !multiChat;
         refreshMainActionButtonState(MainActionRegistry.ACTION_MULTI_CHAT);
@@ -1026,6 +1049,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 切换连续语音对话模式。
     private void toggleVoiceChat() {
         if(!multiVoice && !ttsEnabled) { // 未开启TTS时不允许开启连续语音对话
             GlobalUtils.showToast(this, R.string.toast_voice_chat_tts_off, false);
@@ -1048,6 +1072,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 切换联网检索能力并保存配置。
     private void toggleNetwork() {
         networkEnabled = !networkEnabled;
         refreshMainActionButtonState(MainActionRegistry.ACTION_NETWORK);
@@ -1063,6 +1088,7 @@ public class MainActivity extends Activity {
         GlobalDataHolder.saveFunctionSetting(networkEnabled, GlobalDataHolder.getWebMaxCharCount(), GlobalDataHolder.getOnlyLatestWebResult());
     }
 
+    // 切换 Agent 模式，并校验无障碍依赖。
     private void toggleAgentMode() {
         agentMode = !agentMode;
         if(agentMode) {
@@ -1085,6 +1111,7 @@ public class MainActivity extends Activity {
         GlobalDataHolder.saveAgentModeSetting(agentMode);
     }
 
+    // 打开历史记录页前先保存当前会话。
     private void openHistory() {
         if(pwMenu.isShowing()) {
             pwMenu.dismiss();
@@ -1094,6 +1121,7 @@ public class MainActivity extends Activity {
         startActivityForResult(intent, 3);
     }
 
+    // 打开设置页前先保存当前会话。
     private void openSettings() {
         if(pwMenu.isShowing()) {
             pwMenu.dismiss();
@@ -1102,6 +1130,7 @@ public class MainActivity extends Activity {
         startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
     }
 
+    // 关闭主界面，并顺手收起更多菜单。
     private void closeMain() {
         if(pwMenu.isShowing()) {
             pwMenu.dismiss();
@@ -1585,6 +1614,7 @@ public class MainActivity extends Activity {
         String modelId = getCurrentModelId();
         boolean allowVision = ModelCatalog.supportsVision(modelId);
         boolean allowTools = ModelCatalog.supportsTools(modelId);
+        // 发送前先按当前模型能力提示被忽略的功能。
         if(hasSelectedImageAttachment() && !allowVision) {
             GlobalUtils.showToast(this, R.string.toast_image_send_ignored, false);
         }
@@ -1594,12 +1624,14 @@ public class MainActivity extends Activity {
 
         boolean isMultiChat = currentTemplateParams.getBool("chat", multiChat);
 
+        // 单次对话模式下，每次发送前都重建一个新会话。
         if(!isMultiChat) { // 若为单次对话模式则新建一个聊天
             startNewChat();
         }
 
         // 处理提问文本内容
         String userInput = (input == null) ? etUserInput.getText().toString() : input;
+        // 第一轮用户输入需要先套用当前模板，再决定是否拆成 system + user。
         if(multiChatList.size() == 0 && input == null) { // 由用户输入触发的第一次对话需要添加模板内容
             PromptTabData tabData = GlobalDataHolder.getTabDataList().get(selectedTab);
             String template = tabData.getFormattedPrompt(getTemplateParamsFromView());
@@ -1620,6 +1652,7 @@ public class MainActivity extends Activity {
             multiChatList.add(new ChatMessage(ChatRole.USER).setText(userInput));
         }
 
+        // 当前选中的附件统一挂到最后这条用户消息上。
         if(selectedAttachments.size() > 0) { // 若有选中的文件则添加到聊天记录数据中
             for (ChatMessage.Attachment attachment : selectedAttachments) {
                 multiChatList.get(multiChatList.size() - 1).addAttachment(attachment);
@@ -1661,6 +1694,7 @@ public class MainActivity extends Activity {
 //            }
 //        }
 
+        // 先补齐本轮问答对应的 UI 节点，再正式发起请求。
         // 添加对话布局
         LinearLayout llInput = addChatView(ChatRole.USER, isMultiChat ? multiChatList.get(multiChatList.size() - 1).contentText : userInput, multiChatList.get(multiChatList.size() - 1).attachments);
         LinearLayout llReply = addChatView(ChatRole.ASSISTANT, getString(R.string.text_waiting_reply), null);
@@ -1671,6 +1705,7 @@ public class MainActivity extends Activity {
 
         scrollChatAreaToBottom();
 
+        // 新一轮请求开始前，重置流式渲染和朗读相关状态。
         chatApiBuffer = "";
         pendingAssistantSegmentBuffer = "";
         currentReplyAnchorMessage = null;
@@ -2145,6 +2180,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    // 获取当前模板实际生效的模型 ID。
     private String getCurrentModelId() {
         if(currentTemplateParams == null) {
             return GlobalDataHolder.getGptModel();
@@ -2152,6 +2188,7 @@ public class MainActivity extends Activity {
         return currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel());
     }
 
+    // 判断待发送附件中是否包含图片。
     private boolean hasSelectedImageAttachment() {
         for(ChatMessage.Attachment attachment : selectedAttachments) {
             if(attachment.type == ChatMessage.Attachment.Type.IMAGE) {

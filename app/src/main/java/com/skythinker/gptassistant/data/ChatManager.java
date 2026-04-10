@@ -119,6 +119,7 @@ public class ChatManager{
                 try {
                     File file = new File(getFilePath());
                     if(!file.exists()) {
+                        // 附件内容只在首次落盘时写入，避免重复覆盖已有文件。
                         file.getParentFile().mkdirs();
                         file.createNewFile();
                         FileOutputStream fos = new FileOutputStream(file);
@@ -137,6 +138,7 @@ public class ChatManager{
                 try {
                     File file = new File(getFilePath());
                     if(file.exists()) {
+                        // 统一把磁盘文件恢复到内存字符串，图片仍使用 Base64 表示。
                         FileInputStream fis = new FileInputStream(file);
                         byte[] buffer = new byte[fis.available()];
                         fis.read(buffer);
@@ -266,6 +268,7 @@ public class ChatManager{
         public static ChatMessage fromJson(JSONObject json, boolean loadFiles) {
             ChatMessage msg = new ChatMessage(ChatRole.fromName(json.getStr("role", "USER")));
             msg.contentText = json.getStr("text", null);
+            // 先兼容旧版单图片字段，再走新附件数组结构。
             if(json.containsKey("image")) { // 历史遗留，旧版本仅能添加一张图片
                 msg.addAttachment(Attachment.loadExist(json.getStr("image", null), null, Attachment.Type.IMAGE, loadFiles));
             } else {
@@ -276,6 +279,7 @@ public class ChatManager{
                     }
                 }
             }
+            // 同样兼容旧版单 function 字段，再走新 tools 数组结构。
             if(json.containsKey("function")) { // 历史遗留，旧版本仅能添加一个函数调用
                 msg.addFunctionCall(null, json.getStr("function", null), msg.contentText, null);
                 msg.contentText = null;
@@ -294,6 +298,7 @@ public class ChatManager{
         public ChatMessage clone() {
             ChatMessage clone = new ChatMessage(this.role);
             clone.contentText = this.contentText;
+            // 深拷贝附件和工具调用，避免会话裁剪时串改原对象。
             for(Attachment attachment : this.attachments) {
                 Attachment newAttachment = new Attachment();
                 newAttachment.uuid = attachment.uuid;
@@ -385,6 +390,7 @@ public class ChatManager{
     private SQLiteDatabase db;
 
     public interface ConversationVisitor {
+        // 处理一条遍历到的会话。
         void visit(Conversation conversation);
     }
 
@@ -442,6 +448,7 @@ public class ChatManager{
         }
     }
 
+    // 判断指定会话是否仍存在于数据库中。
     public boolean hasConversation(long id) {
         Cursor cursor = db.query(DatabaseHelper.tableName, new String[]{"id"}, "id=?", new String[]{String.valueOf(id)}, null, null, null);
         try {
@@ -455,6 +462,7 @@ public class ChatManager{
     public Conversation getConversationAtPosition(int position, String filterTitleText) {
         String selection = (filterTitleText == null) ? null : "title LIKE ? ESCAPE '\\'";
         String[] selectionArgs = (filterTitleText == null) ? null : new String[]{"%" + escapeLikeText(filterTitleText) + "%"};
+        // 直接用 limit 偏移量取指定位置，避免整表加载到内存。
         Cursor cursor = db.query(DatabaseHelper.tableName, null, selection, selectionArgs, null, null, "time DESC, id DESC", String.valueOf(position) + ",1");
         try {
             if (cursor.moveToFirst()) {
@@ -470,6 +478,7 @@ public class ChatManager{
     }
 
     // 获取所有会话（按时间倒序）
+    // 可选择是否立即加载附件内容。
     public List<Conversation> getAllConversations(boolean loadImages) {
         Cursor cursor = db.query(DatabaseHelper.tableName, null, null, null, null, null, "time DESC, id DESC");
         List<Conversation> conversations = new ArrayList<>();
@@ -484,6 +493,7 @@ public class ChatManager{
         }
     }
 
+    // 获取所有会话并默认加载附件内容。
     public List<Conversation> getAllConversations() {
         return getAllConversations(true);
     }
@@ -523,6 +533,7 @@ public class ChatManager{
         Cursor cursor = db.query(DatabaseHelper.tableName, null, "id=?", new String[]{String.valueOf(id)}, null, null, null);
         try {
             if (cursor.moveToFirst()) {
+                // 先删附件文件，再删数据库记录，避免遗留孤儿文件。
                 Conversation conversation = getConversationByCursor(cursor, false);
                 conversation.messages.deteteAllAttachments();
             }
@@ -535,6 +546,7 @@ public class ChatManager{
 
     // 删除所有会话
     public void removeAllConversations() {
+        // 聊天附件按类型分目录存储，清空历史时一并清理。
         for(ChatMessage.Attachment.Type type : ChatMessage.Attachment.Type.values()) {
             File dir = new File(ChatMessage.Attachment.getDirPath(type));
             if(dir.exists()) {

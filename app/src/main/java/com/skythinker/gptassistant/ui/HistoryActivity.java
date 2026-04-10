@@ -50,6 +50,7 @@ public class HistoryActivity extends Activity {
             boolean foundFirstUser = false;
             boolean collectingAssistantRound = false;
             StringBuilder detailBuilder = new StringBuilder();
+            // 仅提取首轮用户提问后的首段助手正文，作为历史列表摘要。
             for(ChatMessage message : conversation.messages) {
                 if(message.role == ChatMessage.ChatRole.USER) {
                     if(collectingAssistantRound) {
@@ -74,6 +75,7 @@ public class HistoryActivity extends Activity {
                     }
                 }
             }
+            // 摘要中去掉 think 块和网页引用尾注，避免列表预览过长。
             String detailText = detailBuilder.toString()
                     .replaceAll("(?s)<think>\\n.*?\\n</think>\\n?", "")
                     .replaceAll("(?s)\\n{0,2}\"?(Ref web: |参考网页: ).*$", "")

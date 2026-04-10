@@ -38,11 +38,14 @@ public class CustomModelConfActivity extends Activity {
 
     private static final int REQUEST_EDIT_MODEL = 1000;
 
+    // 当前页面上正在编辑的模型配置副本。
     private final List<CustomModelProfile> modelProfiles = new ArrayList<>();
     private CustomModelConfAdapter adapter;
+    // 防止重复触发远端模型拉取。
     private boolean isFetchingModels = false;
 
     @Override
+    // 初始化模型配置列表页面。
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custom_model_conf);
@@ -53,6 +56,7 @@ public class CustomModelConfActivity extends Activity {
         getWindow().setStatusBarColor(Color.parseColor("#F5F6F7"));
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
+        // 先复制一份全局模型列表，避免在页面内直接改到共享对象。
         for(CustomModelProfile profile : GlobalDataHolder.getCustomModelProfiles()) {
             modelProfiles.add(profile.copy());
         }
@@ -62,6 +66,7 @@ public class CustomModelConfActivity extends Activity {
         adapter = new CustomModelConfAdapter(this, modelProfiles, this::startEditModel);
         rvModelList.setAdapter(adapter);
 
+        // 列表支持拖拽排序和左滑删除，变更后立即落盘。
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT) {
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
@@ -93,6 +98,7 @@ public class CustomModelConfActivity extends Activity {
         findViewById(R.id.tv_custom_model_conf_add).setOnClickListener(view -> startEditModel(-1));
     }
 
+    // 打开新增或编辑模型页面。
     private void startEditModel(int position) {
         Intent intent = new Intent(this, CustomModelDetailActivity.class);
         intent.putExtra("position", position);
@@ -108,6 +114,7 @@ public class CustomModelConfActivity extends Activity {
         startActivityForResult(intent, REQUEST_EDIT_MODEL);
     }
 
+    // 生成除当前项外的模型 ID 列表，用于判重。
     private ArrayList<String> buildExistingModelIds(int excludedPosition) {
         ArrayList<String> modelIds = new ArrayList<>();
         for(int i = 0; i < modelProfiles.size(); i++) {
@@ -119,6 +126,7 @@ public class CustomModelConfActivity extends Activity {
     }
 
     @Override
+    // 处理模型新增、编辑页面返回结果。
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode != REQUEST_EDIT_MODEL || resultCode != RESULT_OK || data == null) {
@@ -142,6 +150,7 @@ public class CustomModelConfActivity extends Activity {
         saveProfiles();
     }
 
+    // 将页面上的模型配置写回全局设置。
     private void saveProfiles() {
         // 只更新模型配置，其他设置沿用当前全局值。
         GlobalDataHolder.saveGptApiInfo(
@@ -153,6 +162,7 @@ public class CustomModelConfActivity extends Activity {
         setResult(RESULT_OK);
     }
 
+    // 从远端接口拉取可用模型列表。
     private void fetchRemoteModels() {
         if(isFetchingModels) {
             return;
@@ -165,11 +175,13 @@ public class CustomModelConfActivity extends Activity {
             return;
         }
 
+        // 拉取模型列表走后台线程，避免阻塞当前配置页。
         isFetchingModels = true;
         Toast.makeText(this, R.string.custom_model_fetch_loading, Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             try {
                 List<String> remoteModelIds = requestRemoteModelIds(host, apiKey);
+                // 结果回到主线程后再更新弹窗和提示。
                 runOnUiThread(() -> {
                     isFetchingModels = false;
                     if(remoteModelIds.size() == 0) {
@@ -222,12 +234,14 @@ public class CustomModelConfActivity extends Activity {
         return new ArrayList<>(modelIdSet);
     }
 
+    // 展示远端模型选择弹窗并处理批量导入。
     private void showFetchModelDialog(List<String> remoteModelIds) {
         Set<String> existingModelIds = new HashSet<>();
         for(CustomModelProfile profile : modelProfiles) {
             existingModelIds.add(profile.id);
         }
 
+        // 先把远端模型映射成弹窗列表项，并标记哪些已经存在。
         ArrayList<FetchModelItem> items = new ArrayList<>();
         for(String modelId : remoteModelIds) {
             items.add(new FetchModelItem(modelId, existingModelIds.contains(modelId)));
@@ -252,6 +266,7 @@ public class CustomModelConfActivity extends Activity {
         dialogView.findViewById(R.id.cv_fetch_model_dialog_cancel).setOnClickListener(view -> dialog.dismiss());
         dialogView.findViewById(R.id.cv_fetch_model_dialog_ok).setOnClickListener(view -> {
             int addedCount = 0;
+            // 仅导入本次勾选且本地尚不存在的模型。
             for(FetchModelItem item : items) {
                 if(!item.checked || item.added) {
                     continue;
@@ -269,6 +284,7 @@ public class CustomModelConfActivity extends Activity {
     }
 
     @Override
+    // 关闭页面并播放返回动画。
     public void finish() {
         super.finish();
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);

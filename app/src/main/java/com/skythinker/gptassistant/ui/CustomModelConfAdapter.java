@@ -20,6 +20,7 @@ import java.util.List;
 public class CustomModelConfAdapter extends RecyclerView.Adapter<CustomModelConfAdapter.ViewHolder> {
 
     public interface IItemClickListener {
+        // 响应模型项点击事件。
         void onItemClick(int position);
     }
 
@@ -27,6 +28,7 @@ public class CustomModelConfAdapter extends RecyclerView.Adapter<CustomModelConf
     private final List<CustomModelProfile> modelProfiles;
     private final IItemClickListener itemClickListener;
 
+    // 绑定模型列表与点击回调。
     public CustomModelConfAdapter(Context context,
                                   List<CustomModelProfile> modelProfiles,
                                   IItemClickListener itemClickListener) {
@@ -41,6 +43,7 @@ public class CustomModelConfAdapter extends RecyclerView.Adapter<CustomModelConf
         final TextView tvId;
         final TextView tvCaps;
 
+        // 缓存模型项视图引用。
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             llOuter = itemView.findViewById(R.id.ll_custom_model_conf_outer);
@@ -52,12 +55,14 @@ public class CustomModelConfAdapter extends RecyclerView.Adapter<CustomModelConf
 
     @NonNull
     @Override
+    // 创建模型配置列表项视图。
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.custom_model_conf_item, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
+    // 绑定单个模型配置的展示内容。
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         CustomModelProfile profile = modelProfiles.get(position);
         holder.tvTitle.setText(profile.id);
@@ -71,10 +76,12 @@ public class CustomModelConfAdapter extends RecyclerView.Adapter<CustomModelConf
     }
 
     @Override
+    // 返回当前模型配置数量。
     public int getItemCount() {
         return modelProfiles.size();
     }
 
+    // 生成模型能力摘要文案。
     private String buildCapabilitySummary(CustomModelProfile profile) {
         ArrayList<String> capabilityTexts = new ArrayList<>();
         if(profile.hasCapability(ModelCatalog.CAPABILITY_VISION)) {

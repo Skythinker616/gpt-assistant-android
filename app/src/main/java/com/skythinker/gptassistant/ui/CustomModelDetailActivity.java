@@ -20,6 +20,7 @@ import java.util.List;
 public class CustomModelDetailActivity extends Activity {
 
     @Override
+    // 初始化模型新增/编辑页面。
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custom_model_detail);
@@ -44,6 +45,7 @@ public class CustomModelDetailActivity extends Activity {
         findViewById(R.id.tv_custom_model_detail_save).setOnClickListener(view -> saveModelProfile());
     }
 
+    // 校验输入并将模型配置作为结果返回。
     private void saveModelProfile() {
         String modelId = ((EditText) findViewById(R.id.et_custom_model_detail_id)).getText().toString().trim();
         String modelName = ((EditText) findViewById(R.id.et_custom_model_detail_name)).getText().toString().trim();
@@ -69,6 +71,7 @@ public class CustomModelDetailActivity extends Activity {
         finish();
     }
 
+    // 将编辑页返回结果转换为模型配置对象。
     public static CustomModelProfile parseResult(Intent data) {
         List<String> capabilities = new ArrayList<>();
         if(data.getBooleanExtra("vision", false)) {
@@ -88,6 +91,7 @@ public class CustomModelDetailActivity extends Activity {
     }
 
     @Override
+    // 关闭页面并播放返回动画。
     public void finish() {
         super.finish();
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);

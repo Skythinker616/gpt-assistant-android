@@ -22,10 +22,12 @@ import java.util.List;
 
 public class MainActionConfActivity extends Activity {
 
+    // 当前页面上编辑的按钮布局副本。
     private final List<MainActionLayoutItem> actionItems = new ArrayList<>();
     private MainActionConfAdapter adapter;
 
     @Override
+    // 初始化主界面按钮布局配置页。
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_action_conf);
@@ -78,6 +80,7 @@ public class MainActionConfActivity extends Activity {
         });
     }
 
+    // 更新按钮所在分组，并同步重排布局。
     private boolean updatePlacement(MainActionLayoutItem item, int newPlacement) {
         if (item.placement == newPlacement) {
             return true;
@@ -98,11 +101,13 @@ public class MainActionConfActivity extends Activity {
         return true;
     }
 
+    // 将当前按钮布局写回全局配置。
     private void saveLayout() {
         GlobalDataHolder.saveMainActionLayout(MainActionRegistry.toJson(actionItems));
     }
 
     @Override
+    // 关闭页面并播放返回动画。
     public void finish() {
         super.finish();
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);

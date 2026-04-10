@@ -25,6 +25,7 @@ public class DataTransferActivity extends Activity {
     private static final int STATE_EXPORTING = 1;
     private static final int STATE_IMPORTING = 2;
 
+    // 用于把后台导入导出结果切回主线程。
     private final Handler handler = new Handler();
     private Switch swLlm, swAsr, swTemplates, swChats;
     private View exportRow, importRow;
@@ -32,6 +33,7 @@ public class DataTransferActivity extends Activity {
     private int transferState = STATE_IDLE;
 
     @Override
+    // 初始化导入导出页面。
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         GlobalDataHolder.init(this);
@@ -62,10 +64,12 @@ public class DataTransferActivity extends Activity {
         findViewById(R.id.bt_data_transfer_back).setOnClickListener(view -> finish());
     }
 
+    // 让整行点击区域都能切换对应开关。
     private void bindToggleRow(int rowId, Switch toggleView) {
         findViewById(rowId).setOnClickListener(view -> toggleView.setChecked(!toggleView.isChecked()));
     }
 
+    // 读取当前勾选的导入导出范围。
     private DataTransferManager.Options getSelectedOptions() {
         DataTransferManager.Options options = new DataTransferManager.Options();
         options.includeLlm = swLlm.isChecked();
@@ -75,6 +79,7 @@ public class DataTransferActivity extends Activity {
         return options;
     }
 
+    // 校验用户至少选择了一项数据。
     private boolean ensureHasSelection(DataTransferManager.Options options) {
         if(options.isEmpty()) {
             new ConfirmDialog(this)
@@ -86,6 +91,7 @@ public class DataTransferActivity extends Activity {
         return true;
     }
 
+    // 发起系统导出文件创建流程。
     private void startExportFlow() {
         if(transferState != STATE_IDLE) {
             return;
@@ -102,6 +108,7 @@ public class DataTransferActivity extends Activity {
         startActivityForResult(intent, REQUEST_EXPORT);
     }
 
+    // 发起系统导入文件选择流程。
     private void startImportFlow() {
         if(transferState != STATE_IDLE) {
             return;
@@ -119,6 +126,7 @@ public class DataTransferActivity extends Activity {
     }
 
     @Override
+    // 处理系统文件选择结果并启动实际导入导出任务。
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(resultCode != RESULT_OK || data == null) {
@@ -146,6 +154,7 @@ public class DataTransferActivity extends Activity {
         }
     }
 
+    // 在后台线程执行导出任务。
     private void runExport(Uri uri, DataTransferManager.Options options) {
         new Thread(() -> {
             try {
@@ -169,6 +178,7 @@ public class DataTransferActivity extends Activity {
         }).start();
     }
 
+    // 在后台线程执行导入任务。
     private void runImport(Uri uri, DataTransferManager.Options options) {
         new Thread(() -> {
             try {
@@ -216,6 +226,7 @@ public class DataTransferActivity extends Activity {
         }
     }
 
+    // 统一展示导入导出异常信息。
     private void showTransferError(Exception e) {
         e.printStackTrace();
         handler.post(() -> {
@@ -234,11 +245,13 @@ public class DataTransferActivity extends Activity {
         });
     }
 
+    // 仅在页面仍存活时显示结果弹窗。
     private boolean canShowResultDialog() {
         return !isFinishing() && !isDestroyed();
     }
 
     @Override
+    // 关闭页面并播放返回动画。
     public void finish() {
         super.finish();
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);

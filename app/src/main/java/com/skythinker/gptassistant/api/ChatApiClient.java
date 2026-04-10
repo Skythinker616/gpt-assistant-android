@@ -55,8 +55,11 @@ public class ChatApiClient {
     }
 
     public static class SendOptions {
+        // 是否允许发送图片等视觉内容。
         public boolean allowVision = true;
+        // 是否允许发送工具调用上下文。
         public boolean allowTools = true;
+        // 是否允许接收并显示思考内容。
         public boolean allowThinking = true;
     }
 
@@ -71,8 +74,10 @@ public class ChatApiClient {
 
     List<Tools> functions = new ArrayList<>();
 
+    // 流式返回过程中暂存的工具调用片段。
     ArrayList<CallingFunction> callingFunctions = new ArrayList<>();
 
+    // 当前是否正处于 reasoning_content 流中。
     boolean isReasoning = false;
 
     Context context = null;
@@ -101,6 +106,7 @@ public class ChatApiClient {
         sendPromptList(promptList, new SendOptions());
     }
 
+    // 按能力开关发送消息列表，并处理工具调用与思考内容兼容逻辑。
     public void sendPromptList(List<ChatMessage> promptList, SendOptions sendOptions) {
         if(url.isEmpty() || apiKey.isEmpty() || chatGPT == null) {
             listener.onError(context.getString(R.string.text_gpt_conf_error));

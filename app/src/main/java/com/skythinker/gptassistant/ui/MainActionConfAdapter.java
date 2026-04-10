@@ -24,6 +24,7 @@ import java.util.List;
 public class MainActionConfAdapter extends RecyclerView.Adapter<MainActionConfAdapter.ViewHolder> {
 
     public interface IPlacementChangeListener {
+        // 响应按钮分组变更请求。
         boolean onPlacementChange(MainActionLayoutItem item, int newPlacement);
     }
 
@@ -31,6 +32,7 @@ public class MainActionConfAdapter extends RecyclerView.Adapter<MainActionConfAd
     private final List<MainActionLayoutItem> actionItems;
     private final IPlacementChangeListener placementChangeListener;
 
+    // 绑定按钮布局列表与分组变更回调。
     public MainActionConfAdapter(Context context,
                                  List<MainActionLayoutItem> actionItems,
                                  IPlacementChangeListener placementChangeListener) {
@@ -46,6 +48,7 @@ public class MainActionConfAdapter extends RecyclerView.Adapter<MainActionConfAd
         final Spinner spPlacement;
         boolean ignoreNextSelection = false;
 
+        // 缓存按钮布局项视图。
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivIcon = itemView.findViewById(R.id.iv_main_action_conf_icon);
@@ -57,12 +60,14 @@ public class MainActionConfAdapter extends RecyclerView.Adapter<MainActionConfAd
 
     @NonNull
     @Override
+    // 创建按钮布局配置列表项视图。
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.main_action_conf_item, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
+    // 绑定按钮布局项的图标、标题和分组选项。
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         MainActionLayoutItem item = actionItems.get(position);
         MainActionSpec spec = MainActionRegistry.findSpec(item.actionId);
@@ -116,10 +121,12 @@ public class MainActionConfAdapter extends RecyclerView.Adapter<MainActionConfAd
     }
 
     @Override
+    // 返回按钮布局项数量。
     public int getItemCount() {
         return actionItems.size();
     }
 
+    // 生成当前按钮可放置分组的说明文案。
     private String buildAllowedPlacementTip(MainActionSpec spec) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < spec.allowedPlacements.length; i++) {
@@ -131,6 +138,7 @@ public class MainActionConfAdapter extends RecyclerView.Adapter<MainActionConfAd
         return builder.toString();
     }
 
+    // 获取分组对应的展示文案。
     private String getPlacementLabel(int placement) {
         if (placement == MainActionRegistry.PLACEMENT_PRIMARY) {
             return context.getString(R.string.main_action_primary);

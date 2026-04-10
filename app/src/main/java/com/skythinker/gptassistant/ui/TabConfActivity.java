@@ -492,6 +492,7 @@ public class TabConfActivity extends Activity {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(localReceiver);
     }
 
+    // 无动画重启当前设置页，便于切换语言等场景立即刷新。
     private void restartSelf() {
         Intent intent = new Intent(getIntent());
         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
@@ -507,6 +508,7 @@ public class TabConfActivity extends Activity {
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
     }
 
+    // 刷新设置页的模型下拉框并同步当前选择。
     private void updateModelSpinner() {
         Spinner spinner = findViewById(R.id.sp_model_conf);
         List<ModelCatalog.ModelOption> modelOptions = ModelCatalog.buildModelOptions(this, GlobalDataHolder.getGptModel());
@@ -525,6 +527,8 @@ public class TabConfActivity extends Activity {
         modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item);
         spinner.setAdapter(modelsAdapter);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            // 保存设置页当前选中的默认模型。
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 ModelCatalog.ModelOption option = modelsAdapter.getItem(position);
                 if(option == null) {
@@ -539,6 +543,7 @@ public class TabConfActivity extends Activity {
                 modelsAdapter.notifyDataSetChanged();
             }
 
+            @Override
             public void onNothingSelected(AdapterView<?> adapterView) { }
         });
 
@@ -554,6 +559,7 @@ public class TabConfActivity extends Activity {
         }
     }
 
+    // 更新自定义模型配置入口的摘要文案。
     private void updateCustomModelSummary() {
         int customModelCount = GlobalDataHolder.getCustomModelProfiles().size();
         ((TextView) findViewById(R.id.tv_custom_model_conf_summary))

@@ -16,9 +16,13 @@ import java.util.Map;
 
 public class ModelCatalog {
 
+    // 视觉输入能力标记。
     public static final String CAPABILITY_VISION = "vision";
+    // 工具调用能力标记。
     public static final String CAPABILITY_TOOL = "tool";
+    // 思考内容能力标记。
     public static final String CAPABILITY_THINKING = "thinking";
+    // 首次启动时写入的默认模型列表。
     private static final List<String> INITIAL_MODEL_IDS = Arrays.asList(
             "gpt-3.5-turbo",
             "gpt-4",
@@ -28,9 +32,12 @@ public class ModelCatalog {
     );
 
     public static class KnownModelInfo {
+        // 模型展示名称。
         public final String displayName;
+        // 模型已知能力。
         public final List<String> capabilities;
 
+        // 记录内置模型的展示信息。
         public KnownModelInfo(String displayName, List<String> capabilities) {
             this.displayName = displayName;
             this.capabilities = capabilities == null ? Collections.emptyList() : new ArrayList<>(capabilities);
@@ -38,15 +45,19 @@ public class ModelCatalog {
     }
 
     public static class ModelOption {
+        // 实际保存的模型 ID。
         public final String modelId;
+        // Spinner 中显示的文本。
         public final String displayText;
 
+        // 构造一个模型下拉项。
         public ModelOption(String modelId, String displayText) {
             this.modelId = modelId;
             this.displayText = displayText;
         }
 
         @Override
+        // 让 Spinner 直接显示准备好的文案。
         public String toString() {
             return displayText;
         }
@@ -54,24 +65,29 @@ public class ModelCatalog {
 
     private static final Map<String, KnownModelInfo> KNOWN_MODEL_MAP = buildKnownModelMap();
 
+    // 工具类不需要实例化。
     private ModelCatalog() { }
 
+    // 生成当前可选模型列表，并补上额外指定模型。
     public static List<ModelOption> buildModelOptions(Context context, @Nullable String extraModelId) {
         ArrayList<ModelOption> options = new ArrayList<>();
         LinkedHashSet<String> addedModelIds = new LinkedHashSet<>();
 
+        // 自定义模型按用户维护顺序优先进入列表。
         List<CustomModelProfile> customProfiles = GlobalDataHolder.getCustomModelProfiles();
         if(customProfiles != null) {
             for(CustomModelProfile profile : customProfiles) {
                 addModelOption(options, addedModelIds, profile.id);
             }
         }
+        // 额外补上当前正在使用但列表里缺失的模型，避免 Spinner 丢选中项。
         if(extraModelId != null && !extraModelId.isEmpty()) {
             addModelOption(options, addedModelIds, extraModelId);
         }
         return options;
     }
 
+    // 获取模型的展示名称，优先使用用户自定义名称。
     public static String getDisplayName(String modelId) {
         if(modelId == null || modelId.isEmpty()) {
             return "";
@@ -82,27 +98,33 @@ public class ModelCatalog {
             return profile.name;
         }
 
+        // 自定义名称为空时，再退回内置名称或原始 modelId。
         KnownModelInfo knownModelInfo = getKnownModelInfo(modelId);
         return knownModelInfo == null ? modelId : knownModelInfo.displayName;
     }
 
+    // 获取模型在列表中的展示文本。
     public static String getDisplayText(String modelId) {
         return getDisplayName(modelId);
     }
 
+    // 判断模型是否支持视觉输入。
     public static boolean supportsVision(String modelId) {
         return supportsCapability(modelId, CAPABILITY_VISION);
     }
 
+    // 判断模型是否支持工具调用。
     public static boolean supportsTools(String modelId) {
         return supportsCapability(modelId, CAPABILITY_TOOL);
     }
 
+    // 判断模型是否支持思考内容。
     public static boolean supportsThinking(String modelId) {
         return supportsCapability(modelId, CAPABILITY_THINKING);
     }
 
     @Nullable
+    // 读取内置模型的静态元信息。
     public static KnownModelInfo getKnownModelInfo(String modelId) {
         if(modelId == null || modelId.isEmpty()) {
             return null;
@@ -110,6 +132,7 @@ public class ModelCatalog {
         return KNOWN_MODEL_MAP.get(modelId);
     }
 
+    // 用内置默认能力生成一条可编辑的模型配置。
     public static CustomModelProfile createProfileWithKnownDefaults(String modelId) {
         KnownModelInfo knownModelInfo = getKnownModelInfo(modelId);
         if(knownModelInfo == null) {
@@ -119,6 +142,7 @@ public class ModelCatalog {
         return new CustomModelProfile(modelId, "", knownModelInfo.capabilities);
     }
 
+    // 构造首次启动时的默认模型配置列表。
     public static List<CustomModelProfile> buildInitialModelProfiles() {
         ArrayList<CustomModelProfile> profiles = new ArrayList<>();
         for(String modelId : INITIAL_MODEL_IDS) {
@@ -128,6 +152,7 @@ public class ModelCatalog {
     }
 
     @Nullable
+    // 在用户自定义模型列表中查找指定模型。
     public static CustomModelProfile findCustomModel(String modelId) {
         if(modelId == null || modelId.isEmpty()) {
             return null;
@@ -145,6 +170,7 @@ public class ModelCatalog {
         return null;
     }
 
+    // 向下拉列表追加一个未重复的模型项。
     private static void addModelOption(List<ModelOption> options,
                                        LinkedHashSet<String> addedModelIds,
                                        String modelId) {
@@ -154,6 +180,7 @@ public class ModelCatalog {
         options.add(new ModelOption(modelId, getDisplayText(modelId)));
     }
 
+    // 按优先级判断模型是否支持某项能力。
     private static boolean supportsCapability(String modelId, String capability) {
         if(modelId == null || modelId.isEmpty()) {
             return false;
@@ -164,10 +191,12 @@ public class ModelCatalog {
             return profile.hasCapability(capability);
         }
 
+        // 没有自定义配置时，再使用内置能力表兜底。
         KnownModelInfo knownModelInfo = getKnownModelInfo(modelId);
         return knownModelInfo != null && knownModelInfo.capabilities.contains(capability);
     }
 
+    // 构建内置模型信息映射表。
     private static Map<String, KnownModelInfo> buildKnownModelMap() {
         HashMap<String, KnownModelInfo> map = new HashMap<>();
 
@@ -229,6 +258,7 @@ public class ModelCatalog {
         return map;
     }
 
+    // 向内置模型表注册一条模型定义。
     private static void addKnownModel(Map<String, KnownModelInfo> map,
                                       String modelId,
                                       String displayName,

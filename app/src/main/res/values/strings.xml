@@ -131,8 +131,10 @@
     <string name="data_transfer_action_subtitle">| Exported zip contains json files and attachments</string>
     <string name="data_transfer_export_item">Export Selected Data</string>
     <string name="data_transfer_export_tip">Create a zip backup file</string>
+    <string name="data_transfer_export_tip_running">Exporting...</string>
     <string name="data_transfer_import_item">Import Selected Data</string>
     <string name="data_transfer_import_tip">Restore data from a zip file</string>
+    <string name="data_transfer_import_tip_running">Importing...</string>
     <string name="data_transfer_rule_tip">Chats are deduplicated only when the full conversation content matches. Attachment uuid conflicts are remapped automatically.</string>
     <string name="data_transfer_toast_no_item">Select at least one data item</string>
     <string name="data_transfer_toast_exporting">Exporting, please wait...</string>

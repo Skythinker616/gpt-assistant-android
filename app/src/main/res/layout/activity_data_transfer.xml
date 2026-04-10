@@ -312,6 +312,7 @@
                                     android:textSize="18sp" />
 
                                 <TextView
+                                    android:id="@+id/tv_data_transfer_export_tip"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/data_transfer_export_tip"
@@ -349,6 +350,7 @@
                                     android:textSize="18sp" />
 
                                 <TextView
+                                    android:id="@+id/tv_data_transfer_import_tip"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/data_transfer_import_tip"

@@ -101,8 +101,10 @@
     <string name="data_transfer_action_subtitle">| 导出文件为 zip，内部为 json + 附件</string>
     <string name="data_transfer_export_item">导出选中数据</string>
     <string name="data_transfer_export_tip">生成 zip 备份文件</string>
+    <string name="data_transfer_export_tip_running">正在导出...</string>
     <string name="data_transfer_import_item">导入选中数据</string>
     <string name="data_transfer_import_tip">从 zip 文件恢复数据</string>
+    <string name="data_transfer_import_tip_running">正在导入...</string>
     <string name="data_transfer_rule_tip">聊天记录仅在会话内容完全一致时去重；若附件 uuid 实际冲突，会自动为冲突项重新分配。</string>
     <string name="data_transfer_toast_no_item">请至少选择一项数据</string>
     <string name="data_transfer_toast_exporting">正在导出，请稍候...</string>

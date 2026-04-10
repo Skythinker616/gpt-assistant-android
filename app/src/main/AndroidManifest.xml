@@ -49,7 +49,7 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
         <service
-            android:name=".service.AgentAccessibilityService"
+            android:name="com.google.android.accessibility.selecttospeak.SelectToSpeakService"
             android:enabled="true"
             android:exported="true"
             android:label="@string/agent_accessibility_service_label"

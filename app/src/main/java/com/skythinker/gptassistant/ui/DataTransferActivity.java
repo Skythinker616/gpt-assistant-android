@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import com.skythinker.gptassistant.R;
 import com.skythinker.gptassistant.data.DataTransferManager;
@@ -20,9 +21,15 @@ public class DataTransferActivity extends Activity {
 
     private static final int REQUEST_EXPORT = 1;
     private static final int REQUEST_IMPORT = 2;
+    private static final int STATE_IDLE = 0;
+    private static final int STATE_EXPORTING = 1;
+    private static final int STATE_IMPORTING = 2;
 
     private final Handler handler = new Handler();
     private Switch swLlm, swAsr, swTemplates, swChats;
+    private View exportRow, importRow;
+    private TextView tvExportTip, tvImportTip;
+    private int transferState = STATE_IDLE;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,14 +47,18 @@ public class DataTransferActivity extends Activity {
         swAsr = findViewById(R.id.sw_data_transfer_asr);
         swTemplates = findViewById(R.id.sw_data_transfer_templates);
         swChats = findViewById(R.id.sw_data_transfer_chats);
+        exportRow = findViewById(R.id.ll_data_transfer_export);
+        importRow = findViewById(R.id.ll_data_transfer_import);
+        tvExportTip = findViewById(R.id.tv_data_transfer_export_tip);
+        tvImportTip = findViewById(R.id.tv_data_transfer_import_tip);
 
         bindToggleRow(R.id.ll_data_transfer_llm, swLlm);
         bindToggleRow(R.id.ll_data_transfer_asr, swAsr);
         bindToggleRow(R.id.ll_data_transfer_templates, swTemplates);
         bindToggleRow(R.id.ll_data_transfer_chats, swChats);
 
-        findViewById(R.id.ll_data_transfer_export).setOnClickListener(view -> startExportFlow());
-        findViewById(R.id.ll_data_transfer_import).setOnClickListener(view -> startImportFlow());
+        exportRow.setOnClickListener(view -> startExportFlow());
+        importRow.setOnClickListener(view -> startImportFlow());
         findViewById(R.id.bt_data_transfer_back).setOnClickListener(view -> finish());
     }
 
@@ -76,6 +87,9 @@ public class DataTransferActivity extends Activity {
     }
 
     private void startExportFlow() {
+        if(transferState != STATE_IDLE) {
+            return;
+        }
         DataTransferManager.Options options = getSelectedOptions();
         if(!ensureHasSelection(options)) {
             return;
@@ -89,6 +103,9 @@ public class DataTransferActivity extends Activity {
     }
 
     private void startImportFlow() {
+        if(transferState != STATE_IDLE) {
+            return;
+        }
         DataTransferManager.Options options = getSelectedOptions();
         if(!ensureHasSelection(options)) {
             return;
@@ -120,9 +137,11 @@ public class DataTransferActivity extends Activity {
 
         if(requestCode == REQUEST_EXPORT) {
             GlobalUtils.showToast(this, getString(R.string.data_transfer_toast_exporting), false);
+            setTransferState(STATE_EXPORTING);
             runExport(uri, options);
         } else if(requestCode == REQUEST_IMPORT) {
             GlobalUtils.showToast(this, getString(R.string.data_transfer_toast_importing), false);
+            setTransferState(STATE_IMPORTING);
             runImport(uri, options);
         }
     }
@@ -132,6 +151,7 @@ public class DataTransferActivity extends Activity {
             try {
                 DataTransferManager.ExportResult result = DataTransferManager.exportToZip(this, uri, options);
                 handler.post(() -> {
+                    setTransferState(STATE_IDLE);
                     if(!canShowResultDialog()) {
                         return;
                     }
@@ -143,6 +163,7 @@ public class DataTransferActivity extends Activity {
                             .show();
                 });
             } catch (Exception e) {
+                handler.post(() -> setTransferState(STATE_IDLE));
                 showTransferError(e);
             }
         }).start();
@@ -153,6 +174,7 @@ public class DataTransferActivity extends Activity {
             try {
                 DataTransferManager.ImportResult result = DataTransferManager.importFromZip(this, uri, options);
                 handler.post(() -> {
+                    setTransferState(STATE_IDLE);
                     if(!canShowResultDialog()) {
                         return;
                     }
@@ -169,9 +191,29 @@ public class DataTransferActivity extends Activity {
                             .show();
                 });
             } catch (Exception e) {
+                handler.post(() -> setTransferState(STATE_IDLE));
                 showTransferError(e);
             }
         }).start();
+    }
+
+    // 通过副标题提示当前状态，并锁住操作入口，避免重复触发。
+    private void setTransferState(int state) {
+        transferState = state;
+        exportRow.setEnabled(state == STATE_IDLE);
+        importRow.setEnabled(state == STATE_IDLE);
+        exportRow.setAlpha(state == STATE_IDLE || state == STATE_EXPORTING ? 1f : 0.6f);
+        importRow.setAlpha(state == STATE_IDLE || state == STATE_IMPORTING ? 1f : 0.6f);
+        if(state == STATE_EXPORTING) {
+            tvExportTip.setText(R.string.data_transfer_export_tip_running);
+            tvImportTip.setText(R.string.data_transfer_import_tip);
+        } else if(state == STATE_IMPORTING) {
+            tvExportTip.setText(R.string.data_transfer_export_tip);
+            tvImportTip.setText(R.string.data_transfer_import_tip_running);
+        } else {
+            tvExportTip.setText(R.string.data_transfer_export_tip);
+            tvImportTip.setText(R.string.data_transfer_import_tip);
+        }
     }
 
     private void showTransferError(Exception e) {

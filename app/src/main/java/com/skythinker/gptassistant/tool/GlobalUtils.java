@@ -11,8 +11,9 @@ import android.util.Base64;
 import android.util.TypedValue;
 import android.widget.Toast;
 
-import java.util.Arrays;
 import java.util.Locale;
+
+import com.skythinker.gptassistant.data.ModelCatalog;
 
 public class GlobalUtils {
     // 检查当前语言是否是中文
@@ -63,7 +64,6 @@ public class GlobalUtils {
     }
 
     public static boolean checkVisionSupport(String model) {
-        final String[] specialVisionModels = {"gpt-4-turbo", "gpt-4o", "gpt-4o-mini"}; // 支持识图但不包含"vision"的模型
-        return model.contains("vision") || Arrays.asList(specialVisionModels).contains(model) || model.endsWith("*");
+        return ModelCatalog.supportsVision(model);
     }
 }

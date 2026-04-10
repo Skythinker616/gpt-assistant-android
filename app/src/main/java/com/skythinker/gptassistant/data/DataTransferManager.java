@@ -42,7 +42,7 @@ import cn.hutool.crypto.digest.MD5;
 
 public class DataTransferManager {
 
-    private static final int FORMAT_VERSION = 1;
+    private static final int FORMAT_VERSION = 2;
     private static final String ENTRY_MANIFEST = "manifest.json";
     private static final String ENTRY_LLM = "llm.json";
     private static final String ENTRY_ASR = "asr.json";
@@ -190,10 +190,10 @@ public class DataTransferManager {
         llmJson.put("maxContextNum", GlobalDataHolder.getGptMaxContextNum());
 
         JSONArray customModelsJson = new JSONArray();
-        for(String model : GlobalDataHolder.getCustomModels()) {
-            customModelsJson.put(model);
+        for(CustomModelProfile profile : GlobalDataHolder.getCustomModelProfiles()) {
+            customModelsJson.put(profile.toJson());
         }
-        llmJson.put("customModels", customModelsJson);
+        llmJson.put("customModelProfiles", customModelsJson);
         return llmJson;
     }
 
@@ -300,15 +300,18 @@ public class DataTransferManager {
         String host = llmJson.has("apiHost") ? llmJson.optString("apiHost", GlobalDataHolder.getGptApiHost()) : GlobalDataHolder.getGptApiHost();
         String key = llmJson.has("apiKey") ? llmJson.optString("apiKey", GlobalDataHolder.getGptApiKey()) : GlobalDataHolder.getGptApiKey();
         String model = llmJson.has("model") ? llmJson.optString("model", GlobalDataHolder.getGptModel()) : GlobalDataHolder.getGptModel();
-        List<String> customModels = new ArrayList<>(GlobalDataHolder.getCustomModels());
-        if(llmJson.has("customModels")) {
+        List<CustomModelProfile> customModels = new ArrayList<>(GlobalDataHolder.getCustomModelProfiles());
+        if(llmJson.has("customModelProfiles")) {
             customModels.clear();
-            JSONArray customModelsJson = llmJson.optJSONArray("customModels");
+            JSONArray customModelsJson = llmJson.optJSONArray("customModelProfiles");
             if(customModelsJson != null) {
                 for(int i = 0; i < customModelsJson.length(); i++) {
-                    String customModel = customModelsJson.optString(i);
-                    if(customModel != null && !customModel.isEmpty()) {
-                        customModels.add(customModel);
+                    JSONObject customModelJson = customModelsJson.optJSONObject(i);
+                    if(customModelJson != null) {
+                        CustomModelProfile profile = CustomModelProfile.fromJson(customModelJson);
+                        if(!profile.id.isEmpty()) {
+                            customModels.add(profile);
+                        }
                     }
                 }
             }

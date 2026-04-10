@@ -8,6 +8,9 @@ import android.util.Log;
 import com.skythinker.gptassistant.BuildConfig;
 import com.skythinker.gptassistant.R;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,6 +18,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,7 +36,7 @@ public class GlobalDataHolder {
     private static String gptModel;
     private static float gptTemperature;
     private static int gptMaxContextNum;
-    private static List<String> customModels = null;
+    private static List<CustomModelProfile> customModelProfiles = null;
     private static boolean checkAccessOnStart;
     private static boolean defaultEnableTts;
     private static boolean defaultEnableMultiChat;
@@ -161,21 +165,78 @@ public class GlobalDataHolder {
     public static void loadGptApiInfo() {
         gptApiHost = sp.getString("gpt_api_host", "https://api.openai.com/");
         gptApiKey = sp.getString("gpt_api_key", "");
-        gptModel = sp.getString("gpt_model", "gpt-3.5-turbo");
-        customModels = new ArrayList<>(Arrays.asList(sp.getString("custom_models", "").split(";")));
-        customModels.removeIf(String::isEmpty);
+        gptModel = sp.getString("gpt_model", "");
+        gptModel = gptModel.replaceAll("\\*+$", "");
+        customModelProfiles = new ArrayList<>();
+        boolean modelProfilesInitialized = sp.getBoolean("model_profiles_initialized", false);
+
+        String customModelProfilesJson = sp.getString("custom_model_profiles", "");
+        if(!customModelProfilesJson.isEmpty()) {
+            try {
+                JSONArray jsonArray = new JSONArray(customModelProfilesJson);
+                for(int i = 0; i < jsonArray.length(); i++) {
+                    CustomModelProfile profile = CustomModelProfile.fromJson(jsonArray.optJSONObject(i));
+                    if(!profile.id.isEmpty()) {
+                        customModelProfiles.add(profile);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else if(!sp.getString("custom_models", "").isEmpty()) {
+            // 兼容旧版本的本地设置，导入后立即转为新结构存储。
+            String oldCustomModels = sp.getString("custom_models", "");
+            for(String oldModel : oldCustomModels.split(";")) {
+                String trimmedModel = oldModel.trim();
+                if(trimmedModel.isEmpty()) {
+                    continue;
+                }
+                ArrayList<String> capabilities = new ArrayList<>();
+                if(trimmedModel.endsWith("*")) {
+                    trimmedModel = trimmedModel.replaceAll("\\*+$", "");
+                    capabilities.add(ModelCatalog.CAPABILITY_VISION);
+                }
+                CustomModelProfile profile = ModelCatalog.createProfileWithKnownDefaults(trimmedModel);
+                profile.capabilities.addAll(capabilities); // 保留旧版*号显式声明的视觉能力
+                customModelProfiles.add(profile);
+            }
+            customModelProfiles = sanitizeCustomModelProfiles(customModelProfiles);
+            saveGptApiInfo(gptApiHost, gptApiKey, gptModel, customModelProfiles);
+            return;
+        } else if(!modelProfilesInitialized) {
+            // 首次使用时写入一组可编辑的默认模型，后续用户删除后不再自动恢复。
+            customModelProfiles = new ArrayList<>(ModelCatalog.buildInitialModelProfiles());
+            if(gptModel.isEmpty() && customModelProfiles.size() > 0) {
+                gptModel = customModelProfiles.get(0).id;
+            }
+            saveGptApiInfo(gptApiHost, gptApiKey, gptModel, customModelProfiles);
+            sp.edit().putBoolean("model_profiles_initialized", true).apply();
+            return;
+        }
+
+        customModelProfiles = sanitizeCustomModelProfiles(customModelProfiles);
+        if(gptModel.isEmpty() && customModelProfiles.size() > 0) {
+            gptModel = customModelProfiles.get(0).id;
+            saveGptApiInfo(gptApiHost, gptApiKey, gptModel, customModelProfiles);
+        } else if(gptModel.isEmpty()) {
+            gptModel = "gpt-3.5-turbo";
+        }
     }
 
-    public static void saveGptApiInfo(String host, String key, String model, List<String> customModelList) {
+    public static void saveGptApiInfo(String host, String key, String model, List<CustomModelProfile> customModelList) {
         gptApiHost = host;
         gptApiKey = key;
-        gptModel = model;
-        customModels = customModelList;
+        gptModel = model == null ? "" : model.replaceAll("\\*+$", "");
+        customModelProfiles = sanitizeCustomModelProfiles(customModelList);
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("gpt_api_host", gptApiHost);
         editor.putString("gpt_api_key", gptApiKey);
         editor.putString("gpt_model", gptModel);
-        editor.putString("custom_models", String.join(";", customModels));
+        JSONArray jsonArray = new JSONArray();
+        for(CustomModelProfile profile : customModelProfiles) {
+            jsonArray.put(profile.toJson());
+        }
+        editor.putString("custom_model_profiles", jsonArray.toString());
         editor.apply();
     }
 
@@ -344,7 +405,7 @@ public class GlobalDataHolder {
 
     public static String getGptModel() { return gptModel; }
 
-    public static List<String> getCustomModels() { return customModels; }
+    public static List<CustomModelProfile> getCustomModelProfiles() { return customModelProfiles; }
 
     public static float getGptTemperature() {return gptTemperature; }
 
@@ -375,4 +436,24 @@ public class GlobalDataHolder {
     public static String getLatestVersion() { return latestVersion; }
 
     public static String getMainActionLayout() { return mainActionLayout; }
+
+    private static List<CustomModelProfile> sanitizeCustomModelProfiles(List<CustomModelProfile> profileList) {
+        LinkedHashMap<String, CustomModelProfile> profileMap = new LinkedHashMap<>();
+        if(profileList != null) {
+            for(CustomModelProfile profile : profileList) {
+                if(profile == null || profile.id == null) {
+                    continue;
+                }
+                CustomModelProfile normalizedProfile = profile.copy();
+                normalizedProfile.id = normalizedProfile.id.trim();
+                normalizedProfile.name = normalizedProfile.name == null ? "" : normalizedProfile.name.trim();
+                normalizedProfile.capabilities = new ArrayList<>(normalizedProfile.capabilities);
+                if(normalizedProfile.id.isEmpty()) {
+                    continue;
+                }
+                profileMap.put(normalizedProfile.id, normalizedProfile);
+            }
+        }
+        return new ArrayList<>(profileMap.values());
+    }
 }

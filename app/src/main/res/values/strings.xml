@@ -1,12 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">GPTAssistant</string>
-    <string-array name="models">
-        <item>gpt-3.5-turbo</item>
-        <item>gpt-4</item>
-        <item>gpt-4-turbo</item>
-        <item>gpt-4o</item>
-        <item>gpt-4o-mini</item>
-    </string-array>
     <!--  在线资源Url  -->
     <string name="homepage_url_github" translatable="false">https://github.com/Skythinker616/gpt-assistant-android</string>
     <string name="homepage_url_gitee" translatable="false">https://gitee.com/skythinker/gpt-assistant-android</string>
@@ -56,8 +49,8 @@
     <string name="conf_opanai_key_item">Key</string>
     <string name="conf_openai_host_item">URL</string>
     <string name="conf_model_select_item">Choose Model</string>
-    <string name="conf_custom_model_item">Custom Models</string>
-    <string name="conf_custom_model_tip">Separate models with \';\'</string>
+    <string name="conf_custom_model_item">Model List</string>
+    <string name="conf_custom_model_summary">%1$d models configured</string>
     <string name="conf_model_temperature">Temperature</string>
     <string name="conf_context_num">Context Length</string>
     <string name="conf_asr_title">Speech Recognition Settings</string>
@@ -231,8 +224,43 @@
     <string name="toast_network_off">Internet Access Off</string>
     <string name="toast_agent_on">Agent Mode On</string>
     <string name="toast_agent_off">Agent Mode Off</string>
-    <string name="dialog_custom_model_help_title">Custom Model Help</string>
-    <string name="dialog_custom_model_help">Custom model names entered here will be appended to drop-down list. Use \';\' to separate different models and use \'*\' to indicate a vision model. \n\nExample: gpt-4o*;gpt-4-0613</string>
+    <string name="dialog_custom_model_help_title">Model List Help</string>
+    <string name="dialog_custom_model_help">Manage all available models here. You can add models manually or fetch them from the API.\n\nModels can be reordered, edited with capability tags, and removed. Deleted models will not be restored automatically.</string>
+    <string name="custom_model_conf_title">Model List</string>
+    <string name="custom_model_conf_fetch">Fetch</string>
+    <string name="custom_model_conf_add">Add</string>
+    <string name="custom_model_conf_subtitle">Tap to edit, swipe left to delete, drag to reorder</string>
+    <string name="custom_model_conf_hint">Display name is optional. When empty, the app will use a default name or the model ID.</string>
+    <string name="custom_model_fetch_loading">Fetching model list...</string>
+    <string name="custom_model_fetch_missing_config">Please fill in the API host and API key first</string>
+    <string name="custom_model_fetch_empty">No available models were returned</string>
+    <string name="custom_model_fetch_title">Choose models to add</string>
+    <string name="custom_model_fetch_subtitle">Already added models stay visible. Check other models to add them in batch.</string>
+    <string name="custom_model_fetch_added_suffix">Added</string>
+    <string name="custom_model_fetch_exists_toast">This model is already in the list</string>
+    <string name="custom_model_fetch_result">Added %1$d models</string>
+    <string name="custom_model_fetch_failed">Failed to fetch models: %1$s</string>
+    <string name="custom_model_detail_title_add">Add Model</string>
+    <string name="custom_model_detail_title_edit">Edit Model</string>
+    <string name="custom_model_detail_save">Save</string>
+    <string name="custom_model_detail_section">Model Details</string>
+    <string name="custom_model_detail_subtitle">Model ID is sent to the API. Display name is only used in the UI.</string>
+    <string name="custom_model_detail_id">Model ID</string>
+    <string name="custom_model_detail_name">Display Name</string>
+    <string name="custom_model_detail_name_tip">Optional. Leave empty to use a default name.</string>
+    <string name="custom_model_detail_name_hint">For example: GPT-4o</string>
+    <string name="custom_model_cap_vision">Vision</string>
+    <string name="custom_model_cap_tool">Tools</string>
+    <string name="custom_model_cap_thinking">Thinking</string>
+    <string name="custom_model_caps_prefix">Capabilities:</string>
+    <string name="custom_model_caps_none">No capability tags</string>
+    <string name="custom_model_caps_text_only">Text chat only</string>
+    <string name="custom_model_toast_id_required">Please enter a model ID</string>
+    <string name="custom_model_toast_duplicate_id">Model ID already exists</string>
+    <string name="toast_network_tool_hint">This model does not support tools. Web access will be ignored when sending.</string>
+    <string name="toast_agent_tool_hint">This model does not support tools. Agent mode will be ignored when sending.</string>
+    <string name="toast_tool_send_ignored">This model does not support tools. Tool messages were ignored for this request.</string>
+    <string name="toast_image_send_ignored">This model does not support image input. Images were ignored for this request.</string>
     <string name="text_gpt_conf_error">Please check GPT api configuration</string>
     <string name="text_markdown_preview_loading">Loading...</string>
     <string name="text_markdown_preview_loading_failed">Failed to obtain online resource.</string>

@@ -35,6 +35,7 @@ import android.widget.Toast;
 
 import com.skythinker.gptassistant.BuildConfig;
 import com.skythinker.gptassistant.data.GlobalDataHolder;
+import com.skythinker.gptassistant.data.ModelCatalog;
 import com.skythinker.gptassistant.tool.GlobalUtils;
 import com.skythinker.gptassistant.data.PromptTabData;
 import com.skythinker.gptassistant.R;
@@ -55,11 +56,13 @@ import okhttp3.Response;
 public class TabConfActivity extends Activity {
 
     private static final int REQUEST_DATA_TRANSFER = 1000;
+    private static final int REQUEST_CUSTOM_MODEL_CONF = 1001;
 
     private RecyclerView rvTabList;
     private TabConfListAdapter adapter;
     private BroadcastReceiver localReceiver;
     private Handler handler = new Handler();
+    private ArrayAdapter<ModelCatalog.ModelOption> modelsAdapter;
 
     private interface CustomTextWatcher extends TextWatcher { // 去掉TextWatcher不需要的方法
         @Override default void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
@@ -130,73 +133,22 @@ public class TabConfActivity extends Activity {
                         host += "/";
                     }
                 }
-                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel(), GlobalDataHolder.getCustomModels());
+                GlobalDataHolder.saveGptApiInfo(host, GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel(), GlobalDataHolder.getCustomModelProfiles());
             }
         });
 
         ((EditText) findViewById(R.id.et_openai_key_conf)).setText(GlobalDataHolder.getGptApiKey());
         ((EditText) findViewById(R.id.et_openai_key_conf)).addTextChangedListener(new CustomTextWatcher() {
             public void afterTextChanged(Editable editable) {
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGptModel(), GlobalDataHolder.getCustomModels());
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), editable.toString().trim(), GlobalDataHolder.getGptModel(), GlobalDataHolder.getCustomModelProfiles());
             }
         });
 
-        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models))); // 内置模型列表
-        models.addAll(GlobalDataHolder.getCustomModels()); // 自定义模型列表
-        if(!GlobalDataHolder.getGptModel().isEmpty() && !models.contains(GlobalDataHolder.getGptModel())) {
-            models.add(GlobalDataHolder.getGptModel()); // 兼容导入后暂未补全到列表里的模型名
-        }
-        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.model_spinner_item, models) { // 设置Spinner样式和列表数据
-            @Override
-            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // 设置选中/未选中的选项样式
-                TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
-                if(((Spinner) findViewById(R.id.sp_model_conf)).getSelectedItemPosition() == position) { // 选中项
-                    tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-                } else { // 未选中项
-                    tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
-                }
-                return tv;
-            }
-        };
-        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item); // 设置下拉选项样式
-        ((Spinner) findViewById(R.id.sp_model_conf)).setAdapter(modelsAdapter);
-        ((Spinner) findViewById(R.id.sp_model_conf)).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) { // 有选项被选中
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString(), GlobalDataHolder.getCustomModels());
-                modelsAdapter.notifyDataSetChanged();
-            }
-            public void onNothingSelected(AdapterView<?> adapterView) { }
-        });
-        for(int i = 0; i < modelsAdapter.getCount(); i++) { // 根据当前模型名查找选中的选项
-            if(modelsAdapter.getItem(i).equals(GlobalDataHolder.getGptModel())) {
-                ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(i);
-                break;
-            }
-            if(i == modelsAdapter.getCount() - 1) { // 没有找到当前模型名，默认选中第一项
-                ((Spinner) findViewById(R.id.sp_model_conf)).setSelection(0);
-            }
-        }
+        updateModelSpinner();
+        updateCustomModelSummary();
 
-        ((EditText) findViewById(R.id.et_custom_model_conf)).setText(String.join(";", GlobalDataHolder.getCustomModels()));
-        ((EditText) findViewById(R.id.et_custom_model_conf)).addTextChangedListener(new CustomTextWatcher() {
-            public void afterTextChanged(Editable editable) { // 将输入的自定义模型转为列表存储
-                List<String> modelList = new ArrayList<>(Arrays.asList(editable.toString().trim().split(";")));
-                modelList.removeIf(String::isEmpty);
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), GlobalDataHolder.getGptModel(), modelList);
-                models.clear();
-                models.addAll(Arrays.asList(getResources().getStringArray(R.array.models)));
-                models.addAll(modelList);
-                modelsAdapter.notifyDataSetChanged();
-            }
-        });
-
-        ((LinearLayout) findViewById(R.id.bt_custom_model_help).getParent()).setOnClickListener(view -> {
-            new ConfirmDialog(this)
-                    .setTitle(getString(R.string.dialog_custom_model_help_title))
-                    .setContent(getString(R.string.dialog_custom_model_help))
-                    .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
-                    .setOkButtonVisibility(View.GONE)
-                    .show();
+        findViewById(R.id.ll_custom_model_conf_entry).setOnClickListener(view -> {
+            startActivityForResult(new Intent(TabConfActivity.this, CustomModelConfActivity.class), REQUEST_CUSTOM_MODEL_CONF);
         });
 
         ((EditText) findViewById(R.id.et_temperature_conf)).setText(String.valueOf(GlobalDataHolder.getGptTemperature()));
@@ -509,6 +461,12 @@ public class TabConfActivity extends Activity {
             }
             return;
         }
+        if(requestCode == REQUEST_CUSTOM_MODEL_CONF) {
+            if(resultCode == RESULT_OK) {
+                restartSelf();
+            }
+            return;
+        }
 
         if(resultCode == RESULT_OK && data != null && data.hasExtra("ok")) {
             if(data.getBooleanExtra("ok", false)) {
@@ -547,5 +505,58 @@ public class TabConfActivity extends Activity {
     public void finish() {
         super.finish();
         overridePendingTransition(R.anim.translate_left_in, R.anim.translate_right_out);
+    }
+
+    private void updateModelSpinner() {
+        Spinner spinner = findViewById(R.id.sp_model_conf);
+        List<ModelCatalog.ModelOption> modelOptions = ModelCatalog.buildModelOptions(this, GlobalDataHolder.getGptModel());
+        modelsAdapter = new ArrayAdapter<ModelCatalog.ModelOption>(this, R.layout.model_spinner_item, modelOptions) {
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
+                if(spinner.getSelectedItemPosition() == position) {
+                    tv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                } else {
+                    tv.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
+                }
+                return tv;
+            }
+        };
+        modelsAdapter.setDropDownViewResource(R.layout.model_spinner_dropdown_item);
+        spinner.setAdapter(modelsAdapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
+                ModelCatalog.ModelOption option = modelsAdapter.getItem(position);
+                if(option == null) {
+                    return;
+                }
+                GlobalDataHolder.saveGptApiInfo(
+                        GlobalDataHolder.getGptApiHost(),
+                        GlobalDataHolder.getGptApiKey(),
+                        option.modelId,
+                        GlobalDataHolder.getCustomModelProfiles()
+                );
+                modelsAdapter.notifyDataSetChanged();
+            }
+
+            public void onNothingSelected(AdapterView<?> adapterView) { }
+        });
+
+        for(int i = 0; i < modelsAdapter.getCount(); i++) {
+            ModelCatalog.ModelOption option = modelsAdapter.getItem(i);
+            if(option != null && option.modelId.equals(GlobalDataHolder.getGptModel())) {
+                spinner.setSelection(i);
+                return;
+            }
+        }
+        if(modelsAdapter.getCount() > 0) {
+            spinner.setSelection(0);
+        }
+    }
+
+    private void updateCustomModelSummary() {
+        int customModelCount = GlobalDataHolder.getCustomModelProfiles().size();
+        ((TextView) findViewById(R.id.tv_custom_model_conf_summary))
+                .setText(getString(R.string.conf_custom_model_summary, customModelCount));
     }
 }

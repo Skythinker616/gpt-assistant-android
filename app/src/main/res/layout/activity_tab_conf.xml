@@ -240,69 +240,42 @@
                             </LinearLayout>
 
                             <LinearLayout
+                                android:id="@+id/ll_custom_model_conf_entry"
                                 android:layout_width="match_parent"
-                                android:layout_height="match_parent"
+                                android:layout_height="wrap_content"
                                 android:layout_marginVertical="10dp"
-                                android:layout_marginBottom="10dp"
                                 android:gravity="center_vertical"
-                                android:orientation="horizontal">
+                                android:orientation="horizontal"
+                                android:paddingVertical="4dp">
 
                                 <LinearLayout
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginRight="20dp"
-                                    android:layout_weight="0"
+                                    android:layout_weight="1"
                                     android:orientation="vertical">
-
-                                    <LinearLayout
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:gravity="fill_vertical"
-                                        android:orientation="horizontal">
-
-                                        <TextView
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:paddingRight="5dp"
-                                            android:text="@string/conf_custom_model_item"
-                                            android:textColor="#000000"
-                                            android:textSize="18sp" />
-
-                                        <ImageButton
-                                            android:id="@+id/bt_custom_model_help"
-                                            android:layout_width="15dp"
-                                            android:layout_height="15dp"
-                                            android:layout_gravity="center_vertical"
-                                            android:layout_weight="1"
-                                            android:background="@color/transparent"
-                                            android:scaleType="centerInside"
-                                            android:src="@drawable/help_btn" />
-
-                                    </LinearLayout>
 
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="@string/conf_custom_model_tip"
-                                        android:textColor="#6A6A6A"
-                                        android:textSize="12sp"
-                                        android:visibility="gone" />
+                                        android:text="@string/conf_custom_model_item"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp" />
                                 </LinearLayout>
 
-                                <EditText
-                                    android:id="@+id/et_custom_model_conf"
+                                <TextView
+                                    android:id="@+id/tv_custom_model_conf_summary"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="5dp"
-                                    android:layout_marginBottom="5dp"
-                                    android:layout_weight="1"
-                                    android:background="#00FFFFFF"
-                                    android:ems="10"
-                                    android:hint="model1;model2"
-                                    android:inputType="text"
-                                    android:textAlignment="textEnd"
+                                    android:layout_marginLeft="10dp"
                                     android:textColor="#5A5A5A"
-                                    android:textSize="16sp" />
+                                    android:textSize="14sp" />
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_marginLeft="8dp"
+                                    android:scaleType="centerInside"
+                                    android:src="@drawable/right_img" />
 
                             </LinearLayout>
 

@@ -54,6 +54,12 @@ public class ChatApiClient {
         public String arguments = "";
     }
 
+    public static class SendOptions {
+        public boolean allowVision = true;
+        public boolean allowTools = true;
+        public boolean allowThinking = true;
+    }
+
     String url = "";
     String apiKey = "";
     String model = "";
@@ -92,12 +98,21 @@ public class ChatApiClient {
 
     // 向GPT发送消息列表
     public void sendPromptList(List<ChatMessage> promptList) {
+        sendPromptList(promptList, new SendOptions());
+    }
+
+    public void sendPromptList(List<ChatMessage> promptList, SendOptions sendOptions) {
         if(url.isEmpty() || apiKey.isEmpty() || chatGPT == null) {
             listener.onError(context.getString(R.string.text_gpt_conf_error));
             return;
         }
 
+        if(sendOptions == null) {
+            sendOptions = new SendOptions();
+        }
+
         BaseChatCompletion chatCompletion = null;
+        List<ChatMessage> promptListForSend = buildPromptListForSend(promptList, sendOptions.allowVision, sendOptions.allowTools);
 
         // 发送前按消息顺序处理assistant文本中的think段，兼容被tool调用打断的情况
         final String thinkStartTag = "<think>\n";
@@ -106,7 +121,7 @@ public class ChatApiClient {
         ArrayList<ChatMessage> pendingThinkMessages = new ArrayList<>();
         boolean inThink = false;
         String pendingThinkFirstVisiblePrefix = "";
-        for(ChatMessage sourceMessage : promptList) {
+        for(ChatMessage sourceMessage : promptListForSend) {
             ChatMessage message = sourceMessage.clone();
             boolean isPlainAssistant = message.role == ChatRole.ASSISTANT && message.toolCalls.size() == 0;
             if(!isPlainAssistant) {
@@ -248,7 +263,7 @@ public class ChatApiClient {
                 }
             }
 
-            if (!functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
+            if (sendOptions.allowTools && !functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
                 chatCompletion = ChatCompletion.builder()
                         .messages(messageList)
                         .model(model.replaceAll("\\*$","")) // 去掉自定义模型结尾的*号
@@ -325,7 +340,7 @@ public class ChatApiClient {
                 }
             }
 
-            if (!functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
+            if (sendOptions.allowTools && !functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
                 chatCompletion = ChatCompletionWithPicture.builder()
                         .messages(messageList)
                         .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
@@ -467,6 +482,36 @@ public class ChatApiClient {
                 }
             }
         });
+    }
+
+    // 在底层统一裁剪不支持的能力，避免界面层维护多套发送副本逻辑。
+    private List<ChatMessage> buildPromptListForSend(List<ChatMessage> promptList, boolean allowVision, boolean allowTools) {
+        ArrayList<ChatMessage> promptListForSend = new ArrayList<>();
+        for(ChatMessage sourceMessage : promptList) {
+            ChatMessage message = sourceMessage.clone();
+            if(!allowTools) {
+                if(message.role == ChatRole.FUNCTION) {
+                    continue;
+                }
+                if(message.toolCalls.size() > 0) {
+                    message.toolCalls.clear();
+                }
+                if(message.role == ChatRole.ASSISTANT
+                        && (message.contentText == null || message.contentText.isEmpty())
+                        && message.attachments.size() == 0) {
+                    continue;
+                }
+            }
+            if(!allowVision) {
+                for(int i = message.attachments.size() - 1; i >= 0; i--) {
+                    if(message.attachments.get(i).type == ChatMessage.Attachment.Type.IMAGE) {
+                        message.attachments.remove(i);
+                    }
+                }
+            }
+            promptListForSend.add(message);
+        }
+        return promptListForSend;
     }
 
     // 配置API信息

@@ -79,6 +79,12 @@
             android:name=".ui.TabDetailConfActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.CustomModelDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CustomModelConfActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.DataTransferActivity"
             android:exported="false" />
         <activity

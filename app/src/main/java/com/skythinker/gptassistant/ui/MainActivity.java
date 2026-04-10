@@ -87,6 +87,7 @@ import com.skythinker.gptassistant.data.ChatManager.ChatMessage.ChatRole;
 import com.skythinker.gptassistant.data.ChatManager.ChatMessage;
 import com.skythinker.gptassistant.data.ChatManager.MessageList;
 import com.skythinker.gptassistant.data.ChatManager.Conversation;
+import com.skythinker.gptassistant.data.ModelCatalog;
 import com.skythinker.gptassistant.service.AgentAccessibilityService;
 import com.skythinker.gptassistant.tool.DocumentParser;
 import com.skythinker.gptassistant.data.GlobalDataHolder;
@@ -515,7 +516,8 @@ public class MainActivity extends Activity {
                             callingFunctions.remove(function); // 从函数调用列表中移除已完成的函数
                             if(callingFunctions.size() == 0) { // 所有函数调用完成，发送给GPT
                                 lastReplyRenderTime = 0;
-                                sendChatList();
+                                String modelId = getCurrentModelId();
+                                sendChatList(ModelCatalog.supportsVision(modelId), ModelCatalog.supportsTools(modelId));
                             } else {
                                 callFunction(callingFunctions.get(0)); // 继续处理下一个函数调用
                             }
@@ -1051,6 +1053,9 @@ public class MainActivity extends Activity {
         refreshMainActionButtonState(MainActionRegistry.ACTION_NETWORK);
         if(networkEnabled) {
             GlobalUtils.showToast(this, R.string.toast_network_on, false);
+            if(!ModelCatalog.supportsTools(getCurrentModelId())) {
+                GlobalUtils.showToast(this, R.string.toast_network_tool_hint, false);
+            }
         }else{
             GlobalUtils.showToast(this, R.string.toast_network_off, false);
         }
@@ -1063,6 +1068,9 @@ public class MainActivity extends Activity {
         if(agentMode) {
             if(AgentAccessibilityService.isConnected()) {
                 GlobalUtils.showToast(this, R.string.toast_agent_on, false);
+                if(!ModelCatalog.supportsTools(getCurrentModelId())) {
+                    GlobalUtils.showToast(this, R.string.toast_agent_tool_hint, false);
+                }
             }else{
                 agentMode = false;
                 GlobalUtils.showToast(this, R.string.toast_agent_accessibility_off, false);
@@ -1184,9 +1192,8 @@ public class MainActivity extends Activity {
     // 更新模型下拉选框
     private void updateModelSpinner() {
         Spinner spModels = findViewById(R.id.sp_main_model);
-        List<String> models = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.models))); // 获取内置模型列表
-        models.addAll(GlobalDataHolder.getCustomModels()); // 添加自定义模型到列表
-        ArrayAdapter<String> modelsAdapter = new ArrayAdapter<String>(this, R.layout.main_model_spinner_item, models) { // 设置Spinner样式和列表数据
+        List<ModelCatalog.ModelOption> models = ModelCatalog.buildModelOptions(this, GlobalDataHolder.getGptModel());
+        ArrayAdapter<ModelCatalog.ModelOption> modelsAdapter = new ArrayAdapter<ModelCatalog.ModelOption>(this, R.layout.main_model_spinner_item, models) { // 设置Spinner样式和列表数据
             @Override
             public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // 设置选中/未选中的选项样式
                 TextView tv = (TextView) super.getDropDownView(position, convertView, parent);
@@ -1202,14 +1209,19 @@ public class MainActivity extends Activity {
         spModels.setAdapter(modelsAdapter);
         spModels.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() { // 设置选项点击事件
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), adapterView.getItemAtPosition(i).toString(), GlobalDataHolder.getCustomModels());
+                ModelCatalog.ModelOption option = modelsAdapter.getItem(i);
+                if(option == null) {
+                    return;
+                }
+                GlobalDataHolder.saveGptApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey(), option.modelId, GlobalDataHolder.getCustomModelProfiles());
                 chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
                 modelsAdapter.notifyDataSetChanged();
             }
             public void onNothingSelected(AdapterView<?> adapterView) { }
         });
         for(int i = 0; i < modelsAdapter.getCount(); i++) { // 查找当前选中的选项
-            if(modelsAdapter.getItem(i).equals(GlobalDataHolder.getGptModel())) {
+            ModelCatalog.ModelOption option = modelsAdapter.getItem(i);
+            if(option != null && option.modelId.equals(GlobalDataHolder.getGptModel())) {
                 spModels.setSelection(i);
                 break;
             }
@@ -1570,6 +1582,16 @@ public class MainActivity extends Activity {
 
     // 发送一个提问，input为null时则从输入框获取
     private void sendQuestion(String input){
+        String modelId = getCurrentModelId();
+        boolean allowVision = ModelCatalog.supportsVision(modelId);
+        boolean allowTools = ModelCatalog.supportsTools(modelId);
+        if(hasSelectedImageAttachment() && !allowVision) {
+            GlobalUtils.showToast(this, R.string.toast_image_send_ignored, false);
+        }
+        if(!allowTools && (networkEnabled || agentMode)) {
+            GlobalUtils.showToast(this, R.string.toast_tool_send_ignored, false);
+        }
+
         boolean isMultiChat = currentTemplateParams.getBool("chat", multiChat);
 
         if(!isMultiChat) { // 若为单次对话模式则新建一个聊天
@@ -1658,7 +1680,7 @@ public class MainActivity extends Activity {
             markdownRenderer.render(tvGptReply, userInput.replace("#markdowndebug\n", ""));
         } else {
             chatApiClient.resetReasoningState();
-            sendChatList();
+            sendChatList(allowVision, allowTools);
             selectedAttachments.clear();
             btSend.setImageResource(R.drawable.cancel_btn);
             updateAttachmentButton(); // 更新附件按钮状态
@@ -1666,7 +1688,7 @@ public class MainActivity extends Activity {
     }
 
     // 预处理并发送聊天列表给GPT
-    void sendChatList() {
+    void sendChatList(boolean allowVision, boolean allowTools) {
         MessageList chatList = new MessageList();
         for(ChatMessage message : multiChatList) { // 深拷贝聊天记录
             chatList.add(message.clone());
@@ -1722,7 +1744,10 @@ public class MainActivity extends Activity {
             }
         }
 
-        chatApiClient.sendPromptList(chatList); // 发送聊天列表给GPT
+        ChatApiClient.SendOptions sendOptions = new ChatApiClient.SendOptions();
+        sendOptions.allowVision = allowVision;
+        sendOptions.allowTools = allowTools;
+        chatApiClient.sendPromptList(chatList, sendOptions); // 发送聊天列表给GPT
     }
 
     // 获取附件弹窗
@@ -2091,7 +2116,7 @@ public class MainActivity extends Activity {
                     if (imageUri != null) {
                         addAttachment(imageUri); // 添加图片到附件列表
                     }
-                    if (!GlobalUtils.checkVisionSupport(GlobalDataHolder.getGptModel()))
+                    if (!GlobalUtils.checkVisionSupport(getCurrentModelId()))
                         Toast.makeText(this, R.string.toast_use_vision_model, Toast.LENGTH_LONG).show();
                 } else if(type != null && type.equals("text/plain") && intent.getStringExtra(Intent.EXTRA_TEXT) != null) { // 分享文本
                     String text = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -2118,6 +2143,22 @@ public class MainActivity extends Activity {
                 }
             }
         }
+    }
+
+    private String getCurrentModelId() {
+        if(currentTemplateParams == null) {
+            return GlobalDataHolder.getGptModel();
+        }
+        return currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel());
+    }
+
+    private boolean hasSelectedImageAttachment() {
+        for(ChatMessage.Attachment attachment : selectedAttachments) {
+            if(attachment.type == ChatMessage.Attachment.Type.IMAGE) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // 转换dp为px

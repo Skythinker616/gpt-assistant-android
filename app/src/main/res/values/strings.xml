@@ -77,10 +77,6 @@
     <string name="conf_set_access_item">Set Accessibility Mode</string>
     <string name="conf_startup_check_access_item">Check Accessibility on Startup</string>
     <string name="conf_set_tts_item">Open TTS Settings</string>
-    <string name="conf_tts_enable_item">Enable TTS by Default</string>
-    <string name="conf_tts_enable_tip">Set voice feedback on app start</string>
-    <string name="conf_def_enable_chat_item">Enable Chat by Default</string>
-    <string name="conf_def_enable_chat_tip">Set ongoing chat on app start</string>
     <string name="conf_remember_tab_item">Remember Selected Tab</string>
     <string name="conf_remember_tab_tip">Auto-select last used template</string>
     <string name="conf_auto_save_history_item">Auto-Save Conversations</string>

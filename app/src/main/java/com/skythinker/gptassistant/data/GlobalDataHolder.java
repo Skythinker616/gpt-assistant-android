@@ -39,6 +39,7 @@ public class GlobalDataHolder {
     // 用户维护的自定义模型配置列表。
     private static List<CustomModelProfile> customModelProfiles = null;
     private static boolean checkAccessOnStart;
+    // 复用历史字段，保存主界面上次的 TTS / 多轮对话开关状态。
     private static boolean defaultEnableTts;
     private static boolean defaultEnableMultiChat;
     private static int selectedTab;
@@ -281,7 +282,7 @@ public class GlobalDataHolder {
     }
 
     public static void loadMultiChatSetting() {
-        defaultEnableMultiChat = sp.getBoolean("default_enable_multi_chat", false);
+        defaultEnableMultiChat = sp.getBoolean("default_enable_multi_chat", true);
     }
 
     public static void saveMultiChatSetting(boolean defaultEnable) {

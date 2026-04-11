@@ -663,12 +663,12 @@ public class MainActivity extends Activity {
             finish();
         });
 
-        // 用户设置为启动时开启连续对话
+        // 恢复主界面上次的多轮对话状态
         if(GlobalDataHolder.getDefaultEnableMultiChat()){
             multiChat = true;
         }
 
-        // 用户设置为启动时开启TTS
+        // 恢复主界面上次的 TTS 状态
         if(!GlobalDataHolder.getDefaultEnableTts()){
             ttsEnabled = false;
         }
@@ -1029,6 +1029,7 @@ public class MainActivity extends Activity {
     // 切换朗读开关并同步按钮状态。
     private void toggleTts() {
         ttsEnabled = !ttsEnabled;
+        GlobalDataHolder.saveTtsSetting(ttsEnabled);
         refreshMainActionButtonState(MainActionRegistry.ACTION_TTS);
         if(ttsEnabled) {
             GlobalUtils.showToast(this, R.string.toast_tts_on, false);
@@ -1041,6 +1042,7 @@ public class MainActivity extends Activity {
     // 切换多轮对话模式。
     private void toggleMultiChat() {
         multiChat = !multiChat;
+        GlobalDataHolder.saveMultiChatSetting(multiChat);
         refreshMainActionButtonState(MainActionRegistry.ACTION_MULTI_CHAT);
         if(multiChat) {
             GlobalUtils.showToast(this, R.string.toast_multi_chat_on, false);

@@ -264,16 +264,6 @@ public class TabConfActivity extends Activity {
             GlobalDataHolder.saveStartUpSetting(checked);
         });
 
-        ((Switch) findViewById(R.id.sw_tts_enable_conf)).setChecked(GlobalDataHolder.getDefaultEnableTts());
-        ((Switch) findViewById(R.id.sw_tts_enable_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            GlobalDataHolder.saveTtsSetting(checked);
-        });
-
-        ((Switch) findViewById(R.id.sw_def_enable_multi_chat_conf)).setChecked(GlobalDataHolder.getDefaultEnableMultiChat());
-        ((Switch) findViewById(R.id.sw_def_enable_multi_chat_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            GlobalDataHolder.saveMultiChatSetting(checked);
-        });
-
         ((Switch) findViewById(R.id.sw_remember_tab_conf)).setChecked(GlobalDataHolder.getSelectedTab() != -1);
         ((Switch) findViewById(R.id.sw_remember_tab_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
             if(checked && GlobalDataHolder.getSelectedTab() == -1) {

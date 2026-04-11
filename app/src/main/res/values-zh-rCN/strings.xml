@@ -47,10 +47,6 @@
     <string name="conf_set_access_item">设置无障碍模式</string>
     <string name="conf_startup_check_access_item">启动时检查无障碍</string>
     <string name="conf_set_tts_item">打开系统语音设置</string>
-    <string name="conf_tts_enable_item">默认启用语音</string>
-    <string name="conf_tts_enable_tip">设置应用启动时是否开启语音播报</string>
-    <string name="conf_def_enable_chat_item">默认启用对话</string>
-    <string name="conf_def_enable_chat_tip">设置应用启动时是否开启连续对话</string>
     <string name="conf_remember_tab_item">记住选用的模板</string>
     <string name="conf_remember_tab_tip">应用启动时自动选中上次使用的模板</string>
     <string name="conf_auto_save_history_item">自动保存对话</string>

@@ -81,17 +81,6 @@ public final class MainActionRegistry {
                     new int[]{PLACEMENT_PRIMARY, PLACEMENT_SECONDARY, PLACEMENT_HIDDEN}
             ),
             new MainActionSpec(
-                    ACTION_AGENT,
-                    R.string.main_action_agent,
-                    R.drawable.agent_btn,
-                    R.drawable.agent_btn_enabled,
-                    PLACEMENT_PRIMARY,
-                    3,
-                    true,
-                    true,
-                    new int[]{PLACEMENT_PRIMARY, PLACEMENT_SECONDARY, PLACEMENT_HIDDEN}
-            ),
-            new MainActionSpec(
                     ACTION_MULTI_CHAT,
                     R.string.main_action_multi_chat,
                     R.drawable.chat_btn,
@@ -129,11 +118,22 @@ public final class MainActionRegistry {
                     R.string.main_action_settings,
                     R.drawable.settings_btn,
                     0,
-                    PLACEMENT_SECONDARY,
+                    PLACEMENT_PRIMARY,
                     3,
                     true,
                     true,
                     new int[]{PLACEMENT_PRIMARY, PLACEMENT_SECONDARY}
+            ),
+            new MainActionSpec(
+                    ACTION_AGENT,
+                    R.string.main_action_agent,
+                    R.drawable.agent_btn,
+                    R.drawable.agent_btn_enabled,
+                    PLACEMENT_SECONDARY,
+                    3,
+                    true,
+                    true,
+                    new int[]{PLACEMENT_PRIMARY, PLACEMENT_SECONDARY, PLACEMENT_HIDDEN}
             ),
             new MainActionSpec(
                     ACTION_CLOSE,

@@ -43,6 +43,7 @@
         </LinearLayout>
 
         <ScrollView
+            android:id="@+id/sv_tab_conf"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -123,6 +124,7 @@
                         android:textSize="14sp" />
 
                     <androidx.cardview.widget.CardView
+                        android:id="@+id/cv_openai_conf_section"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         app:cardBackgroundColor="#FFFFFF"
@@ -865,6 +867,7 @@
                             </LinearLayout>
 
                             <LinearLayout
+                                android:id="@+id/ll_volume_key_conf"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:layout_marginVertical="15dp"
@@ -872,17 +875,46 @@
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
-                                    android:id="@+id/tv_startup_check_access_conf"
+                                <LinearLayout
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="@string/conf_startup_check_access_item"
-                                    android:textColor="#000000"
-                                    android:textSize="18sp" />
+                                    android:orientation="vertical">
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/conf_volume_key_item"
+                                            android:textColor="#000000"
+                                            android:textSize="18sp" />
+
+                                        <ImageButton
+                                            android:id="@+id/bt_volume_key_help"
+                                            android:layout_width="16dp"
+                                            android:layout_height="16dp"
+                                            android:layout_marginStart="6dp"
+                                            android:background="@android:color/transparent"
+                                            android:contentDescription="@string/dialog_volume_key_help_title"
+                                            android:scaleType="centerInside"
+                                            android:src="@drawable/help_btn" />
+                                    </LinearLayout>
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/conf_volume_key_tip"
+                                        android:textColor="#6A6A6A"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
 
                                 <Switch
-                                    android:id="@+id/sw_check_access_conf"
+                                    android:id="@+id/sw_volume_key_conf"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="0"
@@ -896,6 +928,7 @@
                             </LinearLayout>
 
                             <LinearLayout
+                                android:id="@+id/ll_set_access_conf"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:layout_marginVertical="15dp"

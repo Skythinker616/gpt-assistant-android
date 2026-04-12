@@ -28,6 +28,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -36,6 +37,7 @@ import android.widget.Toast;
 import com.skythinker.gptassistant.BuildConfig;
 import com.skythinker.gptassistant.data.GlobalDataHolder;
 import com.skythinker.gptassistant.data.ModelCatalog;
+import com.skythinker.gptassistant.service.MyAccessbilityService;
 import com.skythinker.gptassistant.tool.GlobalUtils;
 import com.skythinker.gptassistant.data.PromptTabData;
 import com.skythinker.gptassistant.R;
@@ -57,12 +59,17 @@ public class TabConfActivity extends Activity {
 
     private static final int REQUEST_DATA_TRANSFER = 1000;
     private static final int REQUEST_CUSTOM_MODEL_CONF = 1001;
+    public static final String EXTRA_FOCUS_SECTION = "focus_section";
+    public static final String FOCUS_SECTION_OPENAI = "openai";
+    public static final String FOCUS_SECTION_VOLUME_KEY = "volume_key";
 
     private RecyclerView rvTabList;
     private TabConfListAdapter adapter;
     private BroadcastReceiver localReceiver;
     private Handler handler = new Handler();
     private ArrayAdapter<ModelCatalog.ModelOption> modelsAdapter;
+    // 程序化更新开关时临时屏蔽监听，避免重复触发跳转。
+    private boolean isBindingVolumeKeySwitch = false;
 
     private interface CustomTextWatcher extends TextWatcher { // 去掉TextWatcher不需要的方法
         @Override default void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
@@ -79,6 +86,9 @@ public class TabConfActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         getWindow().setStatusBarColor(Color.parseColor("#F5F6F7"));
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+
+        ScrollView svConfig = findViewById(R.id.sv_tab_conf);
+        String focusSection = getIntent().getStringExtra(EXTRA_FOCUS_SECTION);
 
         List<PromptTabData> tabDataList = GlobalDataHolder.getTabDataList();
         rvTabList = findViewById(R.id.rv_tab_conf_list);
@@ -259,9 +269,50 @@ public class TabConfActivity extends Activity {
             GlobalDataHolder.saveAsrSelection(GlobalDataHolder.getAsrUseWhisper(), GlobalDataHolder.getAsrUseBaidu(), checked);
         });
 
-        ((Switch) findViewById(R.id.sw_check_access_conf)).setChecked(GlobalDataHolder.getCheckAccessOnStart());
-        ((Switch) findViewById(R.id.sw_check_access_conf)).setOnCheckedChangeListener((compoundButton, checked) -> {
-            GlobalDataHolder.saveStartUpSetting(checked);
+        Switch swVolumeKey = findViewById(R.id.sw_volume_key_conf);
+        isBindingVolumeKeySwitch = true;
+        swVolumeKey.setChecked(GlobalDataHolder.getVolumeKeyEnabled() && MyAccessbilityService.isConnected());
+        isBindingVolumeKeySwitch = false;
+
+        findViewById(R.id.bt_volume_key_help).setOnClickListener(view -> {
+            new ConfirmDialog(this)
+                    .setTitle(getString(R.string.dialog_volume_key_help_title))
+                    .setContent(getString(R.string.dialog_volume_key_help))
+                    .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                    .setOkButtonVisibility(View.GONE)
+                    .show();
+        });
+        swVolumeKey.setOnCheckedChangeListener((compoundButton, checked) -> {
+            if(isBindingVolumeKeySwitch) {
+                return;
+            }
+            if(!checked) {
+                GlobalDataHolder.saveVolumeKeySetting(false);
+                return;
+            }
+            if(MyAccessbilityService.isConnected()) {
+                GlobalDataHolder.saveVolumeKeySetting(true);
+                return;
+            }
+            new ConfirmDialog(this)
+                    .setTitle(getString(R.string.dialog_volume_key_enable_title))
+                    .setContent(getString(R.string.dialog_volume_key_enable_content))
+                    .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                    .setCancelable(false)
+                    .setCancelText(getString(R.string.confirm_dialog_default_cancel_text))
+                    .setOkText(getString(R.string.dialog_welcome_volume_confirm))
+                    .setOnConfirmListener(() -> {
+                        GlobalDataHolder.saveVolumeKeySetting(true);
+                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    })
+                    .setOnCancelListener(() -> {
+                        isBindingVolumeKeySwitch = true;
+                        swVolumeKey.setChecked(false);
+                        isBindingVolumeKeySwitch = false;
+                    })
+                    .show();
         });
 
         ((Switch) findViewById(R.id.sw_remember_tab_conf)).setChecked(GlobalDataHolder.getSelectedTab() != -1);
@@ -331,7 +382,7 @@ public class TabConfActivity extends Activity {
             GlobalDataHolder.saveFunctionSetting(GlobalDataHolder.getEnableInternetAccess(), GlobalDataHolder.getWebMaxCharCount(), checked);
         });
 
-        (findViewById(R.id.tv_set_access_conf)).setOnClickListener(view -> {
+        ((View) findViewById(R.id.tv_set_access_conf).getParent()).setOnClickListener(view -> {
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
@@ -415,9 +466,41 @@ public class TabConfActivity extends Activity {
             WebViewActivity.openUrl(this, getString(R.string.text_homepage_title), getString(GlobalDataHolder.getUseGitee() ? R.string.homepage_url_gitee : R.string.homepage_url_github));
         });
 
+        if(focusSection != null) {
+            handler.post(() -> {
+                View targetView = null;
+                if(FOCUS_SECTION_OPENAI.equals(focusSection)) {
+                    targetView = findViewById(R.id.cv_openai_conf_section);
+                } else if(FOCUS_SECTION_VOLUME_KEY.equals(focusSection)) {
+                    targetView = findViewById(R.id.ll_volume_key_conf);
+                }
+                if(targetView != null) {
+                    View finalTargetView = targetView;
+                    svConfig.post(() -> svConfig.smoothScrollTo(0, Math.max(0, finalTargetView.getTop() - GlobalUtils.dpToPx(this, 16))));
+                }
+            });
+        }
+
         (findViewById(R.id.bt_back_conf)).setOnClickListener(view -> {
             finish();
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        handler.postDelayed(() -> {
+            boolean accessibilityEnabled = MyAccessbilityService.isConnected();
+            boolean volumeKeyEnabled = GlobalDataHolder.getVolumeKeyEnabled();
+            if(volumeKeyEnabled && !accessibilityEnabled) {
+                GlobalDataHolder.saveVolumeKeySetting(false);
+                volumeKeyEnabled = false;
+            }
+            Switch swVolumeKey = findViewById(R.id.sw_volume_key_conf);
+            isBindingVolumeKeySwitch = true;
+            swVolumeKey.setChecked(volumeKeyEnabled && accessibilityEnabled);
+            isBindingVolumeKeySwitch = false;
+        }, 250);
     }
 
     // 设置百度语音识别子配置项是否隐藏

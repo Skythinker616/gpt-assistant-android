@@ -110,6 +110,8 @@ import com.skythinker.gptassistant.asr.WhisperAsrClient;
 @SuppressLint({"UseCompatLoadingForDrawables", "JavascriptInterface", "SetTextI18n"})
 @PrismBundle(includeAll = true)
 public class MainActivity extends Activity {
+    private static final int REQUEST_SETTINGS = 0;
+    private static final int REQUEST_SETTINGS_AFTER_API_ONBOARDING = 5;
 
     private int selectedTab = 0;
     private TextView tvGptReply;
@@ -780,27 +782,13 @@ public class MainActivity extends Activity {
         intentFilter.addAction("com.skythinker.gptassistant.KEY_SEND");
         intentFilter.addAction("com.skythinker.gptassistant.SHOW_KEYBOARD");
         LocalBroadcastManager.getInstance(this).registerReceiver(localReceiver, intentFilter);
-
-        // 检查无障碍权限
-        if(GlobalDataHolder.getCheckAccessOnStart()) {
-            if(!MyAccessbilityService.isConnected()) { // 没有权限则弹窗提醒用户开启
-                new ConfirmDialog(this)
-                    .setContent(getString(R.string.text_access_notice))
-                    .setOnConfirmListener(() -> {
-                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                        startActivity(intent);
-                    })
-                    .setOnCancelListener(() -> {
-                        Toast.makeText(MainActivity.this, getString(R.string.toast_access_error), Toast.LENGTH_SHORT).show();
-                    })
-                    .show();
-            }
-        }
+        syncVolumeKeyState();
 
         //检查更新
         if(!BuildConfig.VERSION_NAME.equals(GlobalDataHolder.getLatestVersion())) {
             GlobalUtils.showToast(this, getString(R.string.toast_update_available), false);
         }
+        handler.postDelayed(this::showStartupOnboarding, 300);
     }
 
     // 设置当前使用的语音识别接口
@@ -1125,11 +1113,20 @@ public class MainActivity extends Activity {
 
     // 打开设置页前先保存当前会话。
     private void openSettings() {
-        if(pwMenu.isShowing()) {
+        openSettings(REQUEST_SETTINGS, null);
+    }
+
+    // 根据需要把设置页滚动到指定区块。
+    private void openSettings(int requestCode, @Nullable String focusSection) {
+        if(pwMenu != null && pwMenu.isShowing()) {
             pwMenu.dismiss();
         }
         persistCurrentConversation(false);
-        startActivityForResult(new Intent(MainActivity.this, TabConfActivity.class), 0);
+        Intent intent = new Intent(MainActivity.this, TabConfActivity.class);
+        if(focusSection != null) {
+            intent.putExtra(TabConfActivity.EXTRA_FOCUS_SECTION, focusSection);
+        }
+        startActivityForResult(intent, requestCode);
     }
 
     // 关闭主界面，并顺手收起更多菜单。
@@ -1143,7 +1140,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 0) { // 从设置界面返回
+        if(requestCode == REQUEST_SETTINGS || requestCode == REQUEST_SETTINGS_AFTER_API_ONBOARDING) { // 从设置界面返回
             int tabNum = GlobalDataHolder.getTabDataList().size(); // 更新模板列表
             if(selectedTab >= tabNum)
                 selectedTab = tabNum - 1;
@@ -1174,6 +1171,10 @@ public class MainActivity extends Activity {
 
             setNetworkEnabled(currentTemplateParams.getBool("network", GlobalDataHolder.getEnableInternetAccess())); // 更新GPT联网设置
             renderMainActionButtons(); // 设置页可能改了一级/二级布局，返回时需要重建按钮
+            syncVolumeKeyState();
+            if(requestCode == REQUEST_SETTINGS_AFTER_API_ONBOARDING) {
+                handler.post(this::showVolumeOnboardingDialogIfNeeded);
+            }
         } else if((requestCode == 1 || requestCode == 2) && resultCode == RESULT_OK) { // 从相册或相机返回
             Uri uri = requestCode == 1 ? photoUri : data.getData(); // 获取图片URI
             addAttachment(uri);
@@ -2286,6 +2287,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         isRunning = true;
+        syncVolumeKeyState();
         Log.d("main activity", "back to main activity");
     }
 
@@ -2320,5 +2322,66 @@ public class MainActivity extends Activity {
     public void finish() {
         super.finish();
         overridePendingTransition(R.anim.translate_up_in, R.anim.translate_down_out);
+    }
+
+    // 首次启动时按顺序触发 API 和音量键引导。
+    private void showStartupOnboarding() {
+        if(!GlobalDataHolder.getOnboardingApiPromptShown()) {
+            if(TextUtils.isEmpty(GlobalDataHolder.getGptApiKey().trim())) {
+                showApiWelcomeDialog();
+                return;
+            }
+            GlobalDataHolder.saveOnboardingApiPromptShown(true);
+        }
+        showVolumeOnboardingDialogIfNeeded();
+    }
+
+    // 首次启动先提醒用户填写 API，再决定是否继续引导音量键操作。
+    private void showApiWelcomeDialog() {
+        new ConfirmDialog(this)
+                .setTitle(getString(R.string.dialog_welcome_api_title))
+                .setContent(getString(R.string.dialog_welcome_api_content))
+                .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                .setCancelable(false)
+                .setCancelText(getString(R.string.dialog_welcome_later))
+                .setOkText(getString(R.string.dialog_welcome_api_confirm))
+                .setOnConfirmListener(() -> {
+                    GlobalDataHolder.saveOnboardingApiPromptShown(true);
+                    openSettings(REQUEST_SETTINGS_AFTER_API_ONBOARDING, TabConfActivity.FOCUS_SECTION_OPENAI);
+                })
+                .setOnCancelListener(() -> {
+                    GlobalDataHolder.saveOnboardingApiPromptShown(true);
+                    showVolumeOnboardingDialogIfNeeded();
+                })
+                .show();
+    }
+
+    // API 引导结束后再询问一次是否启用音量键操作。
+    private void showVolumeOnboardingDialogIfNeeded() {
+        if(GlobalDataHolder.getOnboardingVolumePromptShown() || GlobalDataHolder.getVolumeKeyEnabled()) {
+            return;
+        }
+        new ConfirmDialog(this)
+                .setTitle(getString(R.string.dialog_welcome_volume_title))
+                .setContent(getString(R.string.dialog_welcome_volume_content))
+                .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                .setCancelable(false)
+                .setCancelText(getString(R.string.dialog_welcome_later))
+                .setOkText(getString(R.string.dialog_welcome_volume_confirm))
+                .setOnConfirmListener(() -> {
+                    GlobalDataHolder.saveOnboardingVolumePromptShown(true);
+                    openSettings(REQUEST_SETTINGS, TabConfActivity.FOCUS_SECTION_VOLUME_KEY);
+                })
+                .setOnCancelListener(() -> {
+                    GlobalDataHolder.saveOnboardingVolumePromptShown(true);
+                })
+                .show();
+    }
+
+    // 若系统里把音量键无障碍关掉了，这里及时回收软件内开关状态。
+    private void syncVolumeKeyState() {
+        if(GlobalDataHolder.getVolumeKeyEnabled() && !MyAccessbilityService.isConnected()) {
+            GlobalDataHolder.saveVolumeKeySetting(false);
+        }
     }
 }

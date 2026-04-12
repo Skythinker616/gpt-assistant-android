@@ -38,7 +38,12 @@ public class GlobalDataHolder {
     private static int gptMaxContextNum;
     // 用户维护的自定义模型配置列表。
     private static List<CustomModelProfile> customModelProfiles = null;
-    private static boolean checkAccessOnStart;
+    // 音量键操作的业务开关，需与系统无障碍状态共同生效。
+    private static boolean volumeKeyEnabled;
+    // 首次启动时的 API 引导弹窗是否已显示。
+    private static boolean onboardingApiPromptShown;
+    // 首次启动时的音量键引导弹窗是否已显示。
+    private static boolean onboardingVolumePromptShown;
     // 复用历史字段，保存主界面上次的 TTS / 多轮对话开关状态。
     private static boolean defaultEnableTts;
     private static boolean defaultEnableMultiChat;
@@ -57,16 +62,18 @@ public class GlobalDataHolder {
 
     public static void init(Context context) {
         sp = context.getSharedPreferences("gpt_assistant", Context.MODE_PRIVATE);
+        boolean isFreshInstall = sp.getAll().isEmpty();
         loadTabDataList();
         if(tabDataList.size() == 0) {
-            tabDataList.add(new PromptTabData(context.getString(R.string.text_default_tab_title), context.getString(R.string.text_default_tab_content)));
+            tabDataList.addAll(buildInitialTabDataList(context));
             saveTabDataList();
         }
         loadAsrSelection();
         loadBaiduAsrInfo();
         loadGptApiInfo();
         loadModelParams();
-        loadStartUpSetting();
+        loadVolumeKeySetting(isFreshInstall);
+        loadOnboardingSetting(isFreshInstall);
         loadTtsSetting();
         loadMultiChatSetting();
         loadSelectedTab();
@@ -259,15 +266,47 @@ public class GlobalDataHolder {
         editor.apply();
     }
 
-    public static void loadStartUpSetting() {
-        checkAccessOnStart = sp.getBoolean("check_access_on_start", true);
+    // 加载音量键操作开关；旧版本升级默认保持开启并等待后续同步。
+    public static void loadVolumeKeySetting(boolean isFreshInstall) {
+        if(sp.contains("volume_key_enabled")) {
+            volumeKeyEnabled = sp.getBoolean("volume_key_enabled", false);
+        } else {
+            volumeKeyEnabled = !isFreshInstall;
+            sp.edit().putBoolean("volume_key_enabled", volumeKeyEnabled).apply();
+        }
     }
 
-    public static void saveStartUpSetting(boolean checkAccess) {
-        checkAccessOnStart = checkAccess;
+    public static void saveVolumeKeySetting(boolean enabled) {
+        volumeKeyEnabled = enabled;
         SharedPreferences.Editor editor = sp.edit();
-        editor.putBoolean("check_access_on_start", checkAccessOnStart);
+        editor.putBoolean("volume_key_enabled", volumeKeyEnabled);
         editor.apply();
+    }
+
+    // 加载首次引导状态；旧版本升级默认视为已引导，避免打扰老用户。
+    public static void loadOnboardingSetting(boolean isFreshInstall) {
+        if(sp.contains("onboarding_api_prompt_shown")) {
+            onboardingApiPromptShown = sp.getBoolean("onboarding_api_prompt_shown", false);
+        } else {
+            onboardingApiPromptShown = !isFreshInstall;
+            sp.edit().putBoolean("onboarding_api_prompt_shown", onboardingApiPromptShown).apply();
+        }
+        if(sp.contains("onboarding_volume_prompt_shown")) {
+            onboardingVolumePromptShown = sp.getBoolean("onboarding_volume_prompt_shown", false);
+        } else {
+            onboardingVolumePromptShown = !isFreshInstall;
+            sp.edit().putBoolean("onboarding_volume_prompt_shown", onboardingVolumePromptShown).apply();
+        }
+    }
+
+    public static void saveOnboardingApiPromptShown(boolean shown) {
+        onboardingApiPromptShown = shown;
+        sp.edit().putBoolean("onboarding_api_prompt_shown", onboardingApiPromptShown).apply();
+    }
+
+    public static void saveOnboardingVolumePromptShown(boolean shown) {
+        onboardingVolumePromptShown = shown;
+        sp.edit().putBoolean("onboarding_volume_prompt_shown", onboardingVolumePromptShown).apply();
     }
 
     public static void loadTtsSetting() {
@@ -420,7 +459,11 @@ public class GlobalDataHolder {
 
     public static int getGptMaxContextNum() { return gptMaxContextNum; }
 
-    public static boolean getCheckAccessOnStart() { return checkAccessOnStart; }
+    public static boolean getVolumeKeyEnabled() { return volumeKeyEnabled; }
+
+    public static boolean getOnboardingApiPromptShown() { return onboardingApiPromptShown; }
+
+    public static boolean getOnboardingVolumePromptShown() { return onboardingVolumePromptShown; }
 
     public static boolean getDefaultEnableTts() { return defaultEnableTts; }
 
@@ -466,5 +509,166 @@ public class GlobalDataHolder {
             }
         }
         return new ArrayList<>(profileMap.values());
+    }
+
+    // 构建首次安装时预置的推荐模板列表。
+    private static List<PromptTabData> buildInitialTabDataList(Context context) {
+        boolean isChinese = Locale.getDefault().getLanguage().equals("zh");
+        ArrayList<PromptTabData> initialTabs = new ArrayList<>();
+        String translateTitle = isChinese ? "翻译" : "Translate";
+        String summaryTitle = isChinese ? "总结" : "Summarize";
+        String writingTitle = isChinese ? "撰写" : "Writing";
+        String attachmentTitle = isChinese ? "附件" : "Attachment Review";
+        String webSearchTitle = isChinese ? "搜索" : "Web Search";
+        String voiceTitle = isChinese ? "语音" : "Voice Chat";
+        initialTabs.add(new PromptTabData(
+                context.getString(R.string.text_default_tab_title),
+                context.getString(R.string.text_default_tab_content)
+        ));
+        initialTabs.add(new PromptTabData(translateTitle, buildDefaultTranslatePrompt(isChinese)));
+        initialTabs.add(new PromptTabData(summaryTitle, buildDefaultSummaryPrompt(isChinese)));
+        initialTabs.add(new PromptTabData(writingTitle, buildDefaultWritingPrompt(isChinese)));
+        initialTabs.add(new PromptTabData(attachmentTitle, buildDefaultAttachmentPrompt(isChinese)));
+        initialTabs.add(new PromptTabData(webSearchTitle, buildDefaultWebSearchPrompt(isChinese)));
+        initialTabs.add(new PromptTabData(voiceTitle, buildDefaultVoicePrompt(isChinese)));
+        return initialTabs;
+    }
+
+    private static String buildDefaultTranslatePrompt(boolean isChinese) {
+        if(isChinese) {
+            return String.join("\n",
+                    "\"\"\"",
+                    "@system true",
+                    "@network false",
+                    "@chat false",
+                    "@select 目标语言|简体中文|英语|日语|韩语|俄语|法语|德语|阿拉伯语",
+                    "@select 翻译语气|正式的|口语的",
+                    "\"\"\"",
+                    "你是一个专业的翻译员，在用户每次提问时，你需要识别出用户所使用的语言，然后使用${翻译语气}语气翻译为${目标语言}，不要解释其他内容。"
+            );
+        }
+        return String.join("\n",
+                "\"\"\"",
+                "@system true",
+                "@network false",
+                "@chat false",
+                "@select Target language|Simplified Chinese|English|Japanese|Korean|Russian|French|German|Arabic",
+                "@select Tone|Formal|Casual",
+                "\"\"\"",
+                "You are a professional translator. For each user message, detect the source language and translate it into ${Target language} with a ${Tone} tone. Do not add explanations."
+        );
+    }
+
+    private static String buildDefaultSummaryPrompt(boolean isChinese) {
+        if(isChinese) {
+            return String.join("\n",
+                    "\"\"\"",
+                    "@system true",
+                    "@select 格式|单个摘要段落|主题+列出观点|按时间线分点总结|仅关键字",
+                    "@select 语言|简体中文|繁体中文|英文|日文|韩文|法文|俄文|德文",
+                    "\"\"\"",
+                    "你是一个擅长理解和总结文段的AI助手。助手会阅读用户发送的文段，然后以【${格式}】的格式进行概括，以帮助用户理解文段的主要内容。助手会删去不必要的细节，并使用${语言}进行回复。助手不会对输出的内容进行任何解释。"
+            );
+        }
+        return String.join("\n",
+                "\"\"\"",
+                "@system true",
+                "@select Format|Single summary paragraph|Topic + key points|Timeline bullets|Keywords only",
+                "@select Language|English|Simplified Chinese|Traditional Chinese|Japanese|Korean|French|Russian|German",
+                "\"\"\"",
+                "You are an AI assistant who is good at reading and summarizing text. Read the user-provided content and summarize it in the format of [${Format}] to help the user quickly understand the main ideas. Remove unnecessary details and reply in ${Language}. Do not add explanations."
+        );
+    }
+
+    private static String buildDefaultWritingPrompt(boolean isChinese) {
+        if(isChinese) {
+            return String.join("\n",
+                    "\"\"\"",
+                    "@system true",
+                    "@select 格式|文章|朋友圈文案|小红书分享|微博文章|群公告|邮件|大纲|广告|评论|消息",
+                    "@select 语气|正式|口语化|专业|幽默|热情",
+                    "@select 长度|[较短]100字以内|[中等]300字左右|[较长]500字以上",
+                    "@select 语言|简体中文|繁体中文|英文|日文|韩文|法文|俄文|德文",
+                    "\"\"\"",
+                    "你是一个${格式}撰写助手，助手需要根据用户输入的需求，使用${语气}的语气，用${语言}生成一份${长度}的${格式}，不要解释其他内容。"
+            );
+        }
+        return String.join("\n",
+                "\"\"\"",
+                "@system true",
+                "@select Format|Article|Social post|Short-form share|Microblog post|Announcement|Email|Outline|Ad copy|Comment|Message",
+                "@select Tone|Formal|Conversational|Professional|Humorous|Warm",
+                "@select Length|[Short]Within 100 words|[Medium]About 300 words|[Long]Over 500 words",
+                "@select Language|English|Simplified Chinese|Traditional Chinese|Japanese|Korean|French|Russian|German",
+                "\"\"\"",
+                "You are a ${Format} writing assistant. Based on the user's request, write a ${Length} ${Format} in ${Language} with a ${Tone} tone. Do not add explanations."
+        );
+    }
+
+    private static String buildDefaultAttachmentPrompt(boolean isChinese) {
+        if(isChinese) {
+            return String.join("\n",
+                    "\"\"\"",
+                    "@system true",
+                    "@select 输出方式|直接回答问题|先总结再回答|仅提取关键点",
+                    "\"\"\"",
+                    "你是一个附件阅读助手。用户可能会附带文档、图片或复制文本。",
+                    "请优先依据用户提供的附件和文本内容进行分析。",
+                    "如果用户提出了明确问题，就按“${输出方式}”处理后作答；",
+                    "如果用户没有明确问题，就先概括核心内容，再给出关键信息。",
+                    "如果信息不足，请明确指出缺少什么，不要编造。"
+            );
+        }
+        return String.join("\n",
+                "\"\"\"",
+                "@system true",
+                "@select Output style|Answer the question directly|Summarize first, then answer|Extract key points only",
+                "\"\"\"",
+                "You are an attachment-reading assistant. The user may provide documents, images, or pasted text.",
+                "Always prioritize the provided attachments and text when analyzing the request.",
+                "If the user asks a clear question, respond using the \"${Output style}\" style.",
+                "If there is no clear question, summarize the core content first and then provide the most important information.",
+                "If the information is insufficient, clearly say what is missing instead of making things up."
+        );
+    }
+
+    private static String buildDefaultWebSearchPrompt(boolean isChinese) {
+        if(isChinese) {
+            return String.join("\n",
+                    "\"\"\"",
+                    "@system true",
+                    "@network true",
+                    "@speak false",
+                    "@select 搜索平台|[百度]百度搜索(https://www.baidu.com/s?wd=xxx)|[必应]必应搜索(https://www.bing.com/search?q=xxx)|[谷歌]谷歌搜索(https://www.google.com/search?q=xxx)",
+                    "\"\"\"",
+                    "你是一个可以联网的资料收集助手。助手会通过${搜索平台}查找用户的提问，然后根据搜索结果页面的内容回答用户的问题，并且附上前三个搜索结果链接。助手会在搜索前对关键字进行URL编码，保证访问链接中没有空格等非法字符。"
+            );
+        }
+        return String.join("\n",
+                "\"\"\"",
+                "@system true",
+                "@network true",
+                "@speak false",
+                "@select Search engine|[Baidu]Baidu Search(https://www.baidu.com/s?wd=xxx)|[Bing]Bing Search(https://www.bing.com/search?q=xxx)|[Google]Google Search(https://www.google.com/search?q=xxx)",
+                "\"\"\"",
+                "You are a research assistant with web access. Use ${Search engine} to search the user's question, then answer based on the search result page and include the first three useful result links. URL-encode search keywords before visiting the page so the generated links do not contain illegal characters such as spaces."
+        );
+    }
+
+    private static String buildDefaultVoicePrompt(boolean isChinese) {
+        if(isChinese) {
+            return String.join("\n",
+                    "\"\"\"",
+                    "@system true",
+                    "\"\"\"",
+                    "你是一个语音聊天助手，你会接收用户的提问，并做出回答。用户将使用语音识别进行输入，因此你需要识别出提问中可能存在的错误并针对纠正后的问题进行回答。如果提问中的错误过多，你可以以没听清为由请用户重新提问。你的回复将使用TTS朗读给用户，因此你需要使用纯文本进行回复，不要输出任何含有markdown格式的内容。"
+            );
+        }
+        return String.join("\n",
+                "\"\"\"",
+                "@system true",
+                "\"\"\"",
+                "You are a voice chat assistant. The user's input comes from speech recognition, so you should infer and correct likely recognition mistakes before answering. If the input is too unclear, ask the user to repeat it. Your reply will be read aloud by TTS, so use plain text only and avoid markdown formatting."
+        );
     }
 }

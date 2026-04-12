@@ -31,6 +31,11 @@ public class ConfirmDialog{
     public View getContentView() {
         return dialogView;
     }
+    public ConfirmDialog setCancelable(boolean cancelable) {
+        dialog.setCancelable(cancelable);
+        dialog.setCanceledOnTouchOutside(cancelable);
+        return this;
+    }
     public ConfirmDialog setOnConfirmListener(Runnable listener) {
         (dialogView.findViewById(R.id.cv_dialog_ok)).setOnClickListener(v -> {
             listener.run();

@@ -3,6 +3,7 @@ package com.skythinker.gptassistant.service;
 import android.accessibilityservice.AccessibilityService;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -57,6 +58,9 @@ public class MyAccessbilityService extends AccessibilityService {
     protected boolean onKeyEvent(KeyEvent event) {
         Log.d("MyAccessbilityService", "onKeyEvent: " + event.toString());
         if(event.getKeyCode() != KeyEvent.KEYCODE_VOLUME_DOWN) { // 非音量下键不处理
+            return super.onKeyEvent(event);
+        }
+		if(!isVolumeKeyEnabled()) { // 软件内关闭后不再拦截音量键
             return super.onKeyEvent(event);
         }
 
@@ -174,5 +178,11 @@ public class MyAccessbilityService extends AccessibilityService {
 
     public static boolean isConnected() {
         return isConnected;
+    }
+
+    // 直接读取sp中的开关配置
+    private boolean isVolumeKeyEnabled() {
+        SharedPreferences sp = getSharedPreferences("gpt_assistant", MODE_PRIVATE);
+        return sp.getBoolean("volume_key_enabled", true);
     }
 }

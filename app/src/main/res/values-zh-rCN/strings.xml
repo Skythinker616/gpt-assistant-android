@@ -10,6 +10,7 @@
         **音量键唤起：** 若需使用语音助手功能，须开启无障碍服务，并允许程序后台运行。此后：\n\n1. 在任何界面长按音量下键可唤出应用\n2. 保持按下并对麦克风说话进行语音输入\n3. 在松开后的3秒内再次短按音量下键，可直接发送问题。\n\n
         **语音识别接口：** 软件默认使用内置的华为HMS语音识别接口，用户也可更换为百度、谷歌、Whisper语音接口，具体说明请参考项目主页。\n\n
         **联网功能：** 启用网络访问后软件会将GPT所要求的网页内容返回给GPT，以提供实时信息。注意访问网络会大幅增加Token消耗。\n\n
+        **智能体模式（实验性）：** 在主界面打开“智能体模式”按钮后，根据提示打开无障碍服务，AI 就可以读取并操控屏幕上的可访问控件，实现发消息、查攻略等复杂操作。不建议在支付、验证码、密码等敏感页面使用。\n\n
         **注意：** 若长按音量键后手机震动但不弹出界面，请手动在设置中允许后台弹出界面权限。
     </string>
     <!--  软件界面字符串  -->
@@ -67,8 +68,7 @@
     <string name="history_search_hint">搜索对话标题</string>
     <string name="dialog_clear_history">确定要清空所有历史记录吗？\n（左滑可删除单条记录）</string>
     <string name="main_action_conf_title">主页面按钮</string>
-    <string name="main_action_conf_subtitle">| 长按可在同一分组内拖动排序</string>
-    <string name="main_action_conf_limit_tip">| 一级菜单最多显示 4 个按钮</string>
+    <string name="main_action_conf_subtitle">| 长按拖动排序，一级菜单最多 4 个按钮</string>
     <string name="main_action_conf_reset">恢复默认</string>
     <string name="main_action_primary">一级</string>
     <string name="main_action_secondary">二级</string>
@@ -88,34 +88,33 @@
     <string name="data_transfer_section_subtitle">| 导入与导出都会使用当前勾选项</string>
     <string name="data_transfer_llm_item">LLM 接口配置</string>
     <string name="data_transfer_llm_tip">包含地址、Key、模型和上下文参数</string>
-    <string name="data_transfer_asr_item">ASR 接口配置</string>
-    <string name="data_transfer_asr_tip">包含接口选择和百度语音参数</string>
+    <string name="data_transfer_asr_item">语音识别配置</string>
+    <string name="data_transfer_asr_tip">包含接口参数和启用状态</string>
     <string name="data_transfer_template_item">模板配置</string>
     <string name="data_transfer_template_tip">完全相同的模板会自动跳过</string>
     <string name="data_transfer_chat_item">聊天记录（含附件）</string>
     <string name="data_transfer_chat_tip">合并导入并按会话时间排序</string>
     <string name="data_transfer_action_title">执行操作</string>
-    <string name="data_transfer_action_subtitle">| 导出文件为 zip，内部为 json + 附件</string>
+    <string name="data_transfer_action_subtitle">| 导出文件为 zip 格式</string>
     <string name="data_transfer_export_item">导出选中数据</string>
     <string name="data_transfer_export_tip">生成 zip 备份文件</string>
     <string name="data_transfer_export_tip_running">正在导出...</string>
     <string name="data_transfer_import_item">导入选中数据</string>
     <string name="data_transfer_import_tip">从 zip 文件恢复数据</string>
     <string name="data_transfer_import_tip_running">正在导入...</string>
-    <string name="data_transfer_rule_tip">聊天记录仅在会话内容完全一致时去重；若附件 uuid 实际冲突，会自动为冲突项重新分配。</string>
     <string name="data_transfer_toast_no_item">请至少选择一项数据</string>
     <string name="data_transfer_toast_exporting">正在导出，请稍候...</string>
     <string name="data_transfer_toast_importing">正在导入，请稍候...</string>
     <string name="data_transfer_dialog_export_title">导出完成</string>
     <string name="data_transfer_dialog_import_title">导入完成</string>
     <string name="data_transfer_summary_export_llm">LLM 接口：已导出</string>
-    <string name="data_transfer_summary_export_asr">ASR 接口：已导出</string>
+    <string name="data_transfer_summary_export_asr">语音识别接口：已导出</string>
     <string name="data_transfer_summary_export_templates">模板：已导出 %1$d 个</string>
     <string name="data_transfer_summary_export_chats">聊天记录：已导出 %1$d 条，会话附件 %2$d 个</string>
     <string name="data_transfer_summary_llm_imported">LLM 接口：已导入</string>
     <string name="data_transfer_summary_llm_skipped">LLM 接口：备份中未找到对应数据</string>
-    <string name="data_transfer_summary_asr_imported">ASR 接口：已导入</string>
-    <string name="data_transfer_summary_asr_skipped">ASR 接口：备份中未找到对应数据</string>
+    <string name="data_transfer_summary_asr_imported">语音识别接口：已导入</string>
+    <string name="data_transfer_summary_asr_skipped">语音识别接口：备份中未找到对应数据</string>
     <string name="data_transfer_summary_templates">模板：导入 %1$d 个，跳过 %2$d 个</string>
     <string name="data_transfer_summary_templates_renamed">模板：其中重命名 %1$d 个</string>
     <string name="data_transfer_summary_chats">聊天记录：导入 %1$d 条，跳过 %2$d 条</string>
@@ -150,16 +149,23 @@
     <string name="text_access_notice">请前往开启无障碍服务</string>
     <string name="toast_access_error">无障碍服务未开启，无法使用音量键控制</string>
     <string name="dialog_welcome_api_title">欢迎使用 GPT Assistant</string>
-    <string name="dialog_welcome_api_content">开始使用前，请先在设置中填写 API Host 和 API Key。\n填写后就可以直接提问、上传文档或使用模板功能。</string>
+    <string name="dialog_welcome_api_content">开始使用前，请先在设置中填写 API Host 和 API Key，然后就可以向AI发起询问了。</string>
     <string name="dialog_welcome_api_confirm">去填写</string>
     <string name="dialog_welcome_later">以后再说</string>
     <string name="dialog_welcome_volume_title">是否启用音量键操作</string>
-    <string name="dialog_welcome_volume_content">开启后，可以不触碰屏幕完成以下操作：\n1. 长按音量下键唤起应用\n2. 保持按住进行语音输入\n3. 松开后再次按下即可发送</string>
+    <string name="dialog_welcome_volume_content">开启后，无需触碰屏幕就可以完成以下操作：\n1. 长按音量下键唤起应用\n2. 保持按住进行语音输入\n3. 松开后再次按下即可发送</string>
     <string name="dialog_welcome_volume_confirm">去启用</string>
+    <string name="dialog_template_empty_title">模板已清空</string>
+    <string name="dialog_template_empty_content">当前已删除全部模板。是否立即载入默认模板？\n如果不载入，程序会自动添加一个“问答”空模板。</string>
+    <string name="dialog_template_empty_load_default">载入</string>
+    <string name="dialog_template_empty_add_blank">不载入</string>
     <string name="dialog_volume_key_enable_title">启用前需要开启无障碍</string>
     <string name="dialog_volume_key_enable_content">接下来请在系统无障碍页面中开启“音量键唤起”选项。\n开启后，应用才能监听音量下键来完成唤起、语音输入和发送。</string>
+    <string name="dialog_agent_enable_title">启用智能体模式</string>
+    <string name="dialog_agent_enable_content">智能体模式是实验性功能。在这个模式下，AI 可以查看并操作你的手机屏幕，完成发消息、查攻略等复杂任务。\n\n要启用智能体模式，请先在接下来的设置页面中开启“智能体模式”无障碍服务。\n\n建议不要在支付、验证码、密码等敏感页面中使用，以免造成损失。</string>
+    <string name="dialog_agent_enable_confirm">去开启</string>
     <string name="dialog_volume_key_help_title">音量键操作说明</string>
-    <string name="dialog_volume_key_help">作用：无需触碰屏幕即可完成唤起、语音输入和发送。\n\n使用方式：\n1. 长按音量下键唤起应用\n2. 保持按住进行语音输入\n3. 松开后再次按下发送\n\n若手机震动但没有弹出界面，请检查系统是否限制后台弹出界面。</string>
+    <string name="dialog_volume_key_help">通过音量键操作软件，无需触碰屏幕即可完成唤起、语音输入和发送。\n\n使用方式：\n1. 长按音量下键唤起应用\n2. 保持按住进行语音输入\n3. 松开后再次按下发送\n\n若手机震动但没有弹出界面，请检查系统是否限制后台弹出界面。</string>
     <string name="toast_clipboard">已复制到剪贴板</string>
     <string name="toast_code_clipboard">代码块已复制到剪贴板</string>
     <string name="text_waiting_reply">正在等待回复...</string>
@@ -167,7 +173,7 @@
     <string name="text_thinking_header">思考中...</string>
     <string name="text_think_complete_summary">思考完成</string>
     <string name="text_thinking_summary">思考中</string>
-    <string name="toast_enable_network">提醒：访问网络时会大幅增加token用量，GPT4请谨慎使用！</string>
+    <string name="toast_enable_network">注意：访问网络时会增加很多token用量哦</string>
     <string name="dialog_help_title">帮助</string>
     <string name="dialog_help_cancel">返回</string>
     <string name="dialog_help_homepage">主页</string>
@@ -209,8 +215,7 @@
     <string name="custom_model_conf_title">模型列表</string>
     <string name="custom_model_conf_fetch">获取</string>
     <string name="custom_model_conf_add">添加</string>
-    <string name="custom_model_conf_subtitle">点击编辑，左滑删除，上下拖拽排序</string>
-    <string name="custom_model_conf_hint">显示名称为可选项，留空时会自动使用默认名字或模型 ID</string>
+    <string name="custom_model_conf_subtitle">| 点击编辑，左滑删除，上下拖拽排序</string>
     <string name="custom_model_fetch_loading">正在获取模型列表...</string>
     <string name="custom_model_fetch_missing_config">请先填写接口地址和 API Key</string>
     <string name="custom_model_fetch_empty">未获取到可用模型</string>
@@ -224,7 +229,7 @@
     <string name="custom_model_detail_title_edit">编辑模型</string>
     <string name="custom_model_detail_save">保存</string>
     <string name="custom_model_detail_section">模型详情</string>
-    <string name="custom_model_detail_subtitle">模型 ID 会用于实际请求，显示名称仅用于界面展示</string>
+    <string name="custom_model_detail_subtitle">| 模型 ID 会用于实际请求，显示名称仅用于界面展示</string>
     <string name="custom_model_detail_id">模型 ID</string>
     <string name="custom_model_detail_name">显示名称</string>
     <string name="custom_model_detail_name_tip">可选，留空自动匹配默认名字</string>

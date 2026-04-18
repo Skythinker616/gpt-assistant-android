@@ -40,6 +40,7 @@
         **Activate via volume key:** For voice assistant, enable accessibility service and allow background running. After that,\n\n1. Long-press volume down to wake the app,\n2. speak to the mic while holding,\n3. After release, press again within 3 seconds to send the query.\n\n
         **Speech to text:** The default HMS voice service can be switched to Baidu / Google / Whisper service, see project homepage for instruction.\n\n
         **Network access:** Enabling networking allows fetching web content for GPT to enhance answer accuracy. Note: This can increase token usage significantly.\n\n
+        **Agent Mode (Experimental):** After turning on the "Agent Mode" button on the main screen, AI can read and control your screen. This feature should not be used on sensitive pages such as payments, verification codes, or passwords.\n\n
         **Note:** If there\'s vibration without pop-up after long-pressing volume, please permit background pop-ups in system settings.
     </string>
     <!--  软件界面字符串  -->
@@ -97,8 +98,7 @@
     <string name="history_search_hint">Search Conversation Titles</string>
     <string name="dialog_clear_history">Confirm clear all history?\n(Swipe left to delete individual)</string>
     <string name="main_action_conf_title">Main Page Buttons</string>
-    <string name="main_action_conf_subtitle">| Long-press to sort within the same section</string>
-    <string name="main_action_conf_limit_tip">| Primary menu supports up to 4 buttons</string>
+    <string name="main_action_conf_subtitle">| Long-press to sort. Primary menu supports 4 buttons</string>
     <string name="main_action_conf_reset">Reset</string>
     <string name="main_action_primary">Primary</string>
     <string name="main_action_secondary">Secondary</string>
@@ -119,20 +119,19 @@
     <string name="data_transfer_llm_item">LLM Config</string>
     <string name="data_transfer_llm_tip">Includes host, key, model and context settings</string>
     <string name="data_transfer_asr_item">ASR Config</string>
-    <string name="data_transfer_asr_tip">Includes provider selection and Baidu parameters</string>
+    <string name="data_transfer_asr_tip">Includes provider selection and parameters</string>
     <string name="data_transfer_template_item">Templates</string>
     <string name="data_transfer_template_tip">Exactly identical templates will be skipped</string>
     <string name="data_transfer_chat_item">Chats (with attachments)</string>
     <string name="data_transfer_chat_tip">Merged by time, exact duplicates are skipped</string>
     <string name="data_transfer_action_title">Actions</string>
-    <string name="data_transfer_action_subtitle">| Exported zip contains json files and attachments</string>
+    <string name="data_transfer_action_subtitle">| Export in zip format</string>
     <string name="data_transfer_export_item">Export Selected Data</string>
     <string name="data_transfer_export_tip">Create a zip backup file</string>
     <string name="data_transfer_export_tip_running">Exporting...</string>
     <string name="data_transfer_import_item">Import Selected Data</string>
     <string name="data_transfer_import_tip">Restore data from a zip file</string>
     <string name="data_transfer_import_tip_running">Importing...</string>
-    <string name="data_transfer_rule_tip">Chats are deduplicated only when the full conversation content matches. Attachment uuid conflicts are remapped automatically.</string>
     <string name="data_transfer_toast_no_item">Select at least one data item</string>
     <string name="data_transfer_toast_exporting">Exporting, please wait...</string>
     <string name="data_transfer_toast_importing">Importing, please wait...</string>
@@ -180,14 +179,21 @@
     <string name="text_access_notice">Please enable Accessibility Services</string>
     <string name="toast_access_error">Accessibility not enabled, volume key control unavailable</string>
     <string name="dialog_welcome_api_title">Welcome to GPT Assistant</string>
-    <string name="dialog_welcome_api_content">Before you begin, please fill in your API Host and API Key in Settings.\nAfter that, you can chat, upload files, and use templates right away.</string>
+    <string name="dialog_welcome_api_content">Before you begin, please fill in your API Host and API Key in Settings.\nAfter that, you can chat with AI right away.</string>
     <string name="dialog_welcome_api_confirm">Open Settings</string>
     <string name="dialog_welcome_later">Later</string>
     <string name="dialog_welcome_volume_title">Enable Volume Key Control?</string>
     <string name="dialog_welcome_volume_content">When enabled, you can finish the whole flow without touching the screen:\n1. Long-press volume down to wake the app\n2. Keep holding to speak\n3. Release, then press again to send</string>
     <string name="dialog_welcome_volume_confirm">Enable</string>
+    <string name="dialog_template_empty_title">Templates removed</string>
+    <string name="dialog_template_empty_content">All templates have been deleted. Load the default templates now?\nIf not, the app will add one empty Q&amp;A template.</string>
+    <string name="dialog_template_empty_load_default">Load</string>
+    <string name="dialog_template_empty_add_blank">Don\'t Load</string>
     <string name="dialog_volume_key_enable_title">Accessibility Is Required</string>
     <string name="dialog_volume_key_enable_content">On the next screen, please enable the "Volume Key Wake" accessibility option.\nThis allows the app to listen for volume-down actions and handle wake, speech input, and send.</string>
+    <string name="dialog_agent_enable_title">Enable Agent Mode</string>
+    <string name="dialog_agent_enable_content">Agent Mode is an experimental feature.\n\nIf you want AI to view and operate your phone screen, please enable the "Agent Mode" accessibility service on the next system settings screen.\n\nAfter it is enabled, AI can read accessible controls on the current screen and try actions such as tap, long press, scroll, and text input.\n\nAvoid using this feature on sensitive pages such as payments, verification codes, or passwords.</string>
+    <string name="dialog_agent_enable_confirm">Open Settings</string>
     <string name="dialog_volume_key_help_title">Volume Key Guide</string>
     <string name="dialog_volume_key_help">Purpose: wake the app, dictate, and send without touching the screen.\n\nHow to use:\n1. Long-press volume down to wake the app\n2. Keep holding to speak\n3. Release, then press again to send\n\nIf the phone vibrates but the window does not appear, check whether system settings block background pop-ups.</string>
     <string name="toast_clipboard">Copied to clipboard</string>
@@ -197,7 +203,7 @@
     <string name="text_thinking_header">Thinking...</string>
     <string name="text_think_complete_summary">Thinking complete</string>
     <string name="text_thinking_summary">Thinking</string>
-    <string name="toast_enable_network">Reminder: Web access will increase token usage, use GPT-4 wisely!</string>
+    <string name="toast_enable_network">Reminder: Web access will increase token usage</string>
     <string name="dialog_help_title">Help</string>
     <string name="dialog_help_cancel">Back</string>
     <string name="dialog_help_homepage">Homepage</string>
@@ -239,8 +245,7 @@
     <string name="custom_model_conf_title">Model List</string>
     <string name="custom_model_conf_fetch">Fetch</string>
     <string name="custom_model_conf_add">Add</string>
-    <string name="custom_model_conf_subtitle">Tap to edit, swipe left to delete, drag to reorder</string>
-    <string name="custom_model_conf_hint">Display name is optional. When empty, the app will use a default name or the model ID.</string>
+    <string name="custom_model_conf_subtitle">| Tap to edit, swipe left to delete, drag to reorder</string>
     <string name="custom_model_fetch_loading">Fetching model list...</string>
     <string name="custom_model_fetch_missing_config">Please fill in the API host and API key first</string>
     <string name="custom_model_fetch_empty">No available models were returned</string>
@@ -254,7 +259,7 @@
     <string name="custom_model_detail_title_edit">Edit Model</string>
     <string name="custom_model_detail_save">Save</string>
     <string name="custom_model_detail_section">Model Details</string>
-    <string name="custom_model_detail_subtitle">Model ID is sent to the API. Display name is only used in the UI.</string>
+    <string name="custom_model_detail_subtitle">| Model ID is sent to the API. Display name is only used in the UI.</string>
     <string name="custom_model_detail_id">Model ID</string>
     <string name="custom_model_detail_name">Display Name</string>
     <string name="custom_model_detail_name_tip">Optional. Leave empty to use a default name.</string>

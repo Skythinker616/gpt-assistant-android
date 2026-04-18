@@ -112,9 +112,14 @@ public class TabConfActivity extends Activity {
 
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) { // 左滑删除
-                tabDataList.remove(viewHolder.getAdapterPosition());
-                adapter.notifyItemRemoved(viewHolder.getAdapterPosition());
-                GlobalDataHolder.saveTabDataList();
+                int position = viewHolder.getAdapterPosition();
+                tabDataList.remove(position);
+                adapter.notifyItemRemoved(position);
+                if(tabDataList.size() == 0) {
+                    showRecoverTemplateDialog(tabDataList);
+                } else {
+                    GlobalDataHolder.saveTabDataList();
+                }
             }
         }).attachToRecyclerView(rvTabList);
 
@@ -573,6 +578,31 @@ public class TabConfActivity extends Activity {
         overridePendingTransition(0, 0);
         startActivity(intent);
         overridePendingTransition(0, 0);
+    }
+
+    // 删除最后一个模板后，立即提示用户恢复默认模板或补一个空白问答模板。
+    private void showRecoverTemplateDialog(List<PromptTabData> tabDataList) {
+        new ConfirmDialog(this)
+                .setTitle(getString(R.string.dialog_template_empty_title))
+                .setContent(getString(R.string.dialog_template_empty_content))
+                .setCancelable(false)
+                .setCancelText(getString(R.string.dialog_template_empty_add_blank))
+                .setOkText(getString(R.string.dialog_template_empty_load_default))
+                .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                .setOnConfirmListener(() -> {
+                    tabDataList.addAll(GlobalDataHolder.getDefaultTabDataList(this));
+                    if(tabDataList.size() == 0) {
+                        tabDataList.add(GlobalDataHolder.buildEmptyQaTab(this));
+                    }
+                    adapter.notifyDataSetChanged();
+                    GlobalDataHolder.saveTabDataList();
+                })
+                .setOnCancelListener(() -> {
+                    tabDataList.add(GlobalDataHolder.buildEmptyQaTab(this));
+                    adapter.notifyDataSetChanged();
+                    GlobalDataHolder.saveTabDataList();
+                })
+                .show();
     }
 
     @Override

@@ -71,15 +71,6 @@
                 android:textColor="#6A6A6A"
                 android:textSize="12sp" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
-                android:paddingHorizontal="10dp"
-                android:text="@string/main_action_conf_limit_tip"
-                android:textColor="#6A6A6A"
-                android:textSize="12sp" />
-
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

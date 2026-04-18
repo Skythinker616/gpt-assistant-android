@@ -370,15 +370,6 @@
 
                 </androidx.cardview.widget.CardView>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:paddingHorizontal="10dp"
-                    android:text="@string/data_transfer_rule_tip"
-                    android:textColor="#6A6A6A"
-                    android:textSize="12sp" />
-
             </LinearLayout>
         </ScrollView>
 

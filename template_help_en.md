@@ -42,7 +42,7 @@ Starting from version 1.9.0, GPTAssistant supports advanced template syntax. By 
 
 - Setting the model name to be used
 - Setting whether the template is assigned the 'system' role
-- Enabling voice broadcasting, continuous dialogue, and internet connectivity
+- Enabling voice broadcasting, continuous dialogue, internet connectivity, and Agent Mode
 - Adding custom dropdowns or text input boxes
 
 Content enclosed in triple quotes at the beginning of the template will be recognized as template parameters, with each parameter occupying one line and consisting of a parameter name and a parameter value. Parameter names start with `@`, and there is a space between the parameter name and value, like this:
@@ -67,6 +67,7 @@ When this template is selected, a dropdown named "Target Language" will appear o
 | `@speak` | `true` or `false` | Enable voice broadcasting |
 | `@network` | `true` or `false` | Enable internet connectivity |
 | `@chat` | `true` or `false` | Enable continuous dialogue |
+| `@agent` | `true` or `false` | Enable Agent Mode (experimental, requires the corresponding accessibility service) |
 | `@select` | `Dropdown Name\|Option 1\|Option 2\|...` | Add a dropdown, and the selected option will replace the placeholder `${Dropdown Name}` |
 | `@input` | `Input Box Name` | Add a text input box, and the entered content will replace the placeholder `${Input Box Name}` |
 
@@ -78,7 +79,7 @@ Additionally, each option in `@select` can have a `[Option Name]` (i.e., `[Optio
 
 - Triple quotes `"""` must be on a line by themselves, with no other content before or after; parameter names must be written at the beginning, with no space on the left
 - When set as a 'system' role, the `${input}` placeholder will be disabled, and user-inputted questions will be sent as 'user' role following the template content
-- If `@model`, `@speak`, `@network`, or `@chat` parameters are set, the corresponding global settings of the software will be temporarily overridden when selecting this template
+- If `@model`, `@speak`, `@network`, `@chat`, or `@agent` parameters are set, the corresponding global settings of the software will be temporarily overridden when selecting this template
 - Avoid setting dropdown and input box names as `input` or using duplicate names
 - Changing dropdown options or input box content during continuous dialogue will not replace the placeholder with the new content
 

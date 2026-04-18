@@ -698,7 +698,9 @@ public class MainActivity extends Activity {
             selectedTab = GlobalDataHolder.getSelectedTab();
         switchToTemplate(selectedTab);
         Button selectedTabBtn = (Button) ((LinearLayout) findViewById(R.id.tabs_layout)).getChildAt(selectedTab); // 将选中的模板按钮滚动到可见位置
-        selectedTabBtn.getParent().requestChildFocus(selectedTabBtn, selectedTabBtn);
+        if(selectedTabBtn != null) {
+            selectedTabBtn.getParent().requestChildFocus(selectedTabBtn, selectedTabBtn);
+        }
 
         updateModelSpinner(); // 设置模型选择下拉框
 
@@ -1089,9 +1091,7 @@ public class MainActivity extends Activity {
                 }
             }else{
                 agentMode = false;
-                GlobalUtils.showToast(this, R.string.toast_agent_accessibility_off, false);
-                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                startActivity(intent);
+                showAgentAccessibilityEnableDialog();
             }
         }else{
             GlobalUtils.showToast(this, R.string.toast_agent_off, false);
@@ -1099,6 +1099,22 @@ public class MainActivity extends Activity {
         refreshMainActionButtonState(MainActionRegistry.ACTION_AGENT);
         setAgentModeEnabled(agentMode);
         GlobalDataHolder.saveAgentModeSetting(agentMode);
+    }
+
+    // 智能体模式依赖单独的无障碍服务，这里先向用户说明用途和风险，再跳转系统设置。
+    private void showAgentAccessibilityEnableDialog() {
+        new ConfirmDialog(this)
+                .setTitle(getString(R.string.dialog_agent_enable_title))
+                .setContent(getString(R.string.dialog_agent_enable_content))
+                .setContentAlignment(View.TEXT_ALIGNMENT_TEXT_START)
+                .setCancelable(false)
+                .setCancelText(getString(R.string.confirm_dialog_default_cancel_text))
+                .setOkText(getString(R.string.dialog_agent_enable_confirm))
+                .setOnConfirmListener(() -> {
+                    Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                    startActivity(intent);
+                })
+                .show();
     }
 
     // 打开历史记录页前先保存当前会话。
@@ -1384,11 +1400,19 @@ public class MainActivity extends Activity {
 
     // 切换到指定的模板
     private void switchToTemplate(int tabIndex) {
+        List<PromptTabData> tabDataList = GlobalDataHolder.getTabDataList();
+        if(tabDataList.size() == 0) { // 兜底补一个空模板，避免异常数据导致主界面按下标崩溃。
+            tabDataList.add(GlobalDataHolder.buildEmptyQaTab(this));
+            GlobalDataHolder.saveTabDataList();
+        }
+        if(tabIndex < 0 || tabIndex >= tabDataList.size()) {
+            tabIndex = 0;
+        }
         selectedTab = tabIndex;
         if(GlobalDataHolder.getSelectedTab() != -1) {
             GlobalDataHolder.saveSelectedTab(selectedTab);
         }
-        currentTemplateParams = GlobalDataHolder.getTabDataList().get(selectedTab).parseParams();
+        currentTemplateParams = tabDataList.get(selectedTab).parseParams();
         Log.d("MainActivity", "switch template: params=" + currentTemplateParams);
         chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
         setNetworkEnabled(currentTemplateParams.getBool("network", GlobalDataHolder.getEnableInternetAccess()));

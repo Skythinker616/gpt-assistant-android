@@ -87,15 +87,6 @@
                 android:textColor="#6A6A6A"
                 android:textSize="12sp" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
-                android:paddingHorizontal="10dp"
-                android:text="@string/custom_model_conf_hint"
-                android:textColor="#6A6A6A"
-                android:textSize="12sp" />
-
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

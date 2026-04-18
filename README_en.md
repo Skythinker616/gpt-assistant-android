@@ -41,7 +41,7 @@
 	- Support for images / TXT / PDF / DOCX / PPTX / XLSX files
 
 - **Web browsing capability**: Fetch web content as needed for GPT
-
+- **Agent Mode (Experimental)**: After enabling the dedicated accessibility service, AI can inspect the current screen and perform basic actions
 - **Global quick access**: Volume key activation / status bar shortcut / cross-app text selection
 
 - **Smart templates**: Easily customize interface for each template (custom dropdowns and input fields)
@@ -132,6 +132,18 @@ The Function interface allows GPT to initiate web requests. The app automaticall
 >
 > Note 4: Models that don't support Functions (like `gpt-4-vision-preview`) cannot use the web browsing feature.
 
+**7. Agent Mode (Experimental)**
+
+After turning on "Agent Mode" from the main screen, AI can read the accessible control tree of the current screen and try actions such as tap, long press, scroll, and text input. It is suitable for simple cross-app navigation and form-filling tasks.
+
+<div align="center">
+	<img src="readme_img/agent.gif" height="400px">
+</div>
+
+> Note 1: This feature is still experimental, so recognition and operation may not work reliably in every app or on every control.
+>
+> Note 2: Although the app will not keep your personal information, it is recommended to avoid using Agent Mode on pages with sensitive information such as payments, verification codes, and passwords.
+
 ---
 
 ## Installation & Configuration
@@ -179,6 +191,11 @@ If the OpenAI interface used supports the Whisper model, simply select the Whisp
 	2. Check if there is a "Background Pop-up Interface" permission in system settings. Allow it if available, ignore if not.
 
 		> If you find that the phone vibrates after long-pressing the volume down key but no interface appears, it's likely due to missing this permission.
+
+- If you want to use Agent Mode, you need to:
+	1. Enable this app's "Agent Mode" accessibility service in system settings
+	2. Choose a model that supports Functions / tool calling
+	3. Avoid using this feature on sensitive pages such as payments, verification codes, or passwords
 
 - Please refer to the operations in [Feature Showcase](#feature-showcase) to use the software.
 
@@ -239,6 +256,16 @@ A: For general websites, GPT can only retrieve plain text content. For specially
 **Q: Why does GPT say it can't retrieve content from some websites?**
 
 A: Page loading timeout (15s), login requirements, verification requirements, etc. can all cause this issue. You can try asking again or ask GPT to try a different website.
+
+### Agent Mode
+
+**Q: Why does the app ask me to enable accessibility after I tap Agent Mode?**
+
+A: Agent Mode depends on a separate accessibility service. You need to enable this app's "Agent Mode" entry in system settings. It is different from the "Volume Key Wake" accessibility entry.
+
+**Q: Why can AI still not operate some pages after I enable it?**
+
+A: Some apps do not expose complete control information to accessibility services, or the current model may not support Functions / tool calling. Sensitive pages such as payments, verification codes, and passwords are also not recommended for AI operation.
 
 ### Other Usage Questions
 

@@ -59,6 +59,8 @@ public class TabConfActivity extends Activity {
 
     private static final int REQUEST_DATA_TRANSFER = 1000;
     private static final int REQUEST_CUSTOM_MODEL_CONF = 1001;
+    private static final int VERSION_TEXT_COLOR_NORMAL = Color.parseColor("#6A6A6A");
+    private static final int VERSION_TEXT_COLOR_AVAILABLE = Color.parseColor("#D9822B");
     public static final String EXTRA_FOCUS_SECTION = "focus_section";
     public static final String FOCUS_SECTION_OPENAI = "openai";
 
@@ -406,6 +408,7 @@ public class TabConfActivity extends Activity {
         });
 
         new Thread(() -> { // 通过Gitee/GitHub检查更新
+            GlobalDataHolder.saveUpdateCheckTime(System.currentTimeMillis());
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
                     .url(getString(GlobalDataHolder.getUseGitee() ? R.string.check_update_url_gitee : R.string.check_update_url_github))
@@ -415,16 +418,8 @@ public class TabConfActivity extends Activity {
                 String json = response.body().string();
                 JSONObject jsonObject = new JSONObject(json);
                 String version = jsonObject.getString("tag_name").replace("v", "");
-                if(version.equals(BuildConfig.VERSION_NAME)){
-                    handler.post(() -> {
-                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_latest), version));
-                    });
-                } else {
-                    handler.post(() -> {
-                        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_available), BuildConfig.VERSION_NAME, version));
-                    });
-                }
                 GlobalDataHolder.saveUpdateSetting(version);
+                handler.post(() -> updateVersionText(version, true));
             } catch (JSONException | IOException e) {
                 e.printStackTrace();
             }
@@ -464,7 +459,7 @@ public class TabConfActivity extends Activity {
             }).start();
         });
 
-        ((TextView) findViewById(R.id.tv_version_conf)).setText(String.format(getString(R.string.format_version_normal), BuildConfig.VERSION_NAME));
+        updateVersionText(GlobalDataHolder.getLatestVersion(), false);
 
         ((LinearLayout) findViewById(R.id.tv_homepage_conf).getParent()).setOnClickListener(view -> {
             WebViewActivity.openUrl(this, getString(R.string.text_homepage_title), getString(GlobalDataHolder.getUseGitee() ? R.string.homepage_url_gitee : R.string.homepage_url_github));
@@ -503,6 +498,21 @@ public class TabConfActivity extends Activity {
             swVolumeKey.setChecked(volumeKeyEnabled && accessibilityEnabled);
             isBindingVolumeKeySwitch = false;
         }, 250);
+    }
+
+    private void updateVersionText(String latestVersion, boolean checkedLatest) {
+        TextView versionView = findViewById(R.id.tv_version_conf);
+        boolean updateAvailable = !BuildConfig.VERSION_NAME.equals(latestVersion);
+        if(updateAvailable) {
+            versionView.setText(String.format(getString(R.string.format_version_available), BuildConfig.VERSION_NAME, latestVersion));
+            versionView.setTextColor(VERSION_TEXT_COLOR_AVAILABLE);
+        } else if(checkedLatest) {
+            versionView.setText(String.format(getString(R.string.format_version_latest), BuildConfig.VERSION_NAME));
+            versionView.setTextColor(VERSION_TEXT_COLOR_NORMAL);
+        } else {
+            versionView.setText(String.format(getString(R.string.format_version_normal), BuildConfig.VERSION_NAME));
+            versionView.setTextColor(VERSION_TEXT_COLOR_NORMAL);
+        }
     }
 
     // 设置百度语音识别子配置项是否隐藏

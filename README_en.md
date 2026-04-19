@@ -10,7 +10,7 @@
 <div align=center>
 	<font size=3>
 		<b>Full-featured GPT Assistant for Android</b><br>
-		<b>Quick Launch · Voice Interaction · Web Access · File Upload</b>
+		<b>Quick Launch · Voice Interaction · Web Access · File Upload · Agent</b>
 	</font>
 </div>
 
@@ -41,12 +41,14 @@
 	- Support for images / TXT / PDF / DOCX / PPTX / XLSX files
 
 - **Web browsing capability**: Fetch web content as needed for GPT
-- **Agent Mode (Experimental)**: After enabling the dedicated accessibility service, AI can inspect the current screen and perform basic actions
+
 - **Global quick access**: Volume key activation / status bar shortcut / cross-app text selection
 
 - **Smart templates**: Easily customize interface for each template (custom dropdowns and input fields)
 
 - **Multiple voice input/output interfaces**: Huawei / Baidu / Whisper / Google / System TTS
+
+- **Agent Mode (Experimental)**: Let AI control your phone autonomously (no image recognition needed, supports any model)
 
 - **Fully open source**: Powered by OpenAI API (or compatible interfaces), completely free to use
 

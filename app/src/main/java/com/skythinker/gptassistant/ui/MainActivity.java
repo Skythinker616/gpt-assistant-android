@@ -68,6 +68,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -80,6 +81,9 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONException;
 import cn.hutool.json.JSONObject;
 import io.noties.prism4j.annotations.PrismBundle;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import com.skythinker.gptassistant.BuildConfig;
 import com.skythinker.gptassistant.data.ChatManager;
@@ -112,6 +116,7 @@ import com.skythinker.gptassistant.asr.WhisperAsrClient;
 public class MainActivity extends Activity {
     private static final int REQUEST_SETTINGS = 0;
     private static final int REQUEST_SETTINGS_AFTER_API_ONBOARDING = 5;
+    private static final long UPDATE_CHECK_INTERVAL_MS = 24L * 60 * 60 * 1000;
 
     private int selectedTab = 0;
     private TextView tvGptReply;
@@ -786,10 +791,9 @@ public class MainActivity extends Activity {
         LocalBroadcastManager.getInstance(this).registerReceiver(localReceiver, intentFilter);
         syncVolumeKeyState();
 
-        //检查更新
-        if(!BuildConfig.VERSION_NAME.equals(GlobalDataHolder.getLatestVersion())) {
-            GlobalUtils.showToast(this, getString(R.string.toast_update_available), false);
-        }
+        // 检查更新并刷新设置按钮红点。
+        refreshSettingsUpdateBadge();
+        checkUpdateIfNeeded();
         handler.postDelayed(this::showStartupOnboarding, 300);
     }
 
@@ -907,6 +911,15 @@ public class MainActivity extends Activity {
         button.setCardBackgroundColor(Color.TRANSPARENT);
         button.setForeground(ContextCompat.getDrawable(this, getMainActionForegroundRes(spec.id)));
         button.setContentDescription(getString(spec.titleRes));
+        View badge = button.findViewById(R.id.cv_main_action_badge);
+        if(badge != null) {
+            if(MainActionRegistry.ACTION_SETTINGS.equals(spec.id)
+                    && !BuildConfig.VERSION_NAME.equals(GlobalDataHolder.getLatestVersion())) {
+                badge.setVisibility(View.VISIBLE);
+            } else {
+                badge.setVisibility(View.GONE);
+            }
+        }
         button.setOnClickListener(view -> handleMainActionClick(spec.id));
         parent.addView(button);
         mainActionButtonMap.put(spec.id, button);
@@ -952,6 +965,45 @@ public class MainActivity extends Activity {
             return;
         }
         button.setForeground(ContextCompat.getDrawable(this, getMainActionForegroundRes(actionId)));
+    }
+
+    private void refreshSettingsUpdateBadge() {
+        CardView settingsButton = mainActionButtonMap.get(MainActionRegistry.ACTION_SETTINGS);
+        if(settingsButton == null) {
+            return;
+        }
+        View badge = settingsButton.findViewById(R.id.cv_main_action_badge);
+        if(badge == null) {
+            return;
+        }
+        if(!BuildConfig.VERSION_NAME.equals(GlobalDataHolder.getLatestVersion())) {
+            badge.setVisibility(View.VISIBLE);
+        } else {
+            badge.setVisibility(View.GONE);
+        }
+    }
+
+    private void checkUpdateIfNeeded() {
+        long now = System.currentTimeMillis();
+        if(now - GlobalDataHolder.getLastUpdateCheckTime() < UPDATE_CHECK_INTERVAL_MS) {
+            return;
+        }
+        GlobalDataHolder.saveUpdateCheckTime(now);
+        new Thread(() -> {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(getString(GlobalDataHolder.getUseGitee() ? R.string.check_update_url_gitee : R.string.check_update_url_github))
+                    .build();
+            try(Response response = client.newCall(request).execute()) {
+                String json = response.body().string();
+                org.json.JSONObject jsonObject = new org.json.JSONObject(json);
+                String version = jsonObject.getString("tag_name").replace("v", "");
+                GlobalDataHolder.saveUpdateSetting(version);
+                handler.post(this::refreshSettingsUpdateBadge);
+            } catch (org.json.JSONException | IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     // 根据当前开关状态选择按钮图标资源。

@@ -7,4 +7,18 @@
     android:layout_marginLeft="5dp"
     app:cardBackgroundColor="#00DADADA"
     app:cardCornerRadius="20dp"
-    app:cardElevation="0dp" />
+    app:cardElevation="0dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cv_main_action_badge"
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="#FF5A5F"
+        app:cardCornerRadius="3dp"
+        app:cardElevation="0dp" />
+
+</androidx.cardview.widget.CardView>

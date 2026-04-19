@@ -58,6 +58,7 @@ public class GlobalDataHolder {
     private static boolean useGitee;
     private static boolean agentMode;
     private static String latestVersion;
+    private static long lastUpdateCheckTime;
     // 主界面功能按钮布局的持久化 JSON。
     private static String mainActionLayout;
     private static SharedPreferences sp = null;
@@ -417,12 +418,20 @@ public class GlobalDataHolder {
 
     public static void loadUpdateSetting() {
         latestVersion = sp.getString("latest_version", BuildConfig.VERSION_NAME);
+        lastUpdateCheckTime = sp.getLong("last_update_check_time", 0);
     }
 
     public static void saveUpdateSetting(String latestVersionName) {
         latestVersion = latestVersionName;
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("latest_version", latestVersion);
+        editor.apply();
+    }
+
+    public static void saveUpdateCheckTime(long updateCheckTime) {
+        lastUpdateCheckTime = updateCheckTime;
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putLong("last_update_check_time", lastUpdateCheckTime);
         editor.apply();
     }
 
@@ -498,6 +507,8 @@ public class GlobalDataHolder {
     public static boolean getAgentMode() { return agentMode; }
 
     public static String getLatestVersion() { return latestVersion; }
+
+    public static long getLastUpdateCheckTime() { return lastUpdateCheckTime; }
 
     // 获取主界面按钮布局配置。
     public static String getMainActionLayout() { return mainActionLayout; }

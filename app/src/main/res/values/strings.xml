@@ -185,6 +185,7 @@
     <string name="dialog_welcome_volume_title">Enable Volume Key Control?</string>
     <string name="dialog_welcome_volume_content">When enabled, you can finish the whole flow without touching the screen:\n1. Long-press volume down to wake the app\n2. Keep holding to speak\n3. Release, then press again to send</string>
     <string name="dialog_welcome_volume_confirm">Enable</string>
+    <string name="toast_volume_key_manual_scroll">Please scroll down to the "%1$s" setting and enable it</string>
     <string name="dialog_template_empty_title">Templates removed</string>
     <string name="dialog_template_empty_content">All templates have been deleted. Load the default templates now?\nIf not, the app will add one empty Q&amp;A template.</string>
     <string name="dialog_template_empty_load_default">Load</string>

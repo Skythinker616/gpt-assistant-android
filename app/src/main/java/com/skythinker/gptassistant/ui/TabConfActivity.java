@@ -61,7 +61,6 @@ public class TabConfActivity extends Activity {
     private static final int REQUEST_CUSTOM_MODEL_CONF = 1001;
     public static final String EXTRA_FOCUS_SECTION = "focus_section";
     public static final String FOCUS_SECTION_OPENAI = "openai";
-    public static final String FOCUS_SECTION_VOLUME_KEY = "volume_key";
 
     private RecyclerView rvTabList;
     private TabConfListAdapter adapter;
@@ -476,8 +475,6 @@ public class TabConfActivity extends Activity {
                 View targetView = null;
                 if(FOCUS_SECTION_OPENAI.equals(focusSection)) {
                     targetView = findViewById(R.id.cv_openai_conf_section);
-                } else if(FOCUS_SECTION_VOLUME_KEY.equals(focusSection)) {
-                    targetView = findViewById(R.id.ll_volume_key_conf);
                 }
                 if(targetView != null) {
                     View finalTargetView = targetView;

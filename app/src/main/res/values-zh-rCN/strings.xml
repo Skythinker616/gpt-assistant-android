@@ -155,6 +155,7 @@
     <string name="dialog_welcome_volume_title">是否启用音量键操作</string>
     <string name="dialog_welcome_volume_content">开启后，无需触碰屏幕就可以完成以下操作：\n1. 长按音量下键唤起应用\n2. 保持按住进行语音输入\n3. 松开后再次按下即可发送</string>
     <string name="dialog_welcome_volume_confirm">去启用</string>
+    <string name="toast_volume_key_manual_scroll">请下滑并启用“%1$s”设置项</string>
     <string name="dialog_template_empty_title">模板已清空</string>
     <string name="dialog_template_empty_content">当前已删除全部模板。是否立即载入默认模板？\n如果不载入，程序会自动添加一个“问答”空模板。</string>
     <string name="dialog_template_empty_load_default">载入</string>

@@ -87,9 +87,9 @@ public class CustomModelConfAdapter extends RecyclerView.Adapter<CustomModelConf
         if(profile.hasCapability(ModelCatalog.CAPABILITY_VISION)) {
             capabilityTexts.add(context.getString(R.string.custom_model_cap_vision));
         }
-        if(profile.hasCapability(ModelCatalog.CAPABILITY_THINKING)) {
-            capabilityTexts.add(context.getString(R.string.custom_model_cap_thinking));
-        }
+        // if(profile.hasCapability(ModelCatalog.CAPABILITY_THINKING)) {
+        //     capabilityTexts.add(context.getString(R.string.custom_model_cap_thinking));
+        // }
         if(profile.hasCapability(ModelCatalog.CAPABILITY_TOOL)) {
             capabilityTexts.add(context.getString(R.string.custom_model_cap_tool));
         }

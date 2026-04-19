@@ -2394,7 +2394,10 @@ public class MainActivity extends Activity {
                 .setOkText(getString(R.string.dialog_welcome_volume_confirm))
                 .setOnConfirmListener(() -> {
                     GlobalDataHolder.saveOnboardingVolumePromptShown(true);
-                    openSettings(REQUEST_SETTINGS, TabConfActivity.FOCUS_SECTION_VOLUME_KEY);
+                    GlobalUtils.showToast(this,
+                            getString(R.string.toast_volume_key_manual_scroll, getString(R.string.conf_volume_key_item)),
+                            true);
+                    openSettings();
                 })
                 .setOnCancelListener(() -> {
                     GlobalDataHolder.saveOnboardingVolumePromptShown(true);

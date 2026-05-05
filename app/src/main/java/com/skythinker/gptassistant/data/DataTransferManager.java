@@ -201,6 +201,7 @@ public class DataTransferManager {
         llmJson.put("model", GlobalDataHolder.getGptModel());
         llmJson.put("temperature", GlobalDataHolder.getGptTemperature());
         llmJson.put("maxContextNum", GlobalDataHolder.getGptMaxContextNum());
+        llmJson.put("maxTokens", GlobalDataHolder.getGptMaxTokens());
 
         JSONArray customModelsJson = new JSONArray();
         for(CustomModelProfile profile : GlobalDataHolder.getCustomModelProfiles()) {
@@ -344,7 +345,10 @@ public class DataTransferManager {
         int maxContextNum = llmJson.has("maxContextNum")
                 ? llmJson.optInt("maxContextNum", GlobalDataHolder.getGptMaxContextNum())
                 : GlobalDataHolder.getGptMaxContextNum();
-        GlobalDataHolder.saveModelParams(temperature, maxContextNum);
+        int maxTokens = llmJson.has("maxTokens")
+                ? llmJson.optInt("maxTokens", GlobalDataHolder.getGptMaxTokens())
+                : GlobalDataHolder.getGptMaxTokens();
+        GlobalDataHolder.saveModelParams(temperature, maxContextNum, maxTokens);
     }
 
     // 导入语音识别配置。

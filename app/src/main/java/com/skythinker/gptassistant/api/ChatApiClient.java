@@ -5,6 +5,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.skythinker.gptassistant.BuildConfig;
 import com.skythinker.gptassistant.tool.GlobalUtils;
 import com.skythinker.gptassistant.R;
 import com.unfbx.chatgpt.OpenAiStreamClient;
@@ -25,11 +26,15 @@ import java.util.List;
 
 import cn.hutool.json.JSONObject;
 import okhttp3.ConnectionSpec;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.internal.http2.StreamResetException;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
+import okio.Buffer;
 
 import com.skythinker.gptassistant.data.ChatManager.ChatMessage.ChatRole;
 import com.skythinker.gptassistant.data.ChatManager.ChatMessage;
@@ -63,10 +68,13 @@ public class ChatApiClient {
         public boolean allowThinking = true;
     }
 
+    final static boolean ENABLE_PAYLOAD_LOG = false;
+
     String url = "";
     String apiKey = "";
     String model = "";
     float temperature = 0.5f;
+    int maxTokens = 2048;
     OnReceiveListener listener = null;
 
     OkHttpClient httpClient = null;
@@ -91,6 +99,7 @@ public class ChatApiClient {
             .readTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(180, java.util.concurrent.TimeUnit.SECONDS)
             .connectionSpecs(Arrays.asList(ConnectionSpec.CLEARTEXT, ConnectionSpec.COMPATIBLE_TLS))
+            .addInterceptor(new DebugPayloadLoggingInterceptor())
             .build();
         setApiInfo(url, apiKey);
     }
@@ -272,16 +281,18 @@ public class ChatApiClient {
             if (sendOptions.allowTools && !functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
                 chatCompletion = ChatCompletion.builder()
                         .messages(messageList)
-                        .model(model.replaceAll("\\*$","")) // 去掉自定义模型结尾的*号
+                        .model(model)
                         .tools(functions)
                         .toolChoice(ToolChoice.Choice.AUTO.getName())
-                        .temperature(temperature)
+                        .temperature(temperature).topP(null)
+                        .maxTokens(maxTokens > 0 ? maxTokens : null)
                         .build();
             } else {
                 chatCompletion = ChatCompletion.builder()
                         .messages(messageList)
-                        .model(model.replaceAll("\\*$","")) // 去掉自定义模型结尾的*号
-                        .temperature(temperature)
+                        .model(model)
+                        .temperature(temperature).topP(null)
+                        .maxTokens(maxTokens > 0 ? maxTokens : null)
                         .build();
             }
         } else { // 含有附件，使用contentList格式
@@ -349,16 +360,18 @@ public class ChatApiClient {
             if (sendOptions.allowTools && !functions.isEmpty()) { // 如果有函数列表，则将函数列表传入
                 chatCompletion = ChatCompletionWithPicture.builder()
                         .messages(messageList)
-                        .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
+                        .model(model)
                         .tools(functions)
                         .toolChoice(ToolChoice.Choice.AUTO.getName())
-                        .temperature(temperature)
+                        .temperature(temperature).topP(null)
+                        .maxTokens(maxTokens > 0 ? maxTokens : null)
                         .build();
             } else {
                 chatCompletion = ChatCompletionWithPicture.builder()
                         .messages(messageList)
-                        .model(model.replaceAll("\\*$","")) // 去掉自定义Vision模型结尾的*号
-                        .temperature(temperature)
+                        .model(model)
+                        .temperature(temperature).topP(null)
+                        .maxTokens(maxTokens > 0 ? maxTokens : null)
                         .build();
             }
         }
@@ -396,7 +409,9 @@ public class ChatApiClient {
                         }
                     }
                 } else { // 正在回复
-//                    Log.d("ChatApiClient", "onEvent: " + data);
+                    if(BuildConfig.DEBUG && ChatApiClient.ENABLE_PAYLOAD_LOG) {
+                        Log.d("ChatApiClient", "onEvent: " + data);
+                    }
                     JSONObject json = new JSONObject(data);
                     if(json.containsKey("choices") && json.getJSONArray("choices").size() > 0) {
                         JSONObject delta = ((JSONObject) json.getJSONArray("choices").get(0)).getJSONObject("delta");
@@ -560,6 +575,9 @@ public class ChatApiClient {
     // 设置温度
     public void setTemperature(float temperature) { this.temperature = temperature; }
 
+    // 设置最大生成长度
+    public void setMaxTokens(int maxTokens) { this.maxTokens = maxTokens; }
+
     // 添加一个函数，有同名函数则覆盖
     public void addFunction(String name, String desc, String params, String[] required) {
         removeFunction(name); // 删除同名函数
@@ -601,5 +619,27 @@ public class ChatApiClient {
     // 删除所有函数
     public void clearAllFunctions() {
         this.functions.clear();
+    }
+
+    private static class DebugPayloadLoggingInterceptor implements Interceptor {
+        private static final String TAG = "ChatPayload";
+        private static final int LOG_CHUNK_SIZE = 3000;
+
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+            RequestBody body = request.body();
+            if(BuildConfig.DEBUG && ChatApiClient.ENABLE_PAYLOAD_LOG && body != null) {
+                Buffer buffer = new Buffer();
+                body.writeTo(buffer);
+                String payload = buffer.readUtf8();
+                Log.d(TAG, "request payload begin: " + request.method() + " " + request.url());
+                for(int i = 0; i < payload.length(); i += LOG_CHUNK_SIZE) {
+                    Log.d(TAG, payload.substring(i, Math.min(payload.length(), i + LOG_CHUNK_SIZE)));
+                }
+                Log.d(TAG, "request payload end");
+            }
+            return chain.proceed(request);
+        }
     }
 }

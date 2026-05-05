@@ -601,6 +601,7 @@ public class MainActivity extends Activity {
                 });
 
         chatApiClient.setTemperature(GlobalDataHolder.getGptTemperature());
+		chatApiClient.setMaxTokens(GlobalDataHolder.getGptMaxTokens());
 
         // 发送按钮点击事件
         btSend.setOnClickListener(view -> {
@@ -1220,6 +1221,7 @@ public class MainActivity extends Activity {
             chatApiClient.setApiInfo(GlobalDataHolder.getGptApiHost(), GlobalDataHolder.getGptApiKey());
             chatApiClient.setModel(currentTemplateParams.getStr("model", GlobalDataHolder.getGptModel()));
             chatApiClient.setTemperature(GlobalDataHolder.getGptTemperature());
+			chatApiClient.setMaxTokens(GlobalDataHolder.getGptMaxTokens());
 
             // 更新所使用的语音识别接口
             if(GlobalDataHolder.getAsrUseBaidu() && !(asrClient instanceof BaiduAsrClient)) {

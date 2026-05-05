@@ -54,6 +54,7 @@
     <string name="conf_custom_model_summary">%1$d models configured</string>
     <string name="conf_model_temperature">Temperature</string>
     <string name="conf_context_num">Context Length</string>
+    <string name="conf_max_tokens">Max Output Tokens</string>
     <string name="conf_asr_title">Speech Recognition Settings</string>
     <string name="conf_asr_subtitle">| Disabling all will use built-in HMS service</string>
     <string name="conf_use_baidu_asr_item">Use Baidu Service</string>

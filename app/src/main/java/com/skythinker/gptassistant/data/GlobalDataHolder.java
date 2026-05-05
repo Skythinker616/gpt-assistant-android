@@ -38,6 +38,7 @@ public class GlobalDataHolder {
     private static String gptModel;
     private static float gptTemperature;
     private static int gptMaxContextNum;
+    private static int gptMaxTokens;
     // 用户维护的自定义模型配置列表。
     private static List<CustomModelProfile> customModelProfiles = null;
     // 音量键操作的业务开关，需与系统无障碍状态共同生效。
@@ -268,14 +269,17 @@ public class GlobalDataHolder {
     public static void loadModelParams() {
         gptTemperature = sp.getFloat("model_temperature", 0.5f);
         gptMaxContextNum = sp.getInt("max_context_num", 10);
+        gptMaxTokens = sp.getInt("max_tokens", 2048);
     }
 
-    public static void saveModelParams(float temperature, int maxContextNum) {
+    public static void saveModelParams(float temperature, int maxContextNum, int maxTokens) {
         gptTemperature = temperature;
         gptMaxContextNum = maxContextNum;
+        gptMaxTokens = maxTokens;
         SharedPreferences.Editor editor = sp.edit();
         editor.putFloat("model_temperature", gptTemperature);
         editor.putInt("max_context_num", gptMaxContextNum);
+        editor.putInt("max_tokens", gptMaxTokens);
         editor.apply();
     }
 
@@ -479,6 +483,8 @@ public class GlobalDataHolder {
     public static float getGptTemperature() {return gptTemperature; }
 
     public static int getGptMaxContextNum() { return gptMaxContextNum; }
+
+    public static int getGptMaxTokens() { return gptMaxTokens; }
 
     public static boolean getVolumeKeyEnabled() { return volumeKeyEnabled; }
 

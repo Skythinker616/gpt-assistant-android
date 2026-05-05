@@ -174,7 +174,7 @@ public class TabConfActivity extends Activity {
                     if (!editable.toString().isEmpty()) {
                         float temperature = Float.parseFloat(editable.toString().trim());
                         if (temperature >= 0 && temperature <= 2)
-                            GlobalDataHolder.saveModelParams(temperature, GlobalDataHolder.getGptMaxContextNum());
+                            GlobalDataHolder.saveModelParams(temperature, GlobalDataHolder.getGptMaxContextNum(), GlobalDataHolder.getGptMaxTokens());
                     }
                 } catch (NumberFormatException e) {
                     ((EditText) findViewById(R.id.et_temperature_conf)).setText(String.valueOf(GlobalDataHolder.getGptTemperature()));
@@ -188,10 +188,24 @@ public class TabConfActivity extends Activity {
                 try {
                     if (!editable.toString().isEmpty()) {
                         int contextNum = Integer.parseInt(editable.toString().trim());
-                        GlobalDataHolder.saveModelParams(GlobalDataHolder.getGptTemperature(), contextNum);
+                        GlobalDataHolder.saveModelParams(GlobalDataHolder.getGptTemperature(), contextNum, GlobalDataHolder.getGptMaxTokens());
                     }
                 } catch (NumberFormatException e) {
                     ((EditText) findViewById(R.id.et_context_num_conf)).setText(String.valueOf(GlobalDataHolder.getGptMaxContextNum()));
+                }
+            }
+        });
+
+        ((EditText) findViewById(R.id.et_max_tokens_conf)).setText(String.valueOf(GlobalDataHolder.getGptMaxTokens()));
+        ((EditText) findViewById(R.id.et_max_tokens_conf)).addTextChangedListener(new CustomTextWatcher() {
+            public void afterTextChanged(Editable editable) {
+                try {
+                    if (!editable.toString().isEmpty()) {
+                        int maxTokens = Integer.parseInt(editable.toString().trim());
+                        GlobalDataHolder.saveModelParams(GlobalDataHolder.getGptTemperature(), GlobalDataHolder.getGptMaxContextNum(), maxTokens);
+                    }
+                } catch (NumberFormatException e) {
+                    ((EditText) findViewById(R.id.et_context_num_conf)).setText(String.valueOf(GlobalDataHolder.getGptMaxTokens()));
                 }
             }
         });

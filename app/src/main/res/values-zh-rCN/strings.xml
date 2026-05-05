@@ -24,6 +24,7 @@
     <string name="conf_custom_model_summary">已配置 %1$d 个模型</string>
     <string name="conf_model_temperature">模型随机性</string>
     <string name="conf_context_num">上下文长度</string>
+    <string name="conf_max_tokens">最大输出长度</string>
     <string name="conf_asr_title">语音识别设置</string>
     <string name="conf_asr_subtitle">| 关闭下述接口则使用内置华为接口</string>
     <string name="conf_use_baidu_asr_item">使用百度接口</string>
